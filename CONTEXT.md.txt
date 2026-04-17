@@ -1,0 +1,7 @@
+# Projeto UGC Prompt Generator
+- Site: https://ugc-prompt-generator-six.vercel.app/
+- Pasta CORRETA: C:/Users/phalm/Desktop/ugc-prompt-generator/
+- Frontend: public/index.html
+- Backend: Node.js + server.js
+- Deploy: vercel deploy --prod (dentro da pasta ugc-prompt-generator)
+- NUNCA editar a pasta tiktok_bot

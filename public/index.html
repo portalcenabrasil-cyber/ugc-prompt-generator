@@ -1,0 +1,4387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UGC Prompt Generator — TikTok Shop Brasil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000000;
+      --bg-glass: rgba(255,255,255,0.03);
+      --bg-glass-hover: rgba(255,255,255,0.055);
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.18);
+      --orange: #FF6B00;
+      --orange-dim: rgba(255,107,0,0.10);
+      --orange-hover: #FF8533;
+      --text: rgba(255,255,255,0.92);
+      --text-dim: rgba(255,255,255,0.45);
+      --text-muted: rgba(255,255,255,0.18);
+      --green: #30D158;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --blur: blur(24px) saturate(180%);
+      --iridescent: linear-gradient(135deg, #ff6600, #cc44ff, #0099ff);
+      --iridescent-glow: 0 0 24px rgba(255,102,0,0.18), 0 0 48px rgba(204,68,255,0.12), 0 0 80px rgba(0,153,255,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── AMBIENT BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 45% at 10% 0%,   rgba(0,80,200,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 100%, rgba(140,40,220,0.09) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 50% 40%,  rgba(10,10,30,0.55) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── MARQUEE ── */
+    .marquee-bar {
+      background: rgba(0,80,200,0.05);
+      border-bottom: 1px solid rgba(140,40,220,0.12);
+      padding: 10px 0;
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+    }
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marquee 35s linear infinite;
+    }
+    .marquee-item {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 0 28px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(180,140,255,0.7);
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+    .marquee-item .sep { opacity: 0.35; }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── SITE HEADER ── */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: clamp(10px, 1.2vh, 16px) clamp(16px, 3vw, 40px);
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 1.5vw, 24px);
+      min-height: clamp(44px, 5vh, 64px);
+    }
+    @media (max-width: 768px) {
+      .site-header { padding-left: 20px; padding-right: 20px; }
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: clamp(6px, 0.6vw, 12px);
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+    .logo-mark {
+      width: clamp(26px, 2.2rem, 36px);
+      height: clamp(26px, 2.2rem, 36px);
+      background: var(--iridescent);
+      border-radius: 0.55em;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(12px, 1rem, 17px);
+      font-weight: 900;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    .logo-name {
+      font-size: clamp(13px, 1rem, 17px);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .logo-name em { color: var(--orange); font-style: normal; }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 3px;
+    }
+    .nav-tab {
+      padding: clamp(5px, 0.45rem, 9px) clamp(12px, 1.2rem, 22px);
+      border-radius: 50px;
+      font-size: clamp(11px, 0.85rem, 14px);
+      font-weight: 600;
+      color: rgba(255,255,255,0.88);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: #ffffff; }
+    .nav-tab.active { background: var(--iridescent); color: white; }
+
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 1;
+    }
+    /* Fade bottom — luz emergindo da montanha, dissolve na interface escura */
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(10, 20, 60, 0.35) 30%,
+        rgba(180, 200, 255, 0.55) 65%,
+        rgba(230, 234, 248, 0.92) 82%,
+        #f0f2f8 100%
+      );
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 48px 24px;
+      width: 100%;
+      max-width: 1100px;
+      text-align: center;
+    }
+    .hero-subtitle {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.65);
+      animation: fadeUp 0.6s ease 0.35s both;
+    }
+    .hero-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      font-size: clamp(36px, 6.5vw, 96px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.0;
+      white-space: normal;
+      word-break: break-word;
+      background: linear-gradient(150deg, #fff 20%, rgba(255,255,255,0.42) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s ease 0.2s both;
+    }
+    .hero-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s ease 0.3s both;
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 14px 6px 8px;
+      font-size: 13px;
+      color: var(--text-dim);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .chip-av {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: rgba(255,107,0,0.15);
+      border: 1px solid rgba(255,107,0,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+
+    /* ── MAIN FRAME ── */
+    .main-frame {
+      position: relative;
+      z-index: 1;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 20%,  rgba(0, 60, 180, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 85% 80%,  rgba(120, 30, 200, 0.06) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 80% at 50% 50%, rgba(230, 235, 255, 0.5) 0%, transparent 70%),
+        #f0f2f8;
+      /* Centraliza o conteúdo sem max-width no container, usando padding dinâmico */
+      padding: 32px max(28px, calc((100vw - 1240px) / 2 + 28px)) 60px;
+      animation: fadeUp 0.6s ease 0.4s both;
+    }
+
+    /* ── APP SHELL ── */
+    .app-shell {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 3px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.25);
+      transition: box-shadow 0.3s ease;
+    }
+    .app-shell:hover {
+      box-shadow: 0 40px 80px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.28);
+    }
+    .app-window {
+      background: rgba(6,6,14,0.97);
+      border-radius: 13px;
+      overflow: hidden;
+    }
+
+    /* ── APP TITLEBAR ── */
+    .app-titlebar {
+      padding: 8px 18px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .titlebar-dots { display: flex; gap: 6px; }
+    .titlebar-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .dot-red   { background: #FF5F57; }
+    .dot-amber { background: #FEBC2E; }
+    .dot-green { background: #28C840; }
+    .titlebar-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0 auto;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── APP GRID ── */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 348px 1fr;
+      background: var(--border);
+      gap: 1px;
+    }
+
+    /* ── LEFT PANEL ── */
+    .panel-left {
+      background: rgba(0,0,0,0.92);
+      padding: 14px 16px;
+      overflow-y: auto;
+      height: calc(100svh - 108px);
+    }
+
+    .section-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── UPLOAD ── */
+    .upload-area {
+      border: 1.5px dashed rgba(255,255,255,0.10);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--orange);
+      background: var(--orange-dim);
+    }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 18px; margin-bottom: 2px; }
+    .upload-text { font-size: 13px; font-weight: 600; color: var(--text); }
+    .upload-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+
+    .preview-wrap {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: none;
+      margin-bottom: 8px;
+    }
+    .preview-wrap img { width: 100%; height: 88px; object-fit: cover; display: block; }
+    .preview-remove {
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.8);
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      cursor: pointer; font-size: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── FORM ── */
+    .field { margin-bottom: 9px; }
+    .field-label {
+      display: block;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .seg-group { display: grid; gap: 4px; }
+    .seg-group.cols-2 { grid-template-columns: 1fr 1fr; }
+    .seg-group.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .seg-btn {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 7px;
+      color: var(--text-dim);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .seg-btn:hover { border-color: rgba(255,255,255,0.14); color: var(--text); background: rgba(255,255,255,0.05); }
+    .seg-btn.active {
+      background: var(--orange-dim);
+      border-color: rgba(255,107,0,0.45);
+      color: var(--orange);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    input:focus { border-color: rgba(255,107,0,0.5); background: rgba(255,107,0,0.04); }
+    input::placeholder { color: var(--text-muted); }
+
+    /* ── GENERATE BUTTON ── */
+    .btn-generate {
+      width: 100%;
+      background: var(--iridescent);
+      border: none;
+      border-radius: 100px;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 4px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-generate::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .btn-generate:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--iridescent-glow);
+    }
+    .btn-generate:active:not(:disabled) { transform: translateY(0); }
+    .btn-generate:disabled { opacity: 0.38; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-generate .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn-generate.loading .spinner { display: block; }
+    .btn-generate.loading .btn-label { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RIGHT PANEL ── */
+    .panel-right {
+      background: rgba(0,0,0,0.88);
+      padding: 18px 20px;
+      overflow-y: auto;
+      height: calc(100svh - 108px);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; min-height: 280px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .empty-icon {
+      width: 60px; height: 60px;
+      border-radius: 16px;
+      background: rgba(255,107,0,0.07);
+      border: 1px solid rgba(255,107,0,0.14);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin-bottom: 16px;
+    }
+    .empty-title { font-size: 15px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; }
+    .empty-sub { font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; line-height: 1.6; }
+
+    /* ── RESULTS ── */
+    .results { display: none; flex-direction: column; gap: 12px; }
+    .results.visible { display: flex; }
+
+    .result-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-bottom: 4px; }
+
+    .btn-copy-all {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text-dim);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-copy-all:hover { border-color: rgba(255,107,0,0.4); color: var(--orange); }
+    .btn-copy-all.copied { border-color: rgba(48,209,88,0.4); color: var(--green); }
+
+    .btn-regen {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px 20px;
+      background: transparent;
+      border: 1.5px solid rgba(255,107,0,0.45);
+      border-radius: var(--radius);
+      color: var(--orange);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-regen:hover { background: rgba(255,107,0,0.08); border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,0,0.08); }
+    .btn-regen:active { transform: scale(0.98); }
+    .btn-regen:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-regen .spinner { width:14px;height:14px;border:2px solid rgba(255,107,0,0.25);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;display:none; }
+    .btn-regen.loading .spinner { display:block; }
+    .btn-regen.loading .btn-regen-label { display:none; }
+    .badge {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10.5px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    .badge.nicho { border-color: rgba(124,58,237,0.28); background: rgba(124,58,237,0.07); color: #A78BFA; }
+    .badge.emocao { border-color: rgba(255,107,0,0.28); background: var(--orange-dim); color: var(--orange); }
+
+    .result-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .result-card:hover {
+      border-color: rgba(204,68,255,0.35);
+      background: var(--bg-glass-hover);
+      box-shadow: var(--iridescent-glow);
+    }
+    .result-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 15px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-card-title {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--text-dim);
+      display: flex; align-items: center; gap: 7px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .title-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+    .btn-copy {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text-dim);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-copy:hover { border-color: rgba(255,107,0,0.4); color: var(--orange); }
+    .btn-copy.copied { border-color: rgba(48,209,88,0.4); color: var(--green); }
+    .result-card-body {
+      padding: 15px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
+      line-height: 1.82;
+      color: rgba(255,255,255,0.6);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: rgba(255,59,48,0.07);
+      border: 1px solid rgba(255,59,48,0.18);
+      border-radius: var(--radius);
+      padding: 13px 16px;
+      color: #FF6B6B;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
+      display: none;
+      margin-bottom: 12px;
+    }
+    .error-box.visible { display: block; }
+
+    /* ── DIVIDER LABEL ── */
+    .section-divider {
+      border-top: 1px solid var(--border);
+      padding-top: 5px;
+      margin: 6px 0 14px;
+    }
+    .section-divider p {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9.5px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+
+    /* ── MODE TOGGLE ── */
+    .mode-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 3px;
+      margin-bottom: 10px;
+      gap: 2px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      transition: all 0.2s;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .mode-btn:hover { color: var(--text); }
+    .mode-btn.active { background: var(--iridescent); color: white; }
+
+    /* ── BATCH UPLOAD GRID ── */
+    #batchDropZone {
+      position: relative;
+      border-radius: var(--radius);
+      border: 2px dashed transparent;
+      transition: border-color 0.2s, background 0.2s;
+      padding: 2px;
+    }
+    #batchDropZone.batch-dragover {
+      border-color: #ff6600;
+      background: rgba(255,102,0,0.05);
+      animation: batchPulse 1s ease infinite;
+    }
+    @keyframes batchPulse {
+      0%, 100% { border-color: #ff6600; }
+      50%       { border-color: rgba(255,102,0,0.35); }
+    }
+    .batch-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; border: 1px solid rgba(255,102,0,0.5);
+      color: #ff6600; font-size: 13px; font-weight: 600;
+      padding: 10px 20px; border-radius: 8px; z-index: 9999;
+      white-space: nowrap; pointer-events: none;
+      animation: toastIn 0.2s ease;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .batch-upload-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+    .batch-slot {
+      position: relative;
+      aspect-ratio: 3/4;
+      border-radius: var(--radius-sm);
+      border: 1.5px dashed rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.02);
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .batch-slot:hover { border-color: var(--orange); background: var(--orange-dim); }
+    .batch-slot.has-image { border-style: solid; border-color: rgba(255,107,0,0.4); cursor: default; }
+    .batch-slot.dragover  { border-color: var(--orange); background: var(--orange-dim); }
+    .batch-slot input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .batch-slot.has-image input[type="file"] { display: none; }
+    .batch-slot-empty {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 5px;
+      pointer-events: none;
+    }
+    .batch-slot-empty-icon { font-size: 20px; opacity: 0.35; }
+    .batch-slot-empty-num  {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+    .batch-slot-thumb {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .batch-slot-remove {
+      position: absolute; top: 5px; right: 5px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8);
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      cursor: pointer; font-size: 10px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+      z-index: 2;
+    }
+    .batch-slot-remove:hover { background: rgba(255,59,48,0.7); }
+
+    .batch-cost-preview {
+      background: rgba(255,107,0,0.07);
+      border: 1px solid rgba(255,107,0,0.18);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      color: var(--orange);
+      display: none;
+    }
+    .batch-cost-preview.visible { display: block; }
+
+    /* ── BATCH RESULTS ── */
+    .batch-results { display: none; flex-direction: column; gap: 20px; }
+    .batch-results.visible { display: flex; }
+    .batch-product-block {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .batch-product-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .batch-product-thumb {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .batch-product-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    .batch-product-status {
+      margin-left: auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .batch-product-status.processing { border-color: rgba(255,107,0,0.35); color: var(--orange); }
+    .batch-product-status.done { border-color: rgba(48,209,88,0.35); color: var(--green); }
+    .batch-product-status.error { border-color: rgba(255,59,48,0.35); color: #FF6B6B; }
+    .batch-product-cards { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── COST BREAKDOWN ── */
+    .cost-box {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 15px;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      line-height: 1.9;
+      color: var(--text-dim);
+      animation: fadeUp 0.35s ease both;
+    }
+    .cost-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cost-label { color: var(--text-muted); }
+    .cost-value { color: var(--text); font-weight: 500; }
+    .cost-total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--border);
+      margin-top: 6px; padding-top: 6px;
+      font-size: 12px;
+    }
+    .cost-total-label { color: var(--text-dim); font-weight: 600; }
+    .cost-total-value { color: var(--orange); font-weight: 700; }
+
+    /* ── SESSION BADGE ── */
+    .session-cost {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: clamp(9px, 0.7rem, 11px);
+      color: var(--text-muted);
+      padding: clamp(3px, 0.3rem, 5px) clamp(8px, 0.7rem, 13px);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      white-space: nowrap;
+      transition: color 0.3s;
+    }
+    .session-cost.has-cost { color: var(--text-dim); border-color: rgba(255,107,0,0.2); }
+
+    /* ── APP TABS ── */
+    .app-tabs {
+      display: flex;
+      gap: 2px;
+      margin: 0 auto;
+    }
+    .app-tab {
+      padding: 5px 16px;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .app-tab:hover { color: var(--text-dim); background: rgba(255,255,255,0.04); }
+    .app-tab.active { background: rgba(255,255,255,0.07); color: var(--text); }
+
+    /* ── GALLERY VIEW ── */
+    .gallery-view {
+      display: none;
+      padding: 24px;
+      min-height: 480px;
+    }
+    .gallery-view.visible { display: block; }
+
+    .gallery-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 360px; color: var(--text-muted); text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .gallery-empty-icon {
+      font-size: 32px; margin-bottom: 12px; opacity: 0.3;
+    }
+    .gallery-empty p { font-size: 12px; line-height: 1.7; }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .gallery-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* ── SKELETON ── */
+    .gallery-skeleton {
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+    }
+    .skeleton-thumb {
+      width: 100%; aspect-ratio: 3/4;
+    }
+    .skeleton-body { padding: 9px 11px 10px; display: flex; flex-direction: column; gap: 7px; }
+    .skeleton-line {
+      height: 8px; border-radius: 4px;
+    }
+    .skeleton-line.short { width: 55%; }
+    .skeleton-shimmer {
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.04) 0%,
+        rgba(255,255,255,0.09) 50%,
+        rgba(255,255,255,0.04) 100%);
+      background-size: 300% 100%;
+      animation: shimmer 1.5s ease infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+    @keyframes galleryCardFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .gallery-card-enter {
+      animation: galleryCardFadeIn 0.22s ease both;
+    }
+    .gallery-card:hover {
+      border-color: rgba(0,153,255,0.35);
+      transform: translateY(-3px);
+      box-shadow: var(--iridescent-glow);
+    }
+    .gallery-card-thumb {
+      width: 100%; aspect-ratio: 3/4;
+      background-color: rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .gallery-card-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      display: block;
+    }
+    .gallery-card-num {
+      position: absolute; top: 6px; left: 6px;
+      background: rgba(0,0,0,0.7); color: #fff;
+      font-size: 12px; font-weight: 700;
+      padding: 4px 8px; border-radius: 4px;
+      pointer-events: none; z-index: 2;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', monospace;
+    }
+    .gallery-card-used-badge {
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(34,197,94,0.2); color: #22c55e;
+      font-size: 11px; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px;
+      pointer-events: none; z-index: 2;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .btn-used {
+      width: 100%; padding: 10px 16px;
+      background: transparent; color: #888888;
+      border: 1px solid #2a2a2a; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s ease;
+      text-align: center; margin-bottom: 8px;
+    }
+    .btn-used:hover { border-color: #444; color: #aaa; }
+    .btn-used.active {
+      background: rgba(34,197,94,0.2); color: #22c55e;
+      border-color: #22c55e;
+    }
+    .gallery-card-body { padding: 9px 11px 10px; }
+    .gallery-card-legenda {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px; color: var(--text-dim);
+      line-height: 1.55; margin-bottom: 7px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .gallery-card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 6px;
+    }
+    .gallery-card-date {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9px; color: var(--text-muted);
+    }
+    .gallery-card-cost {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9px; color: var(--orange);
+      background: var(--orange-dim);
+      border: 1px solid rgba(255,107,0,0.2);
+      padding: 2px 6px; border-radius: 4px;
+    }
+
+    /* ── GALLERY MODAL ── */
+    .gallery-modal {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.78);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+    .gallery-modal.hidden { display: none; }
+    .gallery-modal-inner {
+      background: #0d0d1f;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      width: 100%; max-width: 900px;
+      max-height: 88vh;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      animation: fadeUp 0.25s ease;
+    }
+    .gallery-modal-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .gallery-modal-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px; color: var(--text-dim);
+      flex: 1;
+    }
+    .gallery-modal-body {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      flex: 1; overflow: hidden;
+    }
+    .gallery-modal-img-col {
+      border-right: 1px solid var(--border);
+      overflow-y: auto; flex-shrink: 0;
+      display: flex; align-items: flex-start;
+      background: rgba(0,0,0,0.2);
+    }
+    .gallery-modal-img-col img {
+      width: 100%; height: auto;
+      object-fit: contain; display: block;
+    }
+    .gallery-modal-content {
+      padding: 18px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .gallery-detail-section { display: flex; flex-direction: column; gap: 6px; }
+    .gallery-detail-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 1.8px; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .gallery-detail-text {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px; color: rgba(255,255,255,0.6);
+      line-height: 1.75; white-space: pre-wrap; word-break: break-word;
+    }
+    .gallery-detail-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .gallery-detail-chip {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 10px;
+      padding: 3px 10px; border-radius: 50px;
+      border: 1px solid var(--border); color: var(--text-dim);
+    }
+    .gallery-detail-cost {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10.5px; line-height: 1.9; color: var(--text-dim);
+    }
+    .btn-modal-close {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text-dim);
+      font-size: 13px; width: 28px; height: 28px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .btn-modal-close:hover { border-color: var(--border-hover); color: var(--text); }
+    .btn-modal-delete {
+      background: transparent;
+      border: 1px solid rgba(255,59,48,0.25);
+      border-radius: 7px; color: rgba(255,59,48,0.7);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 10px;
+      padding: 5px 12px; cursor: pointer;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .btn-modal-delete:hover { background: rgba(255,59,48,0.1); border-color: rgba(255,59,48,0.5); color: #FF6B6B; }
+    .btn-modal-regen {
+      width: 100%; margin-top: 6px;
+      padding: 12px 20px;
+      background: transparent;
+      border: 1.5px solid rgba(255,107,0,0.45);
+      border-radius: var(--radius);
+      color: var(--orange);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+      cursor: pointer; transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-modal-regen:hover { background: rgba(255,107,0,0.08); border-color: var(--orange); }
+    .btn-modal-regen:active { transform: scale(0.98); }
+    .btn-modal-regen:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    .btn-modal-regen .spinner { width:13px;height:13px;border:2px solid rgba(255,107,0,0.25);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;display:none; }
+    .btn-modal-regen.loading .spinner { display:block; }
+    .btn-modal-regen.loading .regen-label { display:none; }
+
+    /* gallery responsive handled in main media queries below */
+
+    /* ── AUTH OVERLAY ── */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px; overflow-y: auto;
+    }
+    .auth-overlay::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% -5%, rgba(255,107,0,0.10) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 85% 105%, rgba(100,60,220,0.07) 0%, transparent 55%);
+      pointer-events: none; z-index: 0;
+    }
+    .auth-overlay.hidden { display: none; }
+
+    /* Modal mode: aberto sobre a página de perfil */
+    .auth-overlay.recovery-mode {
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .auth-overlay.recovery-mode::before { display: none; }
+
+    .auth-card {
+      position: relative; z-index: 1;
+      background: #1A1A2E;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      padding: 40px;
+      width: 100%; max-width: 400px;
+      animation: fadeUp 0.5s ease both;
+    }
+    @media (max-width: 480px) {
+      .auth-card { padding: 28px 20px; border-radius: 18px; }
+    }
+
+    .auth-logo {
+      display: flex; align-items: center; gap: 10px;
+      justify-content: center; margin-bottom: 28px;
+    }
+    .auth-logo-mark {
+      width: 36px; height: 36px; background: linear-gradient(135deg, #cc44ff, #ff44aa);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 900; color: white; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    }
+    .auth-logo-name {
+      font-size: 17px; font-weight: 800; letter-spacing: -0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; color: var(--text);
+    }
+    .auth-logo-name em { color: var(--orange); font-style: normal; }
+
+    .auth-tabs {
+      display: flex;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 50px; padding: 3px; margin-bottom: 24px; gap: 2px;
+    }
+    .auth-tab {
+      flex: 1; padding: 8px 12px; border-radius: 50px;
+      font-size: 13px; font-weight: 600; color: var(--text-dim);
+      cursor: pointer; border: none; background: transparent;
+      font-family: -apple-system, sans-serif; transition: all 0.2s;
+    }
+    .auth-tab:hover { color: var(--text); }
+    .auth-tab.active { background: var(--orange); color: white; }
+
+    .auth-field { margin-bottom: 20px; }
+    .auth-field label {
+      display: block; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9.5px; font-weight: 600; letter-spacing: 1.8px;
+      text-transform: uppercase; color: rgba(255,255,255,0.75); margin-bottom: 8px;
+    }
+    .auth-field input {
+      width: 100%;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px; color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px; padding: 14px 16px; outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      box-sizing: border-box;
+    }
+    .auth-field input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); }
+    .auth-field input::placeholder { color: rgba(255,255,255,0.4); }
+
+    .auth-error {
+      background: rgba(255,59,48,0.07); border: 1px solid rgba(255,59,48,0.18);
+      border-radius: var(--radius-sm); padding: 10px 14px; color: #FF6B6B;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 11.5px;
+      margin-bottom: 14px; display: none; line-height: 1.5;
+    }
+    .auth-error.visible { display: block; }
+
+    .auth-submit {
+      width: 100%; background: linear-gradient(135deg, #FF6B00, #FF8C00); border: none;
+      border-radius: var(--radius); color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; font-size: 15px; font-weight: 700;
+      padding: 14px; cursor: pointer; transition: all 0.25s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 6px; position: relative; overflow: hidden; min-height: 48px;
+    }
+    .auth-submit::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .auth-submit:hover:not(:disabled) { background: var(--orange-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,107,0,0.25); }
+    .auth-submit:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .auth-submit .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    .auth-submit.loading .spinner { display: block; }
+    .auth-submit.loading .btn-label { display: none; }
+
+    .auth-footer {
+      margin-top: 20px; text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 10.5px;
+      color: rgba(255,255,255,0.75); opacity: 0.4;
+    }
+    .auth-forgot-link {
+      display: block; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px; color: rgba(255,255,255,0.55); cursor: pointer;
+      margin-top: -6px; margin-bottom: 13px;
+      text-underline-offset: 2px; text-decoration: none; transition: color 0.15s;
+    }
+    .auth-forgot-link:hover { color: #FFFFFF; text-decoration: underline; }
+    .auth-back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 10px;
+      color: rgba(255,255,255,0.55);
+      cursor: pointer; margin-bottom: 16px; background: none; border: none; padding: 0;
+      text-decoration: none; transition: color 0.15s;
+    }
+    .auth-back-link:hover { color: #FFFFFF; text-decoration: underline; }
+
+    /* logout / user info in header */
+    .btn-logout {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 0.5rem; color: var(--text-muted);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: clamp(9px, 0.7rem, 11px);
+      padding: clamp(4px, 0.35rem, 6px) clamp(10px, 0.85rem, 14px);
+      cursor: pointer; transition: all 0.15s;
+      flex-shrink: 0; display: none; white-space: nowrap;
+    }
+    .btn-logout:hover { border-color: rgba(255,59,48,0.35); color: #FF6B6B; }
+    .user-email-badge { display: none !important; }
+
+    /* ── AVATAR BUTTON ── */
+    .btn-avatar {
+      width: clamp(26px, 2.2rem, 36px);
+      height: clamp(26px, 2.2rem, 36px);
+      border-radius: 50%;
+      background: linear-gradient(135deg, #cc44ff, #ff44aa); border: none; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      font-size: clamp(11px, 0.9rem, 15px);
+      font-weight: 900;
+      color: white; flex-shrink: 0; transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-avatar:hover { transform: scale(1.08); box-shadow: 0 0 0 3px rgba(255,107,0,0.3); }
+    .btn-avatar.active { box-shadow: 0 0 0 3px rgba(255,107,0,0.5); }
+    .btn-avatar.has-photo { background: none; overflow: hidden; }
+
+    /* ── HEADER RIGHT GROUP ── */
+    .header-right {
+      display: flex; align-items: center;
+      gap: clamp(6px, 1vw, 12px);
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .nav-username {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: clamp(11px, 0.75rem, 13px);
+      font-weight: 500;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: clamp(70px, 22vw, 160px);
+      display: none;
+    }
+
+    /* ── PROFILE PAGE ── */
+    .profile-page {
+      display: none; position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      padding: 40px 28px 80px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .profile-page.visible { display: block; }
+
+    /* Back button */
+    .btn-profile-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; border: 1px solid var(--border); border-radius: 10px;
+      color: rgba(255,255,255,0.45);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px; font-weight: 500; padding: 8px 16px; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      margin-bottom: 28px; letter-spacing: 0.3px;
+    }
+    .btn-profile-back:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.04); }
+    .btn-profile-back svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; transition: transform 0.2s; }
+    .btn-profile-back:hover svg { transform: translateX(-2px); }
+
+    /* ── TOP ── */
+    .profile-top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 20px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .profile-top-left { display: flex; align-items: flex-start; gap: 16px; flex: 1; min-width: 0; }
+    .profile-avatar {
+      width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #cc44ff, #ff44aa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 900; color: white;
+      cursor: pointer; position: relative; overflow: hidden;
+      background-size: cover; background-position: center; transition: opacity 0.2s;
+    }
+    .profile-avatar:hover::after {
+      content: '✎'; position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center; font-size: 18px; color: white;
+    }
+    .profile-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 2px; display: none; }
+    .profile-email { font-size: 11px; color: rgba(255,255,255,0.38); margin-bottom: 4px; display: none; }
+    .profile-badge-admin {
+      font-size: 9px; font-weight: 700; letter-spacing: 1px;
+      background: var(--orange-dim); border: 1px solid rgba(255,107,0,0.4);
+      color: var(--orange); border-radius: 50px; padding: 3px 10px; display: none;
+    }
+    .profile-greeting-block { flex: 1; min-width: 0; }
+    .profile-greeting {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Syne', sans-serif;
+      font-size: 26px; font-weight: 800; color: #fff; margin: 0 0 5px; line-height: 1.2;
+    }
+    .profile-today-summary {
+      font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .profile-today-summary strong { color: var(--orange); font-weight: 600; }
+    .profile-edit-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-profile-edit {
+      background: transparent; border: 1px solid #2a2a2a; border-radius: 8px;
+      color: #888; font-size: 12px; font-weight: 500; padding: 7px 14px;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .btn-profile-edit:hover { border-color: rgba(255,255,255,0.2); color: #ccc; }
+    .profile-top-right { display: flex; gap: 10px; flex-shrink: 0; align-items: flex-start; flex-wrap: wrap; }
+    .btn-quick-action {
+      background: var(--orange-dim); border: 1px solid rgba(255,107,0,0.35);
+      border-radius: 10px; color: var(--orange); font-size: 13px; font-weight: 600;
+      padding: 10px 18px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .btn-quick-action:hover { background: rgba(255,107,0,0.2); border-color: var(--orange); }
+
+    /* ── STATS GRID ── */
+    .profile-stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px;
+    }
+    .pstat-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: var(--radius);
+      padding: 22px 20px; display: flex; flex-direction: column; gap: 5px;
+      transition: border-color 0.25s;
+    }
+    .pstat-card:hover { border-color: rgba(255,102,0,0.3); }
+    .pstat-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #888;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .pstat-value {
+      font-size: 36px; font-weight: 800; color: #fff; line-height: 1;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      transition: opacity 0.3s;
+    }
+    .pstat-value.loading { opacity: 0.2; }
+    .pstat-sub {
+      font-size: 11px; color: rgba(255,255,255,0.35);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .pstat-delta {
+      font-size: 11px; font-weight: 600; margin-top: 2px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .pstat-delta.up   { color: #22c55e; }
+    .pstat-delta.down { color: #ef4444; }
+    .pstat-delta.flat { color: #666; }
+
+    /* ── CHART ── */
+    .profile-activity {
+      background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-radius: var(--radius); padding: 24px 22px 20px; margin-bottom: 20px;
+    }
+    .activity-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .activity-title {
+      font-size: 9.5px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-muted); flex: 1;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .activity-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .ctrl-group {
+      display: flex; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px;
+    }
+    .ctrl-btn {
+      padding: 5px 11px; border-radius: 6px; font-size: 10px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer; border: none; background: transparent;
+      transition: all 0.15s; white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .ctrl-btn:hover { color: var(--text-dim); }
+    .ctrl-btn.active { background: var(--orange); color: white; }
+    .ctrl-btn.metric-active { background: rgba(255,107,0,0.15); color: var(--orange); border: 1px solid rgba(255,107,0,0.3); }
+    .activity-chart-wrap {
+      width: 100%; overflow-x: auto; padding-bottom: 4px;
+      min-height: 300px; display: flex; align-items: flex-end;
+    }
+    .activity-chart-wrap svg { display: block; }
+    .chart-bar { transition: opacity 0.15s; cursor: default; }
+    .chart-bar:hover { opacity: 1 !important; }
+    .chart-tip {
+      position: fixed; z-index: 999;
+      background: rgba(14,14,28,0.98); border: 1px solid var(--border); border-radius: 10px;
+      padding: 9px 14px; font-size: 11px; color: var(--text); pointer-events: none;
+      white-space: nowrap; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; line-height: 1.7;
+    }
+    .chart-tip strong { color: var(--orange); }
+    .activity-empty {
+      text-align: center; padding: 60px 0; font-size: 11px; color: var(--text-muted); width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .activity-date-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .date-input {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 7px;
+      color: var(--text-dim); font-size: 10px; padding: 5px 9px; outline: none;
+      transition: border-color 0.15s; cursor: pointer; color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .date-input:focus { border-color: rgba(255,107,0,0.4); }
+    .date-sep { font-size: 10px; color: var(--text-muted); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+    .activity-summary { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+    .activity-sum-item { font-size: 10.5px; color: var(--text-muted); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+    .activity-sum-item strong { color: var(--text-dim); }
+
+    /* ── BOTTOM GRID ── */
+    .profile-bottom-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+    .profile-section-box {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: var(--radius); padding: 20px;
+    }
+    .profile-section-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #888; margin-bottom: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .recent-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .recent-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .recent-item:hover { opacity: 0.7; }
+    .recent-thumb {
+      width: 48px; height: 64px; border-radius: 6px; flex-shrink: 0;
+      background: rgba(255,255,255,0.05); background-size: cover; background-position: center;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .recent-meta { flex: 1; min-width: 0; }
+    .recent-title {
+      font-size: 12px; font-weight: 600; color: #ddd;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .recent-sub { font-size: 10px; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+    .recent-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .recent-cost { font-size: 10px; color: var(--orange); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+    .recent-used-badge {
+      font-size: 10px; color: #22c55e; background: rgba(34,197,94,0.1);
+      border-radius: 4px; padding: 2px 6px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .insight-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .insight-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .insight-text {
+      font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.55;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+    .insight-text strong { color: var(--orange); font-weight: 700; }
+    .profile-empty-sub {
+      font-size: 11px; color: #444; text-align: center; padding: 24px 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
+
+    @media (max-width: 900px) {
+      .profile-stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .profile-bottom-grid { grid-template-columns: 1fr; }
+      .pstat-value { font-size: 30px; }
+    }
+    @media (max-width: 600px) {
+      .profile-page { padding: 20px 14px 60px; }
+      .profile-greeting { font-size: 20px; }
+      .profile-top-right { display: none; }
+      .btn-profile-back { font-size: 11px; padding: 8px 14px; margin-bottom: 16px; }
+      .profile-activity { padding: 16px 14px 14px; }
+      .ctrl-group { gap: 3px; }
+      .pstat-value { font-size: 26px; }
+    }
+
+    /* Edit profile modal */
+    .profile-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .profile-modal-overlay.visible { display: flex; }
+    .profile-modal-card {
+      background: #0d0d1e; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px;
+      width: 100%; max-width: 400px; margin: 0 16px;
+      animation: slideDown 0.25s ease both;
+    }
+    .profile-modal-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; font-size: 16px; font-weight: 800;
+      color: var(--text); margin-bottom: 20px;
+    }
+    .profile-modal-field { margin-bottom: 14px; }
+    .profile-modal-field label {
+      display: block; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 9.5px;
+      font-weight: 500; letter-spacing: 1.8px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 7px;
+    }
+    .profile-modal-field input {
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm);
+      color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 14px;
+      padding: 11px 14px; outline: none; transition: border-color 0.15s;
+    }
+    .profile-modal-field input:focus { border-color: rgba(255,107,0,0.5); }
+    .profile-modal-field input::placeholder { color: var(--text-muted); }
+    .profile-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-modal-save {
+      flex: 1; background: var(--orange); border: none; border-radius: var(--radius-sm);
+      color: white; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; font-size: 13px; font-weight: 800;
+      padding: 12px; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-modal-save:hover { background: var(--orange-hover); }
+    .btn-modal-cancel {
+      background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text-dim); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 11px;
+      padding: 12px 18px; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-modal-cancel:hover { border-color: var(--border-hover); color: var(--text); }
+    .profile-modal-error {
+      background: rgba(255,59,48,0.07); border: 1px solid rgba(255,59,48,0.18);
+      border-radius: var(--radius-sm); padding: 9px 13px; color: #FF6B6B;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 11px; margin-bottom: 14px; display: none;
+    }
+    .profile-modal-error.visible { display: block; }
+    .profile-modal-success {
+      background: rgba(48,209,88,0.07); border: 1px solid rgba(48,209,88,0.2);
+      border-radius: var(--radius-sm); padding: 9px 13px; color: var(--green);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 11px; margin-bottom: 14px; display: none;
+    }
+    .profile-modal-success.visible { display: block; }
+
+    /* ── SPLASH SCREEN ── */
+    #splashScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      opacity: 1;
+      transition: opacity 0.45s ease;
+    }
+    #splashScreen.fade-out { opacity: 0; pointer-events: none; }
+    #splashScreen.gone     { display: none; }
+
+    .splash-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .splash-mark {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #cc44ff, #ff44aa);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 900; color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      letter-spacing: -0.5px;
+      animation: splashPulse 2s ease-in-out infinite;
+    }
+    .splash-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      font-size: 22px; font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .splash-name em { color: var(--orange); font-style: normal; }
+
+    @keyframes splashPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,0,0.5); }
+      50%       { box-shadow: 0 0 0 14px rgba(255,107,0,0); }
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 2px; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in-1  { animation: fadeIn 0.7s ease 0.05s both; }
+    .fade-in-2  { animation: fadeUp 0.7s ease 0.15s both; }
+    .fade-in-3  { animation: fadeUp 0.7s ease 0.25s both; }
+    .fade-in-4  { animation: fadeUp 0.7s ease 0.38s both; }
+    .fade-in-5  { animation: fadeUp 0.7s ease 0.52s both; }
+    .fade-in-6  { animation: fadeUp 0.7s ease 0.65s both; }
+
+    .result-card {
+      animation: fadeUp 0.35s ease both;
+    }
+
+    /* ── RESPONSIVE ── */
+
+    /* Tablet landscape (≤960px) */
+    @media (max-width: 960px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .panel-left  { height: auto; max-height: none; overflow-y: visible; }
+      .panel-right { height: auto; max-height: none; overflow-y: visible; }
+      .hero-content { padding: 32px 24px; }
+      .main-frame { padding: 0 16px 60px; }
+      .header-nav { display: none; }
+      .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+      .gallery-modal-body { grid-template-columns: 140px 1fr; }
+      /* Oculta empty state — resultados aparecem abaixo do formulário */
+      .empty-state { display: none !important; }
+    }
+
+    @media (max-width: 768px) {
+      .hero-content { padding: 24px 16px; }
+      .hero-title { font-size: clamp(32px, 7.5vw, 60px); letter-spacing: -1px; }
+      .hero-chips { gap: 6px; }
+      .chip { font-size: 11px; padding: 5px 10px 5px 6px; }
+
+      .main-frame { padding: 0 10px 40px; }
+
+      .app-shell { border-radius: 14px; padding: 2px; }
+      .app-window { border-radius: 12px; overflow: visible; }
+      .app-titlebar {
+        padding: 10px 12px; gap: 8px;
+        position: sticky; top: 0; z-index: 20;
+        background: rgba(6,6,14,0.96);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .titlebar-dots { display: none; }
+      .app-tab { font-size: 11px; padding: 7px 14px; min-height: 34px; }
+
+      /* Painéis empilhados, scroll livre da página */
+      .panel-left  { padding: 16px 14px; height: auto; max-height: none; overflow-y: visible; border-bottom: 1px solid var(--border); }
+      .panel-right { padding: 16px 14px; height: auto; max-height: none; overflow-y: visible; }
+
+      .mode-btn { font-size: 11px; padding: 10px 8px; min-height: 42px; }
+      .seg-btn  { font-size: 11px; padding: 11px 4px; min-height: 42px; }
+
+      .upload-area { padding: 20px 12px; }
+      .upload-text { font-size: 12px; }
+
+      input[type="number"] { font-size: 16px; padding: 12px 14px; }
+
+      .btn-generate { padding: 15px; font-size: 14px; min-height: 50px; }
+
+      .result-card-body { font-size: 12px; line-height: 1.75; padding: 14px; }
+      .result-meta { flex-wrap: wrap; gap: 5px; }
+      .btn-copy-all { margin-left: 0; order: 3; width: 100%; justify-content: center; }
+
+      .batch-upload-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+      .gallery-modal-inner { max-height: 92vh; }
+      .gallery-modal-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .gallery-modal-img-col { border-right: none; border-bottom: 1px solid var(--border); max-height: 300px; overflow: hidden; }
+
+      .cost-box { font-size: 10.5px; }
+      .section-label { font-size: 9px; }
+      .badge { font-size: 10px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-content { padding: 20px 16px; text-align: center; align-items: center; }
+      .hero-title { font-size: clamp(26px, 7vw, 36px); letter-spacing: 0px; margin-bottom: 16px; }
+
+      .main-frame { padding: 0 8px 40px; }
+
+      .app-shell { border-radius: 12px; }
+      .app-window { border-radius: 10px; overflow: visible; }
+      .app-titlebar { padding: 8px 12px; }
+      .app-tab { font-size: 11px; padding: 8px 14px; min-height: 36px; }
+      .titlebar-label { font-size: 10.5px; }
+
+      .panel-left  { padding: 16px 14px; }
+      .panel-right { padding: 14px 14px; }
+
+      .field { margin-bottom: 12px; }
+      .field-label { font-size: 10px; }
+
+      .mode-btn { font-size: 11px; padding: 11px 8px; min-height: 44px; }
+      .seg-btn  { font-size: 11px; padding: 12px 4px; min-height: 44px; }
+      .seg-group { gap: 5px; }
+      .seg-group.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+      input[type="number"] { font-size: 16px; padding: 12px 14px; }
+
+      .btn-generate { padding: 16px; font-size: 14px; min-height: 52px; border-radius: 14px; }
+
+      .btn-copy, .btn-copy-all { font-size: 10px; padding: 8px 12px; }
+      .result-card-header { padding: 10px 14px; }
+      .result-card-body { font-size: 11px; line-height: 1.75; padding: 12px 14px; }
+      .btn-regen { font-size: 11px; padding: 13px; min-height: 46px; }
+
+      .gallery-view { padding: 14px 10px; }
+      .gallery-grid { gap: 7px; }
+      .batch-upload-grid { grid-template-columns: repeat(2, 1fr); gap: 5px; }
+    }
+    .batch-slot-add {
+      cursor: pointer;
+      background: rgba(255,107,0,0.04) !important;
+      border-color: rgba(255,107,0,0.35) !important;
+      border-style: dashed !important;
+    }
+    .batch-slot-add:hover {
+      background: var(--orange-dim) !important;
+      border-color: var(--orange) !important;
+    }
+    .batch-slot-add .batch-slot-empty-icon { opacity: 0.7 !important; color: var(--orange); }
+    .batch-slot-add .batch-slot-empty-num  { color: rgba(255,107,0,0.6) !important; }
+
+    @keyframes slotFadeIn {
+      from { opacity: 0; transform: scale(0.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .batch-slot.slot-new { animation: slotFadeIn 0.22s ease both; }
+
+    /* ── PENDING GALLERY CARD ── */
+    @keyframes pendingPulse {
+      0%, 100% { border-color: rgba(255,107,0,0.25); }
+      50%       { border-color: rgba(255,107,0,0.65); }
+    }
+    @keyframes doneFlash {
+      0%   { box-shadow: 0 0 0 3px rgba(48,209,88,0.55); }
+      100% { box-shadow: none; }
+    }
+    .gallery-card-pending {
+      cursor: default;
+      animation: pendingPulse 1.8s ease infinite;
+    }
+    .gallery-card-pending:hover { transform: none !important; }
+    .gallery-pending-thumb {
+      width: 100%; aspect-ratio: 3/4;
+      background-size: cover; background-position: center;
+      background-color: rgba(255,255,255,0.04);
+      position: relative; overflow: hidden;
+    }
+    .gallery-pending-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.52);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .gallery-pending-pct {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 20px; font-weight: 700; color: var(--orange);
+    }
+    .gallery-pending-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9px; letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.55); text-transform: uppercase;
+    }
+    .gallery-pending-bar-wrap {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(255,255,255,0.08);
+    }
+    .gallery-pending-bar {
+      height: 100%; background: var(--orange);
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px rgba(255,107,0,0.5);
+    }
+    .gallery-card-done-flash { animation: doneFlash 0.6s ease both; cursor: pointer; }
+    .gallery-card-error-state {
+      border-color: rgba(255,59,48,0.4) !important;
+      animation: none !important;
+    }
+    /* Waiting state — muted pulse, no bar movement */
+    .gallery-card-pending.is-waiting {
+      animation: none;
+      border-color: rgba(255,255,255,0.1);
+    }
+    .gallery-card-pending.is-waiting .gallery-pending-bar-wrap { opacity: 0; }
+    .gallery-card-pending.is-waiting .gallery-pending-pct { font-size: 22px; }
+    .gallery-card-pending.is-waiting .gallery-pending-label { letter-spacing: 1px; }
+
+  </style>
+</head>
+<body>
+
+<!-- ── SPLASH SCREEN ── -->
+<div id="splashScreen">
+  <div class="splash-logo">
+    <div class="splash-mark">U</div>
+    <span class="splash-name">UGC<em>·</em>AI</span>
+  </div>
+</div>
+
+<!-- ── AUTH OVERLAY ── -->
+<div id="authOverlay" class="auth-overlay hidden">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">U</div>
+      <span class="auth-logo-name">UGC<em>·</em>AI</span>
+    </div>
+
+    <!-- Login / Register tabs -->
+    <div class="auth-tabs" id="authMainTabs">
+      <button class="auth-tab active" id="authTabLogin"    onclick="setAuthTab('login')">Entrar</button>
+      <button class="auth-tab"        id="authTabRegister" onclick="setAuthTab('register')">Criar conta</button>
+    </div>
+
+    <div id="authError" class="auth-error"></div>
+    <div id="authSuccess" class="auth-error" style="background:rgba(48,209,88,0.07);border-color:rgba(48,209,88,0.2);color:var(--green)"></div>
+
+    <!-- Main login/register form -->
+    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+      <div class="auth-field" id="authNameField" style="display:none;">
+        <label>Apelido / Nome</label>
+        <input type="text" id="authName" placeholder="Como quer ser chamado?" autocomplete="nickname" />
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="seu@email.com" required autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label>Senha</label>
+        <input type="password" id="authPassword" placeholder="••••••••" required minlength="6" autocomplete="current-password" />
+      </div>
+      <span class="auth-forgot-link" id="authForgotLink" onclick="setAuthTab('forgot')">Esqueci minha senha</span>
+      <div class="auth-field" id="authConfirmField" style="display:none;">
+        <label>Confirmar Senha</label>
+        <input type="password" id="authConfirm" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+      <button type="submit" class="auth-submit" id="authSubmitBtn">
+        <div class="spinner"></div>
+        <span class="btn-label" id="authSubmitLabel">Entrar</span>
+      </button>
+    </form>
+
+    <!-- Forgot password form -->
+    <div id="authForgotForm" style="display:none;">
+      <button class="auth-back-link" onclick="backFromForgot()">← Voltar para login</button>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="forgotEmail" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <button class="auth-submit" id="authForgotBtn" onclick="handleForgotPassword()">
+        <div class="spinner"></div>
+        <span class="btn-label">Enviar link de recuperação</span>
+      </button>
+    </div>
+
+    <!-- Reset password form (acessado via ?reset=TOKEN na URL) -->
+    <div id="authResetForm" style="display:none;">
+      <button class="auth-back-link" onclick="backFromForgot()">← Voltar para login</button>
+      <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:16px;">Digite sua nova senha abaixo.</p>
+      <div class="auth-field">
+        <label>Nova Senha</label>
+        <input type="password" id="resetPassword" placeholder="••••••••" minlength="6" />
+      </div>
+      <div class="auth-field">
+        <label>Confirmar Nova Senha</label>
+        <input type="password" id="resetConfirm" placeholder="••••••••" minlength="6" />
+      </div>
+      <button class="auth-submit" id="authResetBtn" onclick="handleResetPassword()">
+        <div class="spinner"></div>
+        <span class="btn-label">Salvar nova senha</span>
+      </button>
+    </div>
+
+    <div class="auth-footer">UGC Prompt Generator · TikTok Shop Brasil</div>
+  </div>
+</div>
+
+<!-- ── MARQUEE BAR ── -->
+<div class="marquee-bar fade-in-1" aria-hidden="true">
+  <div class="marquee-track">
+    <div class="marquee-item">
+      UGC PROMPT GENERATOR <span class="sep">·</span>
+      VÍDEO VIRAL <span class="sep">·</span>
+      TIKTOK SHOP BRASIL <span class="sep">·</span>
+      AI-POWERED <span class="sep">·</span>
+      137K VIEWS <span class="sep">·</span>
+      CONTEÚDO AUTÊNTICO <span class="sep">·</span>
+      PROMPT IMAGEM <span class="sep">·</span>
+      CONTEÚDO QUE VENDE <span class="sep">·</span>
+      PROMPT VÍDEO <span class="sep">·</span>
+      CRIADOR AUTÊNTICO <span class="sep">·</span>
+      LEGENDA MASTER <span class="sep">·</span>
+      RESULTADO REAL <span class="sep">·</span>
+      CARRINHO LARANJA <span class="sep">·</span>
+      HOOK EMOCIONAL <span class="sep">·</span>
+      MERCADO BRASILEIRO <span class="sep">·</span>
+    </div>
+    <div class="marquee-item">
+      UGC PROMPT GENERATOR <span class="sep">·</span>
+      VÍDEO VIRAL <span class="sep">·</span>
+      TIKTOK SHOP BRASIL <span class="sep">·</span>
+      AI-POWERED <span class="sep">·</span>
+      137K VIEWS <span class="sep">·</span>
+      CONTEÚDO AUTÊNTICO <span class="sep">·</span>
+      PROMPT IMAGEM <span class="sep">·</span>
+      CONTEÚDO QUE VENDE <span class="sep">·</span>
+      PROMPT VÍDEO <span class="sep">·</span>
+      CRIADOR AUTÊNTICO <span class="sep">·</span>
+      LEGENDA MASTER <span class="sep">·</span>
+      RESULTADO REAL <span class="sep">·</span>
+      CARRINHO LARANJA <span class="sep">·</span>
+      HOOK EMOCIONAL <span class="sep">·</span>
+      MERCADO BRASILEIRO <span class="sep">·</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SITE HEADER ── -->
+<header class="site-header fade-in-2">
+  <a class="logo" href="#">
+    <div class="logo-mark">U</div>
+    <span class="logo-name">UGC<em>·</em>AI</span>
+  </a>
+
+  <div class="session-cost" id="sessionCostBadge" style="display:none;">sessão: R$ 0,00</div>
+  <div id="exchangeRateBadge" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.28);padding:3px 8px;border:1px solid rgba(255,255,255,0.07);border-radius:6px;cursor:default;display:none;"></div>
+
+  <div class="header-right">
+    <span class="user-email-badge" id="userEmailBadge"></span>
+    <span class="nav-username" id="navUsername"></span>
+    <button class="btn-avatar" id="btnAvatar" onclick="toggleProfilePage()" title="Perfil">
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+    </button>
+    <button class="btn-logout" id="btnLogout" onclick="logout()">Sair</button>
+  </div>
+
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero fade-in-3">
+  <video class="hero-video" autoplay muted loop playsinline>
+    <source src="/hero.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1 class="hero-title">UGC PROMPT<br>GENERATOR</h1>
+    <p class="hero-subtitle">De Criadores Para Criadores</p>
+  </div>
+</section>
+
+<!-- ── APP FRAME ── -->
+<section class="main-frame fade-in-4" id="app">
+  <div class="app-shell">
+    <div class="app-window">
+
+      <!-- Titlebar -->
+      <div class="app-titlebar">
+        <div class="titlebar-dots">
+          <div class="titlebar-dot dot-red"></div>
+          <div class="titlebar-dot dot-amber"></div>
+          <div class="titlebar-dot dot-green"></div>
+        </div>
+        <div class="app-tabs">
+          <button class="app-tab active" id="tabBtnGenerate" onclick="setAppTab('generate')">⚡ Gerar</button>
+          <button class="app-tab"        id="tabBtnGallery"  onclick="setAppTab('gallery')">🗂 Galeria</button>
+        </div>
+        <div style="width:52px;"></div>
+      </div>
+
+      <!-- Grid -->
+      <div class="app-grid" id="tabGenerate">
+
+        <!-- ── LEFT: CONFIGURAR ── -->
+        <div class="panel-left">
+          <p class="section-label">Configurar Conteúdo</p>
+
+          <!-- Mode Toggle -->
+          <div class="mode-toggle">
+            <button class="mode-btn active" id="modeSingle" onclick="setMode('single')">⚡ Individual</button>
+            <button class="mode-btn" id="modeBatch" onclick="setMode('batch')">📦 Lote</button>
+          </div>
+
+          <!-- Produto -->
+          <div class="field" id="uploadField">
+            <label class="field-label">Imagem do Produto</label>
+            <div class="preview-wrap" id="previewWrap">
+              <img id="previewImg" src="" alt="Preview do produto" />
+              <button class="preview-remove" onclick="removeImage()" title="Remover imagem">✕</button>
+            </div>
+            <div class="upload-area" id="uploadArea">
+              <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" />
+              <div class="upload-icon">📦</div>
+              <div class="upload-text">Arraste ou clique para enviar</div>
+              <div class="upload-sub">JPG · PNG · WEBP · até 10MB</div>
+            </div>
+          </div>
+
+          <!-- Tipo -->
+          <div class="field" id="fieldTipo" style="display:none">
+            <label class="field-label">Tipo de Vídeo</label>
+            <div class="seg-group cols-2" id="tipoGroup">
+              <button class="seg-btn active" data-value="caseiro"  onclick="selectSeg(this,'tipoGroup')">🏠 Caseiro</button>
+              <button class="seg-btn"        data-value="fabrica"  onclick="selectSeg(this,'tipoGroup')">🏭 Fábrica</button>
+              <button class="seg-btn"        data-value="pov"      onclick="selectSeg(this,'tipoGroup')">👁 POV</button>
+              <button class="seg-btn"        data-value="unboxing" onclick="selectSeg(this,'tipoGroup')">📦 Unboxing</button>
+            </div>
+          </div>
+
+          <!-- Promoção -->
+          <div class="field" id="fieldPromo" style="display:none">
+            <label class="field-label">Promoção</label>
+            <div class="seg-group cols-2" id="promoGroup">
+              <button class="seg-btn active" data-value="sem_promo"  onclick="selectSeg(this,'promoGroup')">🚫 Sem promo</button>
+              <button class="seg-btn"        data-value="relampago"  onclick="selectSeg(this,'promoGroup')">⚡ Relâmpago</button>
+              <button class="seg-btn"        data-value="pascoa"     onclick="selectSeg(this,'promoGroup')">🐣 Páscoa</button>
+              <button class="seg-btn"        data-value="off"        onclick="selectSeg(this,'promoGroup')">🏷 OFF%</button>
+            </div>
+          </div>
+
+          <!-- Preço -->
+          <div class="field" id="fieldPreco" style="display:none">
+            <label class="field-label">Preço (R$)</label>
+            <input type="number" id="priceInput" placeholder="ex: 49.90 (opcional)" step="0.01" min="0" />
+          </div>
+
+          <!-- Gênero -->
+          <div class="field" id="fieldGenero" style="display:none">
+            <label class="field-label">Gênero do Criador</label>
+            <div class="seg-group cols-3" id="genderGroup">
+              <button class="seg-btn active" data-value="neutro"    onclick="selectSeg(this,'genderGroup')">🤝 Neutro</button>
+              <button class="seg-btn"        data-value="feminino"  onclick="selectSeg(this,'genderGroup')">👩 Fem.</button>
+              <button class="seg-btn"        data-value="masculino" onclick="selectSeg(this,'genderGroup')">👨 Masc.</button>
+            </div>
+          </div>
+
+          <!-- Gerar Individual -->
+          <div id="singleActions">
+            <button class="btn-generate" id="btnGenerate" onclick="generate()">
+              <div class="spinner"></div>
+              <span class="btn-label">✦ Gerar Prompts com IA</span>
+            </button>
+          </div>
+
+          <!-- Lote -->
+          <div id="batchSection" style="display:none;">
+            <label class="field-label">Imagens dos Produtos — preço opcional <span id="batchCounter" style="color:var(--orange);margin-left:4px;">5/20</span></label>
+            <div id="batchDropZone">
+              <div class="batch-upload-grid" id="batchSlots"></div>
+            </div>
+            <div class="batch-cost-preview" id="batchCostPreview"></div>
+            <button class="btn-generate" id="btnBatch" onclick="generateBatch()">
+              <div class="spinner"></div>
+              <span class="btn-label">✦ Gerar Lote</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── RIGHT: RESULTADOS ── -->
+        <div class="panel-right" id="panelRight">
+
+          <div class="error-box" id="errorBox"></div>
+
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">✦</div>
+            <p class="empty-title">Pronto para gerar</p>
+            <p class="empty-sub">Configure o produto ao lado<br>e clique em Gerar Prompts</p>
+          </div>
+
+          <!-- Resultados individual -->
+          <div class="results" id="results">
+            <div class="result-meta" id="metaBadges">
+              <button class="btn-copy-all" id="btnCopyAll" onclick="copyAll(this)">
+                <span>⎘</span> Copiar Tudo
+              </button>
+            </div>
+            <div id="cardPromptVideo"></div>
+            <div id="cardLegenda"></div>
+            <div id="costBox"></div>
+            <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
+              <div class="spinner"></div>
+              <span class="btn-regen-label">↻ GERAR UM NOVO PROMPT</span>
+            </button>
+          </div>
+
+          <!-- Resultados lote -->
+          <div class="batch-results" id="batchResults"></div>
+
+        </div>
+      </div><!-- /app-grid -->
+
+      <!-- Gallery view -->
+      <div class="gallery-view" id="tabGallery">
+        <div class="gallery-empty" id="galleryEmpty">
+          <div class="gallery-empty-icon">🗂</div>
+          <p>Nenhuma geração salva ainda.<br>Gere um prompt e ele aparecerá aqui automaticamente.</p>
+        </div>
+        <div class="gallery-grid" id="galleryGrid" style="display:none;"></div>
+      </div>
+
+    </div><!-- /app-window -->
+  </div><!-- /app-shell -->
+</section>
+
+<!-- Profile Page -->
+<section class="profile-page" id="profilePage">
+  <button class="btn-profile-back" onclick="toggleProfilePage()">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    Voltar
+  </button>
+
+  <!-- SECTION 1: Top greeting + ações rápidas -->
+  <div class="profile-top">
+    <div class="profile-top-left">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div class="profile-greeting-block">
+        <div class="profile-greeting" id="profileGreeting">Olá 👋</div>
+        <!-- IDs mantidos para compatibilidade com código existente -->
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-email" id="profileEmail">—</div>
+        <span class="profile-badge-admin" id="profileAdminBadge">ADMIN</span>
+        <div class="profile-today-summary" id="profileTodaySummary">Carregando...</div>
+        <div class="profile-edit-btns">
+          <button class="btn-profile-edit" onclick="openEditProfile()">✏️ Editar Perfil</button>
+          <button class="btn-profile-edit" onclick="openRecoveryModal()">🔑 Alterar Senha</button>
+        </div>
+      </div>
+    </div>
+    <div class="profile-top-right">
+      <button class="btn-quick-action" onclick="toggleProfilePage();setMode('single');setAppTab('generate')">⚡ Gerar prompt</button>
+      <button class="btn-quick-action" onclick="toggleProfilePage();setMode('batch');setAppTab('generate')">📦 Gerar lote</button>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Cards de stats 4 colunas -->
+  <div class="profile-stats-grid">
+    <div class="pstat-card">
+      <div class="pstat-label">Prompts Gerados</div>
+      <div class="pstat-value loading" id="statPrompts">—</div>
+      <div class="pstat-sub">total acumulado</div>
+      <div class="pstat-delta flat" id="statPromptsDelta">—</div>
+    </div>
+    <div class="pstat-card">
+      <div class="pstat-label">Tokens Usados</div>
+      <div class="pstat-value loading" id="statTokens">—</div>
+      <div class="pstat-sub" id="statTokensSub">total acumulado</div>
+      <div class="pstat-delta flat" id="statTokensDelta">—</div>
+    </div>
+    <div class="pstat-card">
+      <div class="pstat-label">Total Gasto</div>
+      <div class="pstat-value loading" id="statSaldo">—</div>
+      <div class="pstat-sub" id="statSaldoSub">em reais</div>
+      <div class="pstat-delta flat" id="statSaldoDelta">—</div>
+    </div>
+    <div class="pstat-card" id="statFalCard" style="display:none;">
+      <div class="pstat-label">Saldo FAL API</div>
+      <div class="pstat-value loading" id="statFalBalance">—</div>
+      <div class="pstat-sub" id="statFalSub">FAL AI · em tempo real</div>
+      <div class="pstat-delta flat" id="statFalDelta">—</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Gráfico (largura total) -->
+  <div class="profile-activity">
+    <div class="activity-header">
+      <span class="activity-title">Atividade</span>
+      <div class="activity-controls">
+        <div class="ctrl-group" id="periodGroup">
+          <button class="ctrl-btn active" data-days="7"  onclick="setActivityPeriod(this)">7d</button>
+          <button class="ctrl-btn"        data-days="30" onclick="setActivityPeriod(this)">30d</button>
+          <button class="ctrl-btn"        data-days="90" onclick="setActivityPeriod(this)">90d</button>
+          <button class="ctrl-btn"        data-days="0"  onclick="setActivityPeriod(this)">Tudo</button>
+        </div>
+        <div class="ctrl-group" id="metricGroup">
+          <button class="ctrl-btn active" data-metric="cost"    onclick="setActivityMetric(this)">R$ gasto</button>
+          <button class="ctrl-btn"        data-metric="prompts" onclick="setActivityMetric(this)">Prompts</button>
+          <button class="ctrl-btn"        data-metric="avg"     onclick="setActivityMetric(this)">Custo médio/prompt</button>
+        </div>
+      </div>
+    </div>
+    <div class="activity-date-range" id="customRangeRow" style="display:none;margin-bottom:14px;">
+      <input type="date" class="date-input" id="dateFrom" onchange="loadActivityStats()" />
+      <span class="date-sep">→</span>
+      <input type="date" class="date-input" id="dateTo" onchange="loadActivityStats()" />
+    </div>
+    <div class="activity-chart-wrap" id="activityChartWrap">
+      <div class="activity-empty">Carregando...</div>
+    </div>
+    <div class="activity-summary" id="activitySummary"></div>
+  </div>
+
+  <!-- SECTION 4+5: Últimos Prompts + Insights -->
+  <div class="profile-bottom-grid">
+    <div class="profile-section-box">
+      <div class="profile-section-title">Últimos Prompts</div>
+      <div id="profileRecentList"><div class="profile-empty-sub">Carregando...</div></div>
+    </div>
+    <div class="profile-section-box">
+      <div class="profile-section-title">💡 Insights</div>
+      <div id="profileInsightsList"><div class="profile-empty-sub">Calculando...</div></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- Tooltip flutuante do gráfico -->
+<div class="chart-tip" id="chartTip"></div>
+
+<!-- Edit Profile Modal -->
+<div class="profile-modal-overlay" id="editProfileModal" onclick="handleEditModalBg(event)">
+  <div class="profile-modal-card" id="editProfileModalCard">
+    <div class="profile-modal-title">Editar Perfil</div>
+    <div class="profile-modal-error" id="editProfileError"></div>
+    <div class="profile-modal-success" id="editProfileSuccess"></div>
+    <div class="profile-modal-field">
+      <label>Apelido / Nome</label>
+      <input type="text" id="editNameInput" placeholder="Como quer ser chamado?" maxlength="50" />
+    </div>
+    <div class="profile-modal-actions">
+      <button class="btn-modal-save" onclick="saveProfile()">Salvar</button>
+      <button class="btn-modal-cancel" onclick="closeEditProfile()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gallery Modal -->
+<div class="gallery-modal hidden" id="galleryModal" onclick="handleModalBgClick(event)">
+  <div class="gallery-modal-inner" id="galleryModalInner">
+    <div class="gallery-modal-header">
+      <span class="gallery-modal-title" id="modalTitle"></span>
+      <button class="btn-modal-delete" id="modalBtnDelete" onclick="deleteCurrentItem()">🗑 Deletar</button>
+      <button class="btn-modal-close"  onclick="closeModal()">✕</button>
+    </div>
+    <div class="gallery-modal-body">
+      <div class="gallery-modal-img-col">
+        <img id="modalImage" src="" alt="" />
+      </div>
+      <div class="gallery-modal-content" id="modalContent"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // ── AUTH ──
+  let _authUser = null;
+  let _authMode = 'login';
+
+  function getToken()        { return localStorage.getItem('ugc_token'); }
+  function setToken(t)       { localStorage.setItem('ugc_token', t); }
+  function clearToken()      { localStorage.removeItem('ugc_token'); }
+
+  // Wrapper que injeta Authorization em todo fetch
+  function authFetch(url, options = {}) {
+    const token = getToken();
+    const headers = { ...(options.headers || {}) };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    return fetch(url, { ...options, headers });
+  }
+
+  function openRecoveryModal() {
+    setAuthTab('forgot');
+    const overlay = document.getElementById('authOverlay');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('recovery-mode');
+    overlay.style.background = '';
+  }
+
+  function backFromForgot() {
+    if (_authUser) {
+      // Usuário já logado — veio do perfil, só fecha o overlay
+      const overlay = document.getElementById('authOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('recovery-mode');
+      overlay.style.background = '';
+    } else {
+      setAuthTab('login');
+    }
+  }
+
+  function setAuthTab(mode) {
+    _authMode = mode;
+    const isLogin    = mode === 'login';
+    const isRegister = mode === 'register';
+    const isForgot   = mode === 'forgot';
+    const isReset    = mode === 'reset';
+
+    // Tabs (visíveis só em login/register)
+    document.getElementById('authMainTabs').style.display = (isForgot || isReset) ? 'none' : 'flex';
+    document.getElementById('authTabLogin').classList.toggle('active', isLogin);
+    document.getElementById('authTabRegister').classList.toggle('active', isRegister);
+
+    // Forms
+    document.getElementById('authForm').style.display       = (isForgot || isReset) ? 'none' : 'block';
+    document.getElementById('authForgotForm').style.display = isForgot ? 'block' : 'none';
+    document.getElementById('authResetForm').style.display  = isReset  ? 'block' : 'none';
+
+    // Campos do form principal
+    document.getElementById('authNameField').style.display  = isRegister ? 'block' : 'none';
+    document.getElementById('authName').required = isRegister;
+    document.getElementById('authConfirmField').style.display = isRegister ? 'block' : 'none';
+    document.getElementById('authConfirm').required = isRegister;
+    document.getElementById('authForgotLink').style.display = isLogin ? 'inline' : 'none';
+    document.getElementById('authSubmitLabel').textContent  = isLogin ? 'Entrar' : 'Criar conta';
+
+    // Limpa mensagens
+    document.getElementById('authError').classList.remove('visible');
+    document.getElementById('authSuccess').classList.remove('visible');
+  }
+
+  async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const btn      = document.getElementById('authSubmitBtn');
+    const errorEl  = document.getElementById('authError');
+    const email    = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+
+    if (_authMode === 'register') {
+      const confirm = document.getElementById('authConfirm').value;
+      if (password !== confirm) {
+        errorEl.textContent = 'As senhas não coincidem.';
+        errorEl.classList.add('visible'); return;
+      }
+    }
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    errorEl.classList.remove('visible');
+
+    try {
+      const isLogin = _authMode === 'login';
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const body = isLogin ? { email, password }
+        : { email, password, name: document.getElementById('authName').value.trim() };
+      const res  = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) { errorEl.textContent = data.error || 'Erro desconhecido'; errorEl.classList.add('visible'); return; }
+      setToken(data.token);
+      _authUser = data.user;
+      showApp(data.user);
+    } catch (err) {
+      errorEl.textContent = 'Erro de conexão: ' + err.message;
+      errorEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+
+  async function handleForgotPassword() {
+    const btn     = document.getElementById('authForgotBtn');
+    const errorEl = document.getElementById('authError');
+    const successEl = document.getElementById('authSuccess');
+    const email   = document.getElementById('forgotEmail').value.trim();
+    if (!email) { errorEl.textContent = 'Digite seu email.'; errorEl.classList.add('visible'); return; }
+
+    btn.disabled = true; btn.classList.add('loading');
+    errorEl.classList.remove('visible'); successEl.classList.remove('visible');
+
+    try {
+      const res  = await fetch('/api/auth/forgot-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      successEl.textContent = data.message || 'Link enviado!';
+      successEl.classList.add('visible');
+      if (data.reset_link) {
+        // Dev mode: email não configurado — mostra o link
+        successEl.innerHTML = `Link gerado (email não configurado):<br><a href="${data.reset_link}" style="color:var(--orange);word-break:break-all">${data.reset_link}</a>`;
+      }
+    } catch (err) {
+      errorEl.textContent = 'Erro: ' + err.message; errorEl.classList.add('visible');
+    } finally {
+      btn.disabled = false; btn.classList.remove('loading');
+    }
+  }
+
+  async function handleResetPassword() {
+    const btn       = document.getElementById('authResetBtn');
+    const errorEl   = document.getElementById('authError');
+    const successEl = document.getElementById('authSuccess');
+    const password  = document.getElementById('resetPassword').value;
+    const confirm   = document.getElementById('resetConfirm').value;
+    const token     = new URLSearchParams(window.location.search).get('reset');
+
+    if (!password || password.length < 6) { errorEl.textContent = 'Senha mínima de 6 caracteres.'; errorEl.classList.add('visible'); return; }
+    if (password !== confirm) { errorEl.textContent = 'As senhas não coincidem.'; errorEl.classList.add('visible'); return; }
+
+    btn.disabled = true; btn.classList.add('loading');
+    errorEl.classList.remove('visible'); successEl.classList.remove('visible');
+
+    try {
+      const res  = await fetch('/api/auth/reset-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { errorEl.textContent = data.error || 'Erro'; errorEl.classList.add('visible'); return; }
+      successEl.textContent = 'Senha atualizada! Faça login.';
+      successEl.classList.add('visible');
+      history.replaceState({}, '', '/');
+      setTimeout(() => setAuthTab('login'), 2000);
+    } catch (err) {
+      errorEl.textContent = 'Erro: ' + err.message; errorEl.classList.add('visible');
+    } finally {
+      btn.disabled = false; btn.classList.remove('loading');
+    }
+  }
+
+  function showApp(user) {
+    const overlay = document.getElementById('authOverlay');
+    overlay.classList.add('hidden');
+    overlay.classList.remove('recovery-mode');
+    overlay.style.background = '';
+    const badge = document.getElementById('userEmailBadge');
+    badge.textContent = user.email;
+    badge.style.display = 'inline-block';
+    document.getElementById('btnLogout').style.display = 'inline-flex';
+    document.getElementById('exchangeRateBadge').style.display = 'inline-block';
+    // Nav username — exibe apenas o apelido cadastrado, nunca o email
+    const navUsername = document.getElementById('navUsername');
+    if (user.name) {
+      navUsername.textContent = user.name;
+      navUsername.style.display = 'inline-block';
+    } else {
+      navUsername.textContent = '';
+      navUsername.style.display = 'none';
+    }
+    // Avatar
+    const initial = (user.name || user.email || '?')[0].toUpperCase();
+    const avatarBtn = document.getElementById('btnAvatar');
+    // Restore saved avatar photo if any
+    const savedPhoto = localStorage.getItem('ugc_avatar_photo');
+    if (savedPhoto) {
+      applyAvatarPhoto(avatarBtn, savedPhoto);
+    } else {
+      avatarBtn.textContent = initial;
+    }
+    avatarBtn.style.display = 'inline-flex';
+    // Avatar: single click = toggle profile; double-click = change photo
+    avatarBtn.ondblclick = function(e) {
+      e.stopPropagation();
+      document.getElementById('avatarFileInput').click();
+    };
+    avatarBtn.onclick = function(e) {
+      toggleProfilePage();
+    };
+    // Restrição de acesso — bloqueia geração para não-admins
+    applyAccessRestriction(user);
+    renderProfilePage(user);
+    prefetchGallery();
+  }
+
+  function applyAccessRestriction(user) {
+    const btnGen = document.getElementById('btnGenerate');
+    const btnBatch = document.getElementById('btnBatch');
+    if (btnGen) {
+      btnGen.disabled = false;
+      btnGen.title = '';
+      btnGen.querySelector('.btn-label').textContent = '✦ Gerar Prompts com IA';
+    }
+    if (btnBatch) {
+      btnBatch.disabled = false;
+      btnBatch.title = '';
+      const lbl = btnBatch.querySelector('.btn-label');
+      if (lbl) lbl.textContent = '⚡ Gerar Lote';
+    }
+  }
+
+  function applyAvatarPhoto(btn, dataUrl) {
+    btn.textContent = '';
+    btn.style.backgroundImage = `url(${dataUrl})`;
+    btn.style.backgroundSize = 'cover';
+    btn.style.backgroundPosition = 'center';
+    btn.classList.add('has-photo');
+  }
+
+  function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      localStorage.setItem('ugc_avatar_photo', dataUrl);
+      const avatarBtn = document.getElementById('btnAvatar');
+      applyAvatarPhoto(avatarBtn, dataUrl);
+      // Also update profile page avatar if visible
+      const profileAvatarEl = document.getElementById('profileAvatar');
+      if (profileAvatarEl) {
+        profileAvatarEl.style.backgroundImage = `url(${dataUrl})`;
+        profileAvatarEl.style.backgroundSize = 'cover';
+        profileAvatarEl.style.backgroundPosition = 'center';
+        profileAvatarEl.textContent = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function renderProfilePage(user) {
+    const initial = (user.name || user.email || '?')[0].toUpperCase();
+    const profileAvatarEl = document.getElementById('profileAvatar');
+    const savedPhoto = localStorage.getItem('ugc_avatar_photo');
+    if (savedPhoto) {
+      profileAvatarEl.style.backgroundImage = `url(${savedPhoto})`;
+      profileAvatarEl.style.backgroundSize = 'cover';
+      profileAvatarEl.style.backgroundPosition = 'center';
+      profileAvatarEl.textContent = '';
+    } else {
+      profileAvatarEl.textContent = initial;
+      profileAvatarEl.style.backgroundImage = '';
+    }
+    profileAvatarEl.onclick = function() { document.getElementById('avatarFileInput').click(); };
+
+    // Manter IDs para compatibilidade
+    document.getElementById('profileName').textContent  = user.name || user.email;
+    document.getElementById('profileEmail').textContent = user.email;
+
+    // Saudação dinâmica
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+    const displayName = (user.name || user.email || '').split(' ')[0];
+    document.getElementById('profileGreeting').textContent = `${greeting}, ${displayName} 👋`;
+
+    // Badge admin
+    const badge = document.getElementById('profileAdminBadge');
+    badge.style.display = user.is_admin ? 'inline-block' : 'none';
+
+    // Admin-only card
+    document.getElementById('statFalCard').style.display = user.is_admin ? '' : 'none';
+
+    // Stat cards em loading
+    ['statPrompts','statTokens','statSaldo'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.add('loading'); el.textContent = '—';
+    });
+    ['statPromptsDelta','statTokensDelta','statSaldoDelta'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = '—'; el.className = 'pstat-delta flat'; }
+    });
+    if (user.is_admin) {
+      const el = document.getElementById('statFalBalance');
+      el.classList.add('loading'); el.textContent = '—';
+    }
+    document.getElementById('profileTodaySummary').textContent = 'Calculando...';
+  }
+
+  function toggleProfilePage() {
+    const page = document.getElementById('profilePage');
+    const hero = document.querySelector('.hero');
+    const main = document.querySelector('.main-frame');
+    const btn  = document.getElementById('btnAvatar');
+    const showing = page.classList.contains('visible');
+
+    page.classList.toggle('visible', !showing);
+    btn.classList.toggle('active', !showing);
+    if (hero) hero.style.display = showing ? '' : 'none';
+    if (main) main.style.display = showing ? '' : 'none';
+
+    if (!showing) {
+      loadProfileStats();
+      loadActivityStats();
+    }
+  }
+
+  function openEditProfile() {
+    document.getElementById('editNameInput').value = _authUser?.name || '';
+    document.getElementById('editProfileError').classList.remove('visible');
+    document.getElementById('editProfileSuccess').classList.remove('visible');
+    document.getElementById('editProfileModal').classList.add('visible');
+  }
+
+  function closeEditProfile() {
+    document.getElementById('editProfileModal').classList.remove('visible');
+  }
+
+  function handleEditModalBg(e) {
+    if (e.target === document.getElementById('editProfileModal')) closeEditProfile();
+  }
+
+  async function saveProfile() {
+    const name    = document.getElementById('editNameInput').value.trim();
+    const errorEl = document.getElementById('editProfileError');
+    const okEl    = document.getElementById('editProfileSuccess');
+    if (!name) { errorEl.textContent = 'Apelido obrigatório.'; errorEl.classList.add('visible'); return; }
+
+    errorEl.classList.remove('visible'); okEl.classList.remove('visible');
+
+    try {
+      const res  = await authFetch('/api/users/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (!res.ok) { errorEl.textContent = data.error || 'Erro'; errorEl.classList.add('visible'); return; }
+      _authUser = { ..._authUser, ...data.user };
+      renderProfilePage(_authUser);
+      // Atualiza avatar no header
+      const initial = name[0].toUpperCase();
+      // Only update initial if no photo saved
+      if (!localStorage.getItem('ugc_avatar_photo')) {
+        document.getElementById('btnAvatar').textContent = initial;
+      }
+      okEl.textContent = 'Perfil atualizado!'; okEl.classList.add('visible');
+      setTimeout(() => closeEditProfile(), 1200);
+    } catch (err) {
+      errorEl.textContent = 'Erro: ' + err.message; errorEl.classList.add('visible');
+    }
+  }
+
+  function logout() {
+    clearToken();
+    _authUser = null;
+    document.getElementById('authOverlay').classList.remove('hidden');
+    document.getElementById('authOverlay').style.background = '';
+    document.getElementById('btnLogout').style.display = 'none';
+    const avatarBtn = document.getElementById('btnAvatar');
+    avatarBtn.style.display = 'none';
+    avatarBtn.textContent = '';
+    avatarBtn.style.backgroundImage = '';
+    avatarBtn.classList.remove('has-photo');
+    const navUsername = document.getElementById('navUsername');
+    navUsername.textContent = ''; navUsername.style.display = 'none';
+    const badge = document.getElementById('userEmailBadge');
+    badge.textContent = ''; badge.style.display = 'none';
+    document.getElementById('sessionCostBadge').textContent = 'sessão: R$ 0,00';
+    document.getElementById('sessionCostBadge').classList.remove('has-cost');
+    // Esconde página de perfil se estiver aberta
+    const page = document.getElementById('profilePage');
+    page.classList.remove('visible');
+    const hero = document.querySelector('.hero');
+    const main = document.querySelector('.main-frame');
+    if (hero) hero.style.display = '';
+    if (main) main.style.display = '';
+    // limpa resultados
+    document.getElementById('results').classList.remove('visible');
+    document.getElementById('batchResults').classList.remove('visible');
+    document.getElementById('emptyState').style.display = 'flex';
+    // reseta tab de auth
+    setAuthTab('login');
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+  }
+
+  // ── SPLASH ──
+  function hideSplash() {
+    const el = document.getElementById('splashScreen');
+    el.classList.add('fade-out');
+    setTimeout(() => el.classList.add('gone'), 460);
+  }
+  function showAuthOverlay() {
+    document.getElementById('authOverlay').classList.remove('hidden');
+  }
+
+  // Verifica token existente ao carregar a página
+  (async function initAuth() {
+    // Verifica se há token de reset na URL
+    const resetToken = new URLSearchParams(window.location.search).get('reset');
+    if (resetToken) {
+      setAuthTab('reset');
+      showAuthOverlay();
+      hideSplash();
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      showAuthOverlay();
+      hideSplash();
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        const { user } = await res.json();
+        _authUser = user;
+        showApp(user);
+      } else {
+        clearToken();
+        showAuthOverlay();
+      }
+    } catch {
+      clearToken();
+      showAuthOverlay();
+    }
+    hideSplash();
+  })();
+
+  // ── STATE ──
+  let imageBase64 = null;
+  let imageType   = null;
+  const _stored   = {};
+  let currentMode = 'single'; // 'single' | 'batch'
+
+  // Batch state: array of { dataUrl, base64, type, name, price }
+  const BATCH_MAX = 20;
+  let batchItems = new Array(5).fill(null);
+  let _batchPrevCount = 5;
+
+  const CARD_CONFIG = [
+    { id: 'cardPromptVideo', field: 'prompt_video', title: 'Prompt — Vídeo UGC', emoji: '🎬' },
+    { id: 'cardLegenda',     field: 'legenda',      title: 'Legenda',            emoji: '✍️' },
+  ];
+
+  // ── MODE ──
+  function setMode(mode) {
+    currentMode = mode;
+    const isSingle = mode === 'single';
+    document.getElementById('modeSingle').classList.toggle('active', isSingle);
+    document.getElementById('modeBatch').classList.toggle('active', !isSingle);
+    document.getElementById('uploadField').style.display  = isSingle ? 'block' : 'none';
+    // fieldTipo, fieldPromo, fieldPreco, fieldGenero ficam sempre ocultos (display:none no HTML)
+    document.getElementById('singleActions').style.display = isSingle ? 'block' : 'none';
+    document.getElementById('batchSection').style.display  = isSingle ? 'none'  : 'block';
+    hideError();
+    if (!isSingle) renderBatchSlots();
+  }
+
+  // ── SINGLE UPLOAD ──
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (file) loadFile(file);
+  }
+
+  function loadFile(file) {
+    if (!file.type.startsWith('image/')) return;
+    imageType = file.type;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      imageBase64 = dataUrl.split(',')[1];
+      document.getElementById('previewImg').src = dataUrl;
+      document.getElementById('previewWrap').style.display = 'block';
+      document.getElementById('uploadArea').style.display  = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage() {
+    imageBase64 = null;
+    imageType   = null;
+    document.getElementById('previewWrap').style.display = 'none';
+    document.getElementById('uploadArea').style.display  = 'block';
+    document.getElementById('fileInput').value = '';
+  }
+
+  const uploadArea = document.getElementById('uploadArea');
+  uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', ()  => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+
+  // ── BATCH SLOTS ──
+  function renderBatchSlots() {
+    const container = document.getElementById('batchSlots');
+    container.innerHTML = '';
+    const total = batchItems.length;
+
+    for (let i = 0; i < total; i++) {
+      const item = batchItems[i];
+      const isNew = i >= _batchPrevCount;
+      const slot = document.createElement('div');
+      slot.className = 'batch-slot' + (item ? ' has-image' : '') + (isNew ? ' slot-new' : '');
+      slot.dataset.index = i;
+
+      if (item) {
+        slot.innerHTML = `
+          <img class="batch-slot-thumb" src="${item.dataUrl}" alt="Produto ${i+1}" />
+          <button class="batch-slot-remove" onclick="batchRemove(${i})" title="Remover">✕</button>`;
+      } else {
+        slot.innerHTML = `
+          <input type="file" accept="image/*" id="batchFile${i}" onchange="batchHandleFile(${i}, event)" />
+          <div class="batch-slot-empty">
+            <div class="batch-slot-empty-icon">+</div>
+            <div class="batch-slot-empty-num">PRODUTO ${i+1}</div>
+          </div>`;
+        slot.addEventListener('dragover',  e => { e.preventDefault(); slot.classList.add('dragover'); });
+        slot.addEventListener('dragleave', () => slot.classList.remove('dragover'));
+        slot.addEventListener('drop', e => {
+          e.preventDefault();
+          slot.classList.remove('dragover');
+          const file = e.dataTransfer.files[0];
+          if (file) batchLoadFile(i, file);
+        });
+      }
+      container.appendChild(slot);
+    }
+
+    // Botão + (some ao atingir o limite)
+    if (total < BATCH_MAX) {
+      const addBtn = document.createElement('div');
+      addBtn.className = 'batch-slot batch-slot-add';
+      addBtn.title = 'Adicionar produto';
+      addBtn.addEventListener('click', addBatchSlot);
+      addBtn.innerHTML = `
+        <div class="batch-slot-empty">
+          <div class="batch-slot-empty-icon" style="font-size:26px;">+</div>
+          <div class="batch-slot-empty-num">${total}/${BATCH_MAX}</div>
+        </div>`;
+      container.appendChild(addBtn);
+    }
+
+    _batchPrevCount = total;
+
+    // Atualiza counter no label
+    const counterEl = document.getElementById('batchCounter');
+    if (counterEl) counterEl.textContent = `${total}/${BATCH_MAX}`;
+
+    updateBatchCost();
+    initBatchDropZone();
+  }
+
+  function addBatchSlot() {
+    if (batchItems.length >= BATCH_MAX) return;
+    _batchPrevCount = batchItems.length;
+    batchItems.push(null);
+    renderBatchSlots();
+  }
+
+  function batchHandleFile(i, e) {
+    const file = e.target.files[0];
+    if (file) batchLoadFile(i, file);
+  }
+
+  function batchLoadFile(i, file) {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      batchItems[i] = {
+        dataUrl: ev.target.result,
+        base64:  ev.target.result.split(',')[1],
+        type:    file.type,
+        name:    file.name,
+        price:   batchItems[i]?.price || ''
+      };
+      renderBatchSlots();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function batchRemove(i) {
+    batchItems[i] = null;
+    renderBatchSlots();
+  }
+
+  // ── BATCH: DRAG-AND-DROP EM MASSA ──
+  function initBatchDropZone() {
+    const zone = document.getElementById('batchDropZone');
+    if (!zone || zone._dndReady) return;
+    zone._dndReady = true;
+
+    let dragCounter = 0;
+
+    zone.addEventListener('dragenter', e => {
+      e.preventDefault();
+      dragCounter++;
+      zone.classList.add('batch-dragover');
+    });
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+    });
+    zone.addEventListener('dragleave', () => {
+      dragCounter--;
+      if (dragCounter <= 0) { dragCounter = 0; zone.classList.remove('batch-dragover'); }
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      dragCounter = 0;
+      zone.classList.remove('batch-dragover');
+      const files = Array.from(e.dataTransfer.files);
+      batchDropFiles(files);
+    });
+  }
+
+  function batchDropFiles(files) {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    const imgs = files.filter(f => allowed.includes(f.type));
+    if (!imgs.length) return;
+
+    // Slots vazios existentes
+    let emptySlots = batchItems.reduce((acc, v, i) => { if (!v) acc.push(i); return acc; }, []);
+
+    // Expandir batchItems se precisar (até BATCH_MAX)
+    let toLoad = imgs;
+    if (toLoad.length > emptySlots.length) {
+      const canAdd = BATCH_MAX - batchItems.length;
+      const needed = toLoad.length - emptySlots.length;
+      const adding = Math.min(needed, canAdd);
+      for (let k = 0; k < adding; k++) { batchItems.push(null); emptySlots.push(batchItems.length - 1); }
+    }
+
+    const skipped = toLoad.length - emptySlots.length;
+    if (skipped > 0) {
+      toLoad = toLoad.slice(0, emptySlots.length);
+      showBatchToast(`Máximo 20 produtos por lote. ${skipped} arquivo(s) ignorado(s).`);
+    }
+
+    let loaded = 0;
+    toLoad.forEach((file, k) => {
+      const slotIdx = emptySlots[k];
+      const reader = new FileReader();
+      reader.onload = ev => {
+        batchItems[slotIdx] = {
+          dataUrl: ev.target.result,
+          base64:  ev.target.result.split(',')[1],
+          type:    file.type,
+          name:    file.name,
+          price:   ''
+        };
+        loaded++;
+        if (loaded === toLoad.length) renderBatchSlots();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  let _batchToastTimer = null;
+  function showBatchToast(msg) {
+    let el = document.querySelector('.batch-toast');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.className = 'batch-toast';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    clearTimeout(_batchToastTimer);
+    _batchToastTimer = setTimeout(() => el.remove(), 3000);
+  }
+
+  function batchSetPrice(i, val) {
+    if (batchItems[i]) batchItems[i].price = val;
+    updateBatchCost();
+  }
+
+  function updateBatchCost() {
+    const count = batchItems.filter(Boolean).length;
+    const preview = document.getElementById('batchCostPreview');
+    if (count === 0) { preview.classList.remove('visible'); return; }
+    const minR = (count * 0.03 * 5.6).toFixed(2);
+    const maxR = (count * 0.05 * 5.6).toFixed(2);
+    preview.classList.add('visible');
+    preview.innerHTML = `💰 Custo estimado: ${count} produto${count > 1 ? 's' : ''} × ~$0.03–$0.05 = <strong>R$ ${minR}–${maxR}</strong>`;
+  }
+
+  // ── SEGMENTED CONTROLS ──
+  function selectSeg(btn, groupId) {
+    document.querySelectorAll(`#${groupId} .seg-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function getSelected(groupId) {
+    const active = document.querySelector(`#${groupId} .seg-btn.active`);
+    return active ? active.dataset.value : '';
+  }
+
+  // ── GENERATE SINGLE ──
+  async function generate() {
+    if (!imageBase64) { showError('Envie uma imagem do produto antes de gerar.'); return; }
+    const price = document.getElementById('priceInput').value;
+
+    const btn = document.getElementById('btnGenerate');
+    btn.disabled = true;
+    btn.classList.add('loading');
+    hideError();
+    hideAllResults();
+    scrollToSection('app');
+
+    // Card pendente imediato na galeria
+    const previewSrc  = document.getElementById('previewImg').src || null;
+    const productName = document.getElementById('fileInput').files?.[0]?.name || 'Produto';
+    const tempId = addPendingGalleryCard(previewSrc, productName);
+    let _simPct = 5;
+    const _simInterval = setInterval(() => {
+      _simPct = Math.min(82, _simPct + Math.random() * 9);
+      updatePendingProgress(tempId, _simPct);
+    }, 700);
+
+    try {
+      const res = await authFetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: imageBase64,
+          image_type:   imageType,
+          tipo:   getSelected('tipoGroup'),
+          promo:  getSelected('promoGroup'),
+          price,
+          gender: getSelected('genderGroup')
+        })
+      });
+      const data = await res.json();
+      clearInterval(_simInterval);
+      if (!res.ok) { rejectPendingCard(tempId); showError(data.error || 'Erro desconhecido na API.'); return; }
+      updatePendingProgress(tempId, 100);
+      renderResults(data);
+      // Gallery saved server-side — resolve card directly from response
+      const galleryItem = data._gallery;
+      if (galleryItem) resolvePendingCard(tempId, galleryItem);
+      else rejectPendingCard(tempId);
+    } catch (err) {
+      clearInterval(_simInterval);
+      rejectPendingCard(tempId);
+      showError('Erro de conexão: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+
+  // ── GENERATE BATCH ──
+  async function generateBatch() {
+    const active = batchItems.filter(Boolean);
+    if (active.length === 0) { showError('Adicione ao menos um produto ao lote.'); return; }
+
+    const btn = document.getElementById('btnBatch');
+    btn.disabled = true;
+    btn.classList.add('loading');
+    hideError();
+    hideAllResults();
+
+    const tipo   = getSelected('tipoGroup');
+    const promo  = getSelected('promoGroup');
+    const gender = getSelected('genderGroup');
+
+    const batchEl = document.getElementById('batchResults');
+    batchEl.innerHTML = '';
+    batchEl.classList.add('visible');
+    document.getElementById('emptyState').style.display = 'none';
+
+    const filledItems = batchItems
+      .map((it, i) => it ? { ...it, slotIndex: i } : null)
+      .filter(Boolean);
+
+    // 1. Register all jobs → get jobIds (for Supabase persistence)
+    let jobIds = null;
+    try {
+      const qRes = await authFetch('/api/queue/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: filledItems.map(it => ({ name: it.name })) })
+      });
+      if (qRes.ok) {
+        const q = await qRes.json();
+        jobIds = q.jobs.map(j => j.id);
+        sessionStorage.setItem('ugc_batch_id', q.batchId);
+      }
+    } catch { /* continue without queue persistence */ }
+
+    // 2. Show ALL cards immediately as "waiting" in gallery
+    const tempIds = [];
+    filledItems.forEach((it, idx) => {
+      const block = document.createElement('div');
+      block.className = 'batch-product-block';
+      block.id = `batchBlock${idx}`;
+      block.innerHTML = `
+        <div class="batch-product-header">
+          <img class="batch-product-thumb" src="${it.dataUrl}" alt="" />
+          <span class="batch-product-label">Produto ${idx + 1} — ${it.name}</span>
+          <span class="batch-product-status" id="batchStatus${idx}">aguardando</span>
+        </div>
+        <div class="batch-product-cards" id="batchCards${idx}">
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);padding:8px 0;">Na fila...</div>
+        </div>`;
+      batchEl.appendChild(block);
+      // All start as "waiting" — worker pool transitions them to "generating"
+      tempIds.push(addPendingGalleryCard(it.dataUrl, it.name, 'waiting'));
+    });
+
+    scrollToSection('panelRight');
+
+    // 3. Start SSE — server processes 3 at a time, saves each to gallery server-side
+    try {
+      const payload = {
+        items: filledItems.map(it => ({
+          image_base64: it.base64,
+          image_type:   it.type,
+          price:        it.price
+        })),
+        jobIds,
+        tipo, promo, gender
+      };
+
+      const res = await authFetch('/api/generate-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const msg = JSON.parse(line.slice(6));
+            handleBatchEvent(msg, filledItems, tempIds);
+          } catch { /* malformed SSE line */ }
+        }
+      }
+    } catch (err) {
+      showError('Erro no lote: ' + err.message);
+      // Reject all still-pending cards
+      tempIds.forEach(tid => { if (_pendingCards[tid]) rejectPendingCard(tid); });
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      sessionStorage.removeItem('ugc_batch_id');
+    }
+  }
+
+  function handleBatchEvent(msg, filledItems, tempIds) {
+    const i = msg.index;
+
+    if (msg.type === 'progress') {
+      // Worker picked up this item — switch from waiting → generating
+      const statusEl = document.getElementById('batchStatus' + i);
+      if (statusEl) { statusEl.textContent = 'processando...'; statusEl.className = 'batch-product-status processing'; }
+      const cardsEl = document.getElementById('batchCards' + i);
+      if (cardsEl) { const d = cardsEl.querySelector('div'); if (d) d.textContent = 'Gerando...'; }
+      if (tempIds?.[i]) {
+        setPendingCardStatus(tempIds[i], 'generating');
+        let _pct = 5;
+        updatePendingProgress(tempIds[i], _pct);
+        _batchSims[i] = setInterval(() => {
+          _pct = Math.min(82, _pct + Math.random() * 9);
+          updatePendingProgress(tempIds[i], _pct);
+        }, 700);
+      }
+    }
+
+    if (msg.type === 'result') {
+      if (_batchSims[i]) { clearInterval(_batchSims[i]); delete _batchSims[i]; }
+      const statusEl = document.getElementById('batchStatus' + i);
+      const cardsEl  = document.getElementById('batchCards'  + i);
+      if (statusEl) { statusEl.textContent = '✓ pronto'; statusEl.className = 'batch-product-status done'; }
+      if (tempIds?.[i]) updatePendingProgress(tempIds[i], 100);
+
+      // Resolve gallery card immediately — saved server-side, clickable right now
+      const galleryItem = msg.gallery;
+      if (galleryItem && tempIds?.[i]) resolvePendingCard(tempIds[i], galleryItem);
+      else if (tempIds?.[i])           rejectPendingCard(tempIds[i]);
+
+      if (cardsEl) {
+        const d = msg.data;
+        cardsEl.innerHTML = '';
+        if (d.prompt_video) cardsEl.innerHTML += makeBatchCard('🎬 Prompt Vídeo UGC', d.prompt_video);
+        if (d.legenda)      cardsEl.innerHTML += makeBatchCard('✍️ Legenda',          d.legenda);
+        if (d._usage) {
+          const u = d._usage;
+          cardsEl.innerHTML += `
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);padding:4px 2px;line-height:1.8;">
+              ${fmtTok(u.input_tokens)} entrada + ${fmtTok(u.output_tokens)} saída
+              → <span style="color:var(--orange)">${fmtR$(u.total_cost)} <span style="opacity:0.6">(${fmt$(u.total_cost)})</span></span>
+            </div>`;
+          updateSessionBadge(u.session);
+        }
+      }
+    }
+
+    if (msg.type === 'retry_pending') {
+      // All main attempts failed — card goes back to "aguardando" silently, final retry coming
+      if (_batchSims[i]) { clearInterval(_batchSims[i]); delete _batchSims[i]; }
+      const statusEl = document.getElementById('batchStatus' + i);
+      if (statusEl) { statusEl.textContent = 'aguardando...'; statusEl.className = 'batch-product-status'; }
+      const cardsEl = document.getElementById('batchCards' + i);
+      if (cardsEl) { const d = cardsEl.querySelector('div'); if (d) d.textContent = 'Na fila...'; }
+      if (tempIds?.[i]) setPendingCardStatus(tempIds[i], 'waiting');
+    }
+
+    if (msg.type === 'silent_error') {
+      // Final retry also failed — fade card out silently, no error shown
+      if (_batchSims[i]) { clearInterval(_batchSims[i]); delete _batchSims[i]; }
+      const batchBlock = document.getElementById('batchBlock' + i);
+      if (batchBlock) {
+        batchBlock.style.transition = 'opacity 1.5s ease';
+        batchBlock.style.opacity = '0.25';
+      }
+      const tempId = tempIds?.[i];
+      if (tempId && _pendingCards[tempId]) {
+        setTimeout(() => {
+          const card = _pendingCards[tempId];
+          if (card) { card.el.remove(); delete _pendingCards[tempId]; }
+        }, 2000);
+      }
+    }
+  }
+
+  function makeBatchCard(title, content) {
+    const safe = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeContent = JSON.stringify(content).replace(/"/g, '&quot;');
+    return `
+      <div class="result-card" style="animation-delay:0ms">
+        <div class="result-card-header">
+          <div class="result-card-title"><span class="title-dot"></span>${title}</div>
+          <button class="btn-copy" onclick="copyRaw(${safeContent}, this)">
+            <span>⎘</span> COPIAR
+          </button>
+        </div>
+        <div class="result-card-body">${safe}</div>
+      </div>`;
+  }
+
+  function copyRaw(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<span>✓</span> COPIADO';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span>⎘</span> COPIAR'; }, 2000);
+    });
+  }
+
+  // ── RENDER SINGLE ──
+  function renderResults(data) {
+    Object.assign(_stored, data);
+
+    const meta = document.getElementById('metaBadges');
+    const copyAllBtn = document.getElementById('btnCopyAll');
+    meta.innerHTML = '';
+    if (data.nicho)  meta.innerHTML += `<span class="badge nicho">🏷 ${data.nicho}</span>`;
+    if (data.emocao) meta.innerHTML += `<span class="badge emocao">💫 ${data.emocao}</span>`;
+    meta.appendChild(copyAllBtn);
+
+    CARD_CONFIG.forEach((cfg, i) => {
+      const content = data[cfg.field] || '';
+      document.getElementById(cfg.id).innerHTML = makeCard(cfg.title, cfg.emoji, content, cfg.field, i);
+    });
+
+    if (data._usage) renderCostBox(data._usage);
+
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('results').classList.add('visible');
+    setTimeout(() => scrollToSection('panelRight'), 120);
+  }
+
+  // ── REGEN ──
+  async function regenPrompt() {
+    if (!imageBase64) { showError('Nenhuma imagem carregada.'); return; }
+    const btn = document.getElementById('btnRegen');
+    const mainBtn = document.getElementById('btnGenerate');
+    btn.disabled = true;
+    btn.classList.add('loading');
+    mainBtn.disabled = true;
+    hideError();
+
+    try {
+      const price = document.getElementById('priceInput').value;
+      const res = await authFetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: imageBase64,
+          image_type:   imageType,
+          tipo:  getSelected('tipoGroup'),
+          promo: getSelected('promoGroup'),
+          gender: getSelected('genderGroup'),
+          price: price || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) { showError(data.error || 'Erro desconhecido na API.'); return; }
+      renderResults(data);
+      saveToGallery(data, imageBase64, imageType, price, getSelected('tipoGroup'));
+    } catch (err) {
+      showError('Erro de conexão: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      mainBtn.disabled = false;
+    }
+  }
+
+  // ── COST BOX ──
+  let BRL = 5.70; // fallback; atualizado ao vivo por fetchExchangeRate()
+  function fmt$(v)   { return '$' + v.toFixed(4); }
+  function fmtR$(v)  { return 'R$\u00a0' + (v * BRL).toFixed(3); }
+  function fmtCostCard(v) { return 'R$\u00a0' + (v * BRL).toFixed(2) + ' <span style="opacity:0.55;font-size:8px">($' + v.toFixed(4) + ')</span>'; }
+
+  async function fetchExchangeRate() {
+    try {
+      const res  = await fetch('/api/exchange-rate');
+      const data = await res.json();
+      if (data.usd_brl && data.usd_brl > 1) {
+        BRL = data.usd_brl;
+        const el = document.getElementById('exchangeRateBadge');
+        if (el) {
+          el.textContent = 'USD → R$\u00a0' + BRL.toFixed(2);
+          el.title = 'Câmbio ao vivo · atualizado ' + new Date(data.cached_at).toLocaleTimeString('pt-BR');
+        }
+      }
+    } catch (e) { console.warn('[exchange] usando fallback R$5.70:', e.message); }
+  }
+  fetchExchangeRate();
+  function fmtTok(n) { return n.toLocaleString('pt-BR') + '\u00a0tok'; }
+
+  function renderCostBox(usage) {
+    const el = document.getElementById('costBox');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="cost-box">
+        <div class="cost-row">
+          <span class="cost-label">Tokens de entrada</span>
+          <span class="cost-value">${fmtTok(usage.input_tokens)} → ${fmtR$(usage.input_cost)} <span style="color:var(--text-muted)">(${fmt$(usage.input_cost)})</span></span>
+        </div>
+        <div class="cost-row">
+          <span class="cost-label">Tokens de saída</span>
+          <span class="cost-value">${fmtTok(usage.output_tokens)} → ${fmtR$(usage.output_cost)} <span style="color:var(--text-muted)">(${fmt$(usage.output_cost)})</span></span>
+        </div>
+        <div class="cost-total-row">
+          <span class="cost-total-label">Total desta geração</span>
+          <span class="cost-total-value">${fmtR$(usage.total_cost)} <span style="font-weight:400;color:var(--text-dim)">(${fmt$(usage.total_cost)})</span></span>
+        </div>
+      </div>`;
+    updateSessionBadge(usage.session);
+  }
+
+  function updateSessionBadge(session) {
+    if (!session) return;
+    const badge = document.getElementById('sessionCostBadge');
+    if (!badge) return;
+    const totalR = (session.total_cost * BRL).toFixed(2).replace('.', ',');
+    badge.textContent = `sessão: R$ ${totalR}`;
+    badge.classList.add('has-cost');
+  }
+
+  function makeCard(title, emoji, content, field, idx) {
+    const safe = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `
+      <div class="result-card" style="animation-delay:${idx * 80}ms">
+        <div class="result-card-header">
+          <div class="result-card-title"><span class="title-dot"></span>${emoji} ${title}</div>
+          <button class="btn-copy" onclick="copyField('${field}',this)">
+            <span>⎘</span> COPIAR
+          </button>
+        </div>
+        <div class="result-card-body">${safe}</div>
+      </div>`;
+  }
+
+  // ── COPY ──
+  function copyField(field, btn) {
+    const text = _stored[field] || '';
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<span>✓</span> COPIADO';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span>⎘</span> COPIAR'; }, 2000);
+    });
+  }
+
+  function copyAll(btn) {
+    const parts = [
+      _stored.prompt_video ? `=== PROMPT — VÍDEO UGC ===\n${_stored.prompt_video}` : '',
+      _stored.legenda      ? `=== LEGENDA ===\n${_stored.legenda}`                  : '',
+    ].filter(Boolean);
+    if (!parts.length) return;
+    navigator.clipboard.writeText(parts.join('\n\n')).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<span>✓</span> Copiado!';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span>⎘</span> Copiar Tudo'; }, 2500);
+    });
+  }
+
+  // ── HELPERS ──
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('visible');
+  }
+  function hideError() {
+    document.getElementById('errorBox').classList.remove('visible');
+  }
+  function hideAllResults() {
+    document.getElementById('results').classList.remove('visible');
+    document.getElementById('batchResults').classList.remove('visible');
+    document.getElementById('emptyState').style.display = 'flex';
+  }
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── APP TABS ──
+  function setAppTab(tab) {
+    const isGallery = tab === 'gallery';
+    document.getElementById('tabBtnGenerate').classList.toggle('active', !isGallery);
+    document.getElementById('tabBtnGallery').classList.toggle('active', isGallery);
+    document.getElementById('tabGenerate').style.display = isGallery ? 'none' : '';
+    document.getElementById('tabGallery').classList.toggle('visible', isGallery);
+    if (isGallery) loadGallery();
+  }
+
+  // ── GALLERY: SAVE ──
+  async function saveToGallery(data, imageB64, imageType, price, tipo) {
+    if (!data.prompt_video) return null;
+    try {
+      const res = await authFetch('/api/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image:        imageB64 ? `data:${imageType};base64,${imageB64}` : null,
+          prompt_video: data.prompt_video,
+          legenda:      data.legenda      || '',
+          nicho:        data.nicho        || '',
+          emocao:       data.emocao       || '',
+          tipo:         tipo              || '',
+          price:        price             || '',
+          cost:         data._usage       || null
+        })
+      });
+      if (!res.ok) { console.warn('Gallery save failed:', res.status); return null; }
+      const saved = await res.json();
+      return saved;
+    } catch (e) { console.warn('Falha ao salvar na galeria:', e); return null; }
+  }
+
+  // ── PENDING GALLERY CARDS ──
+  function addPendingGalleryCard(imageDataUrl, productName, initialStatus = 'generating') {
+    const tempId = 'pending-' + (++_pendingCounter);
+    const grid  = document.getElementById('galleryGrid');
+    const empty = document.getElementById('galleryEmpty');
+    empty.style.display = 'none';
+    grid.style.display  = 'grid';
+
+    const el = document.createElement('div');
+    const isWaiting = initialStatus === 'waiting';
+    el.className = 'gallery-card gallery-card-pending' + (isWaiting ? ' is-waiting' : '');
+    el.id = tempId;
+    const thumbStyle = imageDataUrl
+      ? `background-image:url('${imageDataUrl}')`
+      : 'display:flex;align-items:center;justify-content:center;font-size:28px;';
+    const nameLabel = productName
+      ? productName.replace(/\.[^.]+$/, '').slice(0, 28)
+      : 'Produto';
+    el.innerHTML = `
+      <div class="gallery-pending-thumb" style="${thumbStyle}">
+        ${imageDataUrl ? '' : '📦'}
+        <div class="gallery-pending-overlay">
+          <div class="gallery-pending-pct">${isWaiting ? '⏳' : '0%'}</div>
+          <div class="gallery-pending-label">${isWaiting ? 'Aguardando' : 'Gerando'}</div>
+        </div>
+        <div class="gallery-pending-bar-wrap">
+          <div class="gallery-pending-bar" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="gallery-card-body">
+        <div class="gallery-card-legenda" style="color:var(--text-muted);">${nameLabel}</div>
+        <div class="gallery-card-footer"><span class="gallery-card-date">${isWaiting ? 'aguardando...' : 'gerando...'}</span></div>
+      </div>`;
+    grid.prepend(el);
+    _pendingCards[tempId] = {
+      el,
+      pctEl:   el.querySelector('.gallery-pending-pct'),
+      barEl:   el.querySelector('.gallery-pending-bar'),
+      labelEl: el.querySelector('.gallery-pending-label'),
+      dateEl:  el.querySelector('.gallery-card-date'),
+    };
+    return tempId;
+  }
+
+  function setPendingCardStatus(tempId, status) {
+    const card = _pendingCards[tempId];
+    if (!card) return;
+    if (status === 'generating') {
+      card.el.classList.remove('is-waiting');
+      if (card.pctEl)   card.pctEl.textContent   = '0%';
+      if (card.labelEl) card.labelEl.textContent  = 'Gerando';
+      if (card.dateEl)  card.dateEl.textContent   = 'gerando...';
+      const barWrap = card.barEl?.closest('.gallery-pending-bar-wrap');
+      if (barWrap) barWrap.style.opacity = '1';
+      if (card.barEl) card.barEl.style.width = '0%';
+    } else if (status === 'waiting') {
+      card.el.classList.add('is-waiting');
+      if (_batchSims) {
+        // clear any running sim for this card
+        Object.keys(_batchSims).forEach(k => {
+          if (_pendingCards[tempId] && _batchSims[k]) {
+            // match by tempId not index — handled by caller
+          }
+        });
+      }
+      if (card.pctEl)   card.pctEl.textContent   = '⏳';
+      if (card.labelEl) card.labelEl.textContent  = 'Aguardando';
+      if (card.dateEl)  card.dateEl.textContent   = 'aguardando...';
+      const barWrap = card.barEl?.closest('.gallery-pending-bar-wrap');
+      if (barWrap) barWrap.style.opacity = '0';
+    }
+  }
+
+  function updatePendingProgress(tempId, pct) {
+    const card = _pendingCards[tempId];
+    if (!card) return;
+    if (card.pctEl) card.pctEl.textContent = Math.round(pct) + '%';
+    if (card.barEl) card.barEl.style.width = Math.min(100, pct) + '%';
+  }
+
+  function resolvePendingCard(tempId, item) {
+    const card = _pendingCards[tempId];
+    if (!card) return;
+    const el = card.el;
+    // Re-insere no grid se foi removido por renderGalleryGrid
+    const grid = document.getElementById('galleryGrid');
+    if (grid && !el.parentNode) grid.prepend(el);
+    const leg   = (item.legenda || '').replace(/</g, '&lt;');
+    const date  = fmtDate(item.created_at);
+    const cost  = item.cost ? `<span class="gallery-card-cost">${fmt$(item.cost.total_cost)}</span>` : '';
+    const thumb = item.image
+      ? `<div class="gallery-card-thumb" style="background-image:url('${item.image}')"></div>`
+      : `<div class="gallery-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📦</div>`;
+    el.className = 'gallery-card gallery-card-done-flash';
+    el.onclick = () => openGalleryItem(item.id);
+    el.innerHTML = `
+      ${thumb}
+      <div class="gallery-card-body">
+        <div class="gallery-card-legenda">${leg || '—'}</div>
+        <div class="gallery-card-footer">
+          <span class="gallery-card-date">${date}</span>${cost}
+        </div>
+      </div>`;
+    _galleryItems.unshift(item);
+    delete _pendingCards[tempId];
+  }
+
+  function rejectPendingCard(tempId) {
+    const card = _pendingCards[tempId];
+    if (!card) return;
+    const el = card.el;
+    const grid = document.getElementById('galleryGrid');
+    if (grid && !el.parentNode) grid.prepend(el);
+    el.classList.add('gallery-card-error-state');
+    const leg = el.querySelector('.gallery-card-legenda');
+    if (leg) leg.textContent = '⚠ Erro ao gerar';
+    setTimeout(() => { el.remove(); delete _pendingCards[tempId]; }, 4000);
+  }
+
+  // ── GALLERY: LOAD & RENDER ──
+  let _galleryItems    = [];
+  let _galleryLoaded   = false;
+  let _currentItemId   = null;
+  const _pendingCards  = {};
+  let _pendingCounter  = 0;
+  const _batchSims     = {}; // { [index]: { intervalId, pct } }
+  const GALLERY_PAGE     = 20; // itens por requisição ao servidor
+  let _galleryOffset     = 0;  // offset atual no banco
+  let _galleryTotal      = 0;  // total real de itens no banco (para numeração correta)
+  let _galleryServerDone = false; // servidor não tem mais itens
+  let _galleryObserver   = null;
+  let _galleryRendering  = false; // impede double-batch durante stagger
+  let _galleryGeneration = 0;    // cancela renders obsoletos quando galeria recarrega
+
+  function _reinjectPendingCards(grid) {
+    // Re-insere cards pendentes no topo do grid após qualquer substituição de innerHTML
+    Object.values(_pendingCards).reverse().forEach(({ el }) => {
+      if (el) grid.prepend(el);
+    });
+  }
+
+  function showGallerySkeletons(count = 4) {
+    const grid  = document.getElementById('galleryGrid');
+    const empty = document.getElementById('galleryEmpty');
+    empty.style.display = 'none';
+    grid.style.display  = 'grid';
+    grid.innerHTML = Array.from({ length: count }, () => `
+      <div class="gallery-skeleton">
+        <div class="skeleton-thumb skeleton-shimmer"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line skeleton-shimmer"></div>
+          <div class="skeleton-line short skeleton-shimmer"></div>
+        </div>
+      </div>`).join('');
+    _reinjectPendingCards(grid);
+  }
+
+  // Busca a próxima página do servidor — retorna { items, total }
+  async function _fetchGalleryPage() {
+    if (_galleryServerDone) return [];
+    try {
+      const res  = await authFetch(`/api/gallery?limit=${GALLERY_PAGE}&offset=${_galleryOffset}`);
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+      const total = data?.total ?? items.length;
+      if (total > _galleryTotal) _galleryTotal = total; // guarda total real do banco
+      if (items.length < GALLERY_PAGE) _galleryServerDone = true;
+      _galleryOffset += items.length;
+      return items;
+    } catch (e) {
+      console.warn('Erro ao buscar galeria:', e);
+      return [];
+    }
+  }
+
+  async function loadGallery(force = false) {
+    if (_galleryLoaded && !force) {
+      const grid = document.getElementById('galleryGrid');
+      const hasPending = Object.keys(_pendingCards).length > 0;
+      const gridHasContent = grid && grid.children.length > 0;
+      if (hasPending || !gridHasContent) renderGalleryGrid(_galleryItems);
+      return;
+    }
+    // Reset estado de paginação
+    _galleryItems      = [];
+    _galleryOffset     = 0;
+    _galleryTotal      = 0;
+    _galleryServerDone = false;
+    _galleryLoaded     = false;
+    _galleryGeneration++;
+
+    showGallerySkeletons();
+    const firstPage = await _fetchGalleryPage();
+    _galleryItems   = firstPage;
+    _galleryLoaded  = true;
+    renderGalleryGrid(_galleryItems);
+  }
+
+  // Pré-carrega a primeira página em background logo após o login
+  function prefetchGallery() {
+    _galleryOffset     = 0;
+    _galleryTotal      = 0;
+    _galleryServerDone = false;
+    authFetch(`/api/gallery?limit=${GALLERY_PAGE}&offset=0`)
+      .then(r => r.json())
+      .then(data => {
+        const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+        const total  = data?.total ?? items.length;
+        _galleryItems  = items;
+        _galleryTotal  = total;
+        _galleryOffset = items.length;
+        if (items.length < GALLERY_PAGE) _galleryServerDone = true;
+        _galleryLoaded = true;
+      })
+      .catch(() => {});
+  }
+
+  function _galleryCardHTML(item, i, total) {
+    const usedItems    = getUsedItems();
+    const date         = fmtDate(item.created_at);
+    const effectiveTotal = _galleryTotal > 0 ? _galleryTotal : total;
+    const numStr       = '#' + String(Math.max(effectiveTotal - i, 1)).padStart(3, '0');
+    const isUsed       = usedItems.includes(item.id);
+    const usedBadge    = isUsed ? `<span class="gallery-card-used-badge">✅ USADO</span>` : '';
+    const thumbOpacity = isUsed ? 'opacity:0.6;' : '';
+    const thumb        = item.image
+      ? `<div class="gallery-card-thumb skeleton-shimmer"><img src="${item.image}" loading="lazy" alt="" style="${thumbOpacity}" onload="this.parentElement.classList.remove('skeleton-shimmer')" onerror="this.parentElement.classList.remove('skeleton-shimmer')"><span class="gallery-card-num">${numStr}</span>${usedBadge}</div>`
+      : `<div class="gallery-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;${thumbOpacity}"><span class="gallery-card-num">${numStr}</span>${usedBadge}📦</div>`;
+    const leg  = (item.legenda || '').replace(/</g,'&lt;');
+    const cost = item.cost ? `<span class="gallery-card-cost">${fmtCostCard(item.cost.total_cost)}</span>` : '';
+    return `
+      <div class="gallery-card" onclick="openGalleryItem('${item.id}')">
+        ${thumb}
+        <div class="gallery-card-body">
+          <div class="gallery-card-legenda">${leg || '—'}</div>
+          <div class="gallery-card-footer">
+            <span class="gallery-card-date">${date}</span>
+            ${cost}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Insere cards um por um com 35ms de intervalo (a partir de startIdx global); chama onDone() quando termina
+  function _appendCardsAnimated(newItems, startIdx, onDone) {
+    const grid  = document.getElementById('galleryGrid');
+    const old   = grid.querySelector('.gallery-sentinel');
+    if (old) old.remove();
+
+    if (!newItems.length) { if (onDone) onDone(); return; }
+
+    _galleryRendering = true;
+    const gen = _galleryGeneration; // captura geração atual para cancelar se galeria recarregar
+    let i = 0;
+    function appendNext() {
+      // Cancela se a galeria foi recarregada (nova geração)
+      if (_galleryGeneration !== gen) { _galleryRendering = false; return; }
+      if (i >= newItems.length) {
+        _galleryRendering = false;
+        if (onDone) onDone();
+        return;
+      }
+      // insertAdjacentHTML é mais confiável que wrapper.firstChild para garantir elemento direto no grid
+      const total = _galleryItems.length;
+      grid.insertAdjacentHTML('beforeend', _galleryCardHTML(newItems[i], startIdx + i, total).trim());
+      grid.lastElementChild.classList.add('gallery-card-enter');
+      i++;
+      setTimeout(appendNext, 35);
+    }
+    appendNext();
+  }
+
+  // Configura observer que busca a PRÓXIMA PÁGINA do servidor ao scrollar
+  function _gallerySetupScrollFetch() {
+    if (_galleryObserver) { _galleryObserver.disconnect(); _galleryObserver = null; }
+    if (_galleryServerDone) return;
+    const grid     = document.getElementById('galleryGrid');
+    const sentinel = document.createElement('div');
+    sentinel.className  = 'gallery-sentinel';
+    sentinel.style.cssText = 'width:100%;height:40px;grid-column:1/-1;pointer-events:none;';
+    grid.appendChild(sentinel);
+    _galleryObserver = new IntersectionObserver(async entries => {
+      if (!entries[0].isIntersecting || _galleryRendering) return;
+      _galleryObserver.disconnect(); _galleryObserver = null;
+      sentinel.remove();
+      const startIdx = _galleryItems.length;
+      const newItems = await _fetchGalleryPage();
+      if (!newItems.length) return;
+      _galleryItems = [..._galleryItems, ...newItems];
+      _appendCardsAnimated(newItems, startIdx, () => {
+        if (!_galleryServerDone) _gallerySetupScrollFetch();
+      });
+    }, { rootMargin: '300px' });
+    _galleryObserver.observe(sentinel);
+  }
+
+  function renderGalleryGrid(items) {
+    const grid  = document.getElementById('galleryGrid');
+    const empty = document.getElementById('galleryEmpty');
+    const hasPending = Object.keys(_pendingCards).length > 0;
+    if (!items.length && !hasPending) {
+      grid.style.display  = 'none';
+      empty.style.display = 'flex';
+      return;
+    }
+    empty.style.display = 'none';
+    grid.style.display  = 'grid';
+
+    if (_galleryObserver) { _galleryObserver.disconnect(); _galleryObserver = null; }
+    _galleryGeneration++; // cancela qualquer render anterior ainda em andamento
+    _galleryRendering = false;
+    grid.innerHTML = '';
+
+    _reinjectPendingCards(grid);
+    _appendCardsAnimated(items, 0, () => _gallerySetupScrollFetch());
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) +
+           ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  const TIPO_LABELS = { caseiro:'🏠 Caseiro', fabrica:'🏭 Fábrica', pov:'👁 POV', unboxing:'📦 Unboxing' };
+
+  // ── GALLERY: OPEN ITEM ──
+  function openGalleryItem(id) {
+    const item = _galleryItems.find(it => it.id === id);
+    if (!item) return;
+    _currentItemId = id;
+
+    document.getElementById('modalTitle').textContent = fmtDate(item.created_at);
+    document.getElementById('modalImage').src = item.image || '';
+    document.getElementById('modalImage').style.display = item.image ? 'block' : 'none';
+
+    const content = document.getElementById('modalContent');
+    const copyBtn = (text, label) => {
+      const safe = JSON.stringify(text).replace(/"/g,'&quot;');
+      return `<button class="btn-copy" style="align-self:flex-start;margin-top:4px" onclick="copyRaw(${safe},this)"><span>⎘</span> COPIAR</button>`;
+    };
+
+    let chips = '';
+    if (item.nicho)  chips += `<span class="gallery-detail-chip">🏷 ${item.nicho}</span>`;
+    if (item.emocao) chips += `<span class="gallery-detail-chip">💫 ${item.emocao}</span>`;
+    if (item.tipo)   chips += `<span class="gallery-detail-chip">${TIPO_LABELS[item.tipo] || item.tipo}</span>`;
+    if (item.price)  chips += `<span class="gallery-detail-chip">R$ ${item.price}</span>`;
+
+    let costHtml = '';
+    if (item.cost) {
+      const c = item.cost;
+      costHtml = `
+        <div class="gallery-detail-section">
+          <span class="gallery-detail-label">Custo</span>
+          <div class="gallery-detail-cost">
+            ${fmtTok(c.input_tokens)} entrada → ${fmtR$(c.input_cost||0)} &nbsp;|&nbsp; ${fmtTok(c.output_tokens)} saída → ${fmtR$(c.output_cost||0)}<br>
+            <strong style="color:var(--orange)">Total: ${fmtR$(c.total_cost)} <span style="font-weight:400;font-size:10px;opacity:0.6">(${fmt$(c.total_cost)})</span></strong>
+          </div>
+        </div>`;
+    }
+
+    content.innerHTML = `
+      ${chips ? `<div class="gallery-detail-section"><div class="gallery-detail-chips">${chips}</div></div>` : ''}
+      <div class="gallery-detail-section">
+        <span class="gallery-detail-label">Legenda</span>
+        <div class="gallery-detail-text">${(item.legenda||'—').replace(/</g,'&lt;')}</div>
+        ${item.legenda ? copyBtn(item.legenda) : ''}
+      </div>
+      <div class="gallery-detail-section">
+        <span class="gallery-detail-label">Prompt — Vídeo UGC</span>
+        <div class="gallery-detail-text">${(item.prompt_video||'—').replace(/</g,'&lt;')}</div>
+        ${item.prompt_video ? copyBtn(item.prompt_video) : ''}
+      </div>
+      ${costHtml}
+      <button class="btn-used${getUsedItems().includes(id) ? ' active' : ''}" id="btnUsed" onclick="toggleUsed('${id}')">
+        ${getUsedItems().includes(id) ? '✅ Já usado' : '☐ Marcar como usado'}
+      </button>
+      <button class="btn-modal-regen" id="btnModalRegen" onclick="regenFromGallery()">
+        <div class="spinner"></div>
+        <span class="regen-label">↻ GERAR UM NOVO PROMPT</span>
+      </button>`;
+
+    document.getElementById('galleryModal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('galleryModal').classList.add('hidden');
+    _currentItemId = null;
+  }
+
+  // ── GALLERY: USADO ──
+  function getUsedItems() {
+    const key = 'ugc_used_' + (_authUser?.id || 'anon');
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+  }
+
+  function toggleUsed(id) {
+    const key = 'ugc_used_' + (_authUser?.id || 'anon');
+    let used = getUsedItems();
+    if (used.includes(id)) {
+      used = used.filter(x => x !== id);
+    } else {
+      used.push(id);
+    }
+    localStorage.setItem(key, JSON.stringify(used));
+    const isUsed = used.includes(id);
+    const btn = document.getElementById('btnUsed');
+    if (btn) {
+      btn.className = 'btn-used' + (isUsed ? ' active' : '');
+      btn.textContent = isUsed ? '✅ Já usado' : '☐ Marcar como usado';
+    }
+    renderGalleryGrid(_galleryItems);
+  }
+
+  function handleModalBgClick(e) {
+    if (e.target === document.getElementById('galleryModal')) closeModal();
+  }
+
+  // ── GALLERY: DELETE ──
+  async function deleteCurrentItem() {
+    if (!_currentItemId) return;
+    if (!confirm('Deletar este item da galeria?')) return;
+    try {
+      await authFetch('/api/gallery/' + _currentItemId, { method: 'DELETE' });
+      _galleryItems = _galleryItems.filter(it => it.id !== _currentItemId);
+      closeModal();
+      renderGalleryGrid(_galleryItems);
+    } catch (e) { alert('Erro ao deletar: ' + e.message); }
+  }
+
+  // ── REGEN FROM GALLERY ──
+  async function regenFromGallery() {
+    if (!_currentItemId) return;
+    const item = _galleryItems.find(it => it.id === _currentItemId);
+    if (!item || !item.image) { alert('Imagem não encontrada neste item.'); return; }
+
+    const btn = document.getElementById('btnModalRegen');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    // Extrai base64 puro e media_type do data URL salvo na galeria
+    const rawImage = item.image || '';
+    const imgParts = rawImage.split(',');
+    const imgBase64 = imgParts.length > 1 ? imgParts[1] : rawImage;
+    const imgTypeMatch = rawImage.match(/^data:([^;]+);/);
+    const imgType = imgTypeMatch ? imgTypeMatch[1] : 'image/jpeg';
+
+    try {
+      const res = await authFetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: imgBase64,
+          image_type:   imgType,
+          tipo:  item.tipo  || 'caseiro',
+          promo: item.promo || 'sem_promo',
+          gender: 'neutro',
+          price: item.price || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) { alert('Erro: ' + (data.error || 'Erro desconhecido')); return; }
+
+      // Salva na galeria e atualiza lista local
+      const saved = await authFetch('/api/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image:        item.image,
+          prompt_video: data.prompt_video || null,
+          legenda:      data.legenda      || null,
+          nicho:        data.nicho        || null,
+          emocao:       data.emocao       || null,
+          tipo:         item.tipo         || null,
+          price:        item.price        || null,
+          cost:         data._usage ? {
+            input_tokens:  data._usage.input_tokens,
+            output_tokens: data._usage.output_tokens,
+            input_cost:    data._usage.input_cost,
+            output_cost:   data._usage.output_cost,
+            total_cost:    data._usage.total_cost
+          } : null
+        })
+      });
+      if (saved.ok) {
+        const newItem = await saved.json();
+        _galleryItems.unshift(newItem);
+        _galleryLoaded = false;
+      }
+
+      // Abre o novo item gerado no modal
+      closeModal();
+      renderGalleryGrid(_galleryItems);
+      if (_galleryItems.length > 0) openGalleryItem(_galleryItems[0].id);
+
+    } catch (err) {
+      alert('Erro de conexão: ' + err.message);
+    } finally {
+      if (document.getElementById('btnModalRegen')) {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+      }
+    }
+  }
+
+  // ── ESC to close modal ──
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── STATS & ACTIVITY CHART ──
+  // BRL_RATE é alias de BRL (câmbio ao vivo, atualizado por fetchExchangeRate)
+  Object.defineProperty(window, 'BRL_RATE', { get: () => BRL });
+  let _activityDays   = 7;
+  let _activityMetric = 'cost'; // 'cost' | 'prompts'
+  let _activityData   = [];
+
+  function isoToday() {
+    return new Date().toISOString().slice(0, 10);
+  }
+  function isoOffset(days) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function fmtK(n) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace('.', ',') + 'M';
+    if (n >= 1_000)     return (n / 1_000).toFixed(1).replace('.', ',') + 'K';
+    return n.toLocaleString('pt-BR');
+  }
+
+  function fmtRelativeTime(iso) {
+    if (!iso) return '';
+    const diff  = Date.now() - new Date(iso).getTime();
+    const mins  = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days  = Math.floor(diff / 86400000);
+    if (mins < 1)   return 'agora';
+    if (mins < 60)  return `há ${mins}min`;
+    if (hours < 24) return `há ${hours}h`;
+    if (days < 7)   return `há ${days} dia${days !== 1 ? 's' : ''}`;
+    return fmtDate(iso);
+  }
+
+  async function loadProfileStats() {
+    // ── Dados de hoje via _galleryItems ──
+    const todayStr   = isoToday();
+    const todayItems = (_galleryItems || []).filter(it => (it.created_at || '').startsWith(todayStr));
+    const todayCount = todayItems.length;
+    const todaySpent = todayItems.reduce((s, it) => s + (it.cost?.total_cost || 0), 0) * BRL_RATE;
+    const sumEl = document.getElementById('profileTodaySummary');
+    sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''} · <strong>R$\u00a0${todaySpent.toFixed(2).replace('.',',')}</strong> gastos`;
+
+    // ── Totais all-time ──
+    try {
+      const res  = await authFetch('/api/stats');
+      const data = await res.json();
+      if (!res.ok) return;
+
+      const pEl    = document.getElementById('statPrompts');
+      const tEl    = document.getElementById('statTokens');
+      const sEl    = document.getElementById('statSaldo');
+      const sSubEl = document.getElementById('statSaldoSub');
+
+      pEl.textContent = (data.total_prompts || 0).toLocaleString('pt-BR');
+      pEl.classList.remove('loading');
+      tEl.textContent = fmtK(data.total_tokens || 0);
+      tEl.classList.remove('loading');
+      const totalR = (data.total_cost_usd || 0) * BRL_RATE;
+      sEl.textContent = 'R$\u00a0' + totalR.toFixed(2).replace('.', ',');
+      sEl.classList.remove('loading');
+      sSubEl.textContent = `≈ $${(data.total_cost_usd || 0).toFixed(4)} USD`;
+    } catch (e) { console.warn('Erro ao carregar stats:', e); }
+
+    // ── Comparação semanal (últimos 14 dias) ──
+    try {
+      const res14  = await authFetch('/api/stats?from=' + isoOffset(13) + '&to=' + isoToday());
+      const data14 = await res14.json();
+      if (res14.ok && data14.daily?.length) {
+        const daily = [...data14.daily].sort((a, b) => a.date.localeCompare(b.date));
+        const midIdx = Math.max(0, daily.length - 7);
+        const last7  = daily.slice(midIdx);
+        const prev7  = daily.slice(0, midIdx);
+        const sum = (arr, key) => arr.reduce((s, d) => s + (d[key] || 0), 0);
+
+        const applyDelta = (elId, lastVal, prevVal) => {
+          const el = document.getElementById(elId);
+          if (!el) return;
+          if (prev7.length < 6) { el.textContent = '—'; el.className = 'pstat-delta flat'; return; }
+          if (prevVal === 0 && lastVal === 0) { el.textContent = '→ sem atividade'; el.className = 'pstat-delta flat'; return; }
+          if (prevVal === 0) { el.textContent = '↑ novo'; el.className = 'pstat-delta up'; return; }
+          const pct = Math.round(((lastVal - prevVal) / prevVal) * 100);
+          if (Math.abs(pct) < 5) { el.textContent = '→ estável vs semana passada'; el.className = 'pstat-delta flat'; }
+          else if (pct > 0) { el.textContent = `↑ ${pct}% vs semana passada`; el.className = 'pstat-delta up'; }
+          else { el.textContent = `↓ ${Math.abs(pct)}% vs semana passada`; el.className = 'pstat-delta down'; }
+        };
+
+        applyDelta('statPromptsDelta', sum(last7, 'prompts'),  sum(prev7, 'prompts'));
+        applyDelta('statSaldoDelta',   sum(last7, 'cost_usd'), sum(prev7, 'cost_usd'));
+        const tokLast = last7.reduce((s,d) => s + (d.input_tokens||0) + (d.output_tokens||0), 0);
+        const tokPrev = prev7.reduce((s,d) => s + (d.input_tokens||0) + (d.output_tokens||0), 0);
+        applyDelta('statTokensDelta', tokLast, tokPrev);
+      }
+    } catch (e) { console.warn('Erro comparação semanal:', e); }
+
+    // ── FAL AI balance (admin only) ──
+    if (_authUser?.is_admin) {
+      const CUSTO_POR_PROMPT_BRL = 0.15;
+      const PROMPTS_POR_DIA      = 5;
+      const falEl    = document.getElementById('statFalBalance');
+      const falSubEl = document.getElementById('statFalSub');
+      const falDelta = document.getElementById('statFalDelta');
+      try {
+        const fr = await authFetch('/api/fal/balance');
+        const fd = await fr.json();
+        if (fr.ok && fd.balance_usd !== null) {
+          const brl = fd.balance_brl;
+          falEl.textContent = 'R$\u00a0' + brl.toFixed(2).replace('.', ',');
+          falEl.classList.remove('loading');
+          const promptsRest = Math.floor(brl / CUSTO_POR_PROMPT_BRL);
+          const dias = Math.floor(promptsRest / PROMPTS_POR_DIA);
+          falSubEl.textContent = `$${fd.balance_usd.toFixed(3)} USD · ~${dias} dias autonomia · R$${CUSTO_POR_PROMPT_BRL.toFixed(2).replace('.',',')}/prompt`;
+          if (falDelta) { falDelta.textContent = `${promptsRest.toLocaleString('pt-BR')} prompts restantes`; falDelta.className = 'pstat-delta flat'; }
+        } else {
+          falEl.textContent = 'Erro'; falEl.classList.remove('loading');
+        }
+      } catch (e) { falEl.textContent = 'Erro'; falEl.classList.remove('loading'); console.warn(e); }
+    }
+
+    // ── Seções inferiores ──
+    renderRecentPrompts();
+    renderInsights();
+  }
+
+  function renderRecentPrompts() {
+    const el = document.getElementById('profileRecentList');
+    if (!el) return;
+    const items = (_galleryItems || []).slice(0, 5);
+    if (!items.length) { el.innerHTML = '<div class="profile-empty-sub">Nenhum prompt gerado ainda.</div>'; return; }
+    const used = getUsedItems();
+    el.innerHTML = items.map(item => {
+      const thumb = item.image
+        ? `<div class="recent-thumb" style="background-image:url('${item.image}')"></div>`
+        : `<div class="recent-thumb">📦</div>`;
+      const title = (item.legenda || item.nicho || 'Sem título').replace(/</g,'&lt;').slice(0, 55);
+      const ago   = fmtRelativeTime(item.created_at);
+      const cost  = item.cost ? `R$\u00a0${((item.cost.total_cost || 0) * BRL_RATE).toFixed(3).replace('.',',')}` : '';
+      const isUsed = used.includes(item.id);
+      return `<div class="recent-item" onclick="toggleProfilePage();setAppTab('gallery');setTimeout(()=>openGalleryItem('${item.id}'),180)">
+        ${thumb}
+        <div class="recent-meta">
+          <div class="recent-title">${title}</div>
+          <div class="recent-sub">${ago}</div>
+        </div>
+        <div class="recent-right">
+          ${cost ? `<span class="recent-cost">${cost}</span>` : ''}
+          ${isUsed ? '<span class="recent-used-badge">✅ usado</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderInsights() {
+    const el = document.getElementById('profileInsightsList');
+    if (!el) return;
+    const items = _galleryItems || [];
+    if (!items.length) { el.innerHTML = '<div class="profile-empty-sub">Gere prompts para ver insights.</div>'; return; }
+
+    const insights = [];
+
+    // 1. Custo médio por prompt
+    const totalUSD = items.reduce((s, it) => s + (it.cost?.total_cost || 0), 0);
+    const avgBRL   = items.length > 0 ? (totalUSD / items.length) * BRL_RATE : 0;
+    insights.push({ icon: '💰', text: `Custo médio por prompt: <strong>R$\u00a0${avgBRL.toFixed(4).replace('.',',')}</strong> (${items.length} gerado${items.length!==1?'s':''} no total)` });
+
+    // 2. Horário de pico
+    const hourMap = {};
+    items.forEach(it => {
+      if (it.created_at) { const h = new Date(it.created_at).getHours(); hourMap[h] = (hourMap[h]||0)+1; }
+    });
+    const peak = Object.entries(hourMap).sort((a,b)=>b[1]-a[1])[0];
+    if (peak) {
+      const h = parseInt(peak[0]);
+      const period = h < 12 ? 'manhã' : h < 18 ? 'tarde' : 'noite';
+      insights.push({ icon: '⏰', text: `Horário de pico: <strong>${h}h</strong> (${period}) com <strong>${peak[1]}</strong> geraç${peak[1]!==1?'ões':'ão'}` });
+    }
+
+    // 3. Nicho mais gerado
+    const nichoMap = {};
+    items.forEach(it => { if (it.nicho) nichoMap[it.nicho] = (nichoMap[it.nicho]||0)+1; });
+    const topNicho = Object.entries(nichoMap).sort((a,b)=>b[1]-a[1])[0];
+    if (topNicho) {
+      const pct = Math.round((topNicho[1]/items.length)*100);
+      insights.push({ icon: '🏷', text: `Nicho favorito: <strong>${topNicho[0]}</strong> — <strong>${topNicho[1]}</strong> prompt${topNicho[1]!==1?'s':''} (${pct}% do total)` });
+    }
+
+    // 4. Ritmo de geração
+    if (items.length >= 3) {
+      const sorted = [...items].sort((a,b) => new Date(a.created_at)-new Date(b.created_at));
+      const diff = new Date(sorted[sorted.length-1].created_at) - new Date(sorted[0].created_at);
+      const days = Math.max(1, Math.round(diff/(1000*60*60*24)));
+      const rate = (items.length/days).toFixed(1);
+      insights.push({ icon: '📈', text: `Ritmo atual: <strong>${rate} prompts/dia</strong> nos últimos <strong>${days}</strong> dia${days!==1?'s':''}` });
+    }
+
+    el.innerHTML = insights.map(ins => `
+      <div class="insight-item">
+        <span class="insight-icon">${ins.icon}</span>
+        <span class="insight-text">${ins.text}</span>
+      </div>`).join('');
+  }
+
+  async function loadActivityStats() {
+    const wrap    = document.getElementById('activityChartWrap');
+    const summary = document.getElementById('activitySummary');
+    wrap.innerHTML = '<div class="activity-empty">Carregando...</div>';
+    summary.innerHTML = '';
+
+    let from = '', to = '';
+    if (_activityDays === 0) {
+      // Tudo — sem filtro
+    } else if (_activityDays === -1) {
+      // Range customizado
+      from = document.getElementById('dateFrom').value;
+      to   = document.getElementById('dateTo').value;
+    } else {
+      from = isoOffset(_activityDays);
+      to   = isoToday();
+    }
+
+    const qs = new URLSearchParams();
+    if (from) qs.set('from', from);
+    if (to)   qs.set('to', to);
+
+    try {
+      const res  = await authFetch('/api/stats?' + qs.toString());
+      const data = await res.json();
+      if (!res.ok) { wrap.innerHTML = '<div class="activity-empty">Erro ao carregar.</div>'; return; }
+
+      _activityData = data.daily || [];
+      renderActivityChart(_activityData, _activityMetric);
+
+      // Summary bar
+      const totalR = (data.total_cost_usd || 0) * BRL_RATE;
+      summary.innerHTML = `
+        <span class="activity-sum-item">Prompts: <strong>${(data.total_prompts || 0).toLocaleString('pt-BR')}</strong></span>
+        <span class="activity-sum-item">Gasto: <strong>R$\u00a0${totalR.toFixed(2).replace('.', ',')}</strong></span>
+        <span class="activity-sum-item" style="color:var(--text-muted);font-size:9.5px;">≈ $${(data.total_cost_usd||0).toFixed(4)} USD · câmbio R$${BRL_RATE.toFixed(2)}</span>`;
+    } catch (e) {
+      wrap.innerHTML = '<div class="activity-empty">Erro de conexão.</div>';
+    }
+  }
+
+  function renderActivityChart(daily, metric) {
+    const wrap = document.getElementById('activityChartWrap');
+    if (!daily.length) {
+      wrap.innerHTML = '<div class="activity-empty">Nenhuma geração neste período.</div>';
+      return;
+    }
+
+    const values = daily.map(d => {
+      if (metric === 'cost')    return d.cost_usd * BRL_RATE;
+      if (metric === 'prompts') return d.prompts;
+      if (metric === 'avg')     return d.prompts > 0 ? (d.cost_usd * BRL_RATE / d.prompts) : 0;
+      return 0;
+    });
+    const maxVal = Math.max(...values, 0.001);
+
+    const BAR_W   = 36;
+    const BAR_GAP = 8;
+    const H       = 300;
+    const LABEL_H = 26;
+    const Y_W     = 52;
+    const PAD     = 12;
+    const Y_STEPS = 5;
+
+    const totalW = Y_W + daily.length * (BAR_W + BAR_GAP) - BAR_GAP + PAD;
+    const svgW   = Math.max(totalW, 500);
+    const svgH   = PAD + H + LABEL_H;
+
+    const defs = `<defs>
+      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ff6600"/>
+        <stop offset="100%" stop-color="#ff8c00" stop-opacity="0.65"/>
+      </linearGradient>
+    </defs>`;
+
+    let grids = '';
+    for (let i = 0; i <= Y_STEPS; i++) {
+      const v = maxVal * i / Y_STEPS;
+      const y = PAD + H - (H * i / Y_STEPS);
+      const label = (metric === 'cost' || metric === 'avg')
+        ? (v >= 1 ? 'R$' + v.toFixed(1) : 'R$' + v.toFixed(3))
+        : Math.round(v).toString();
+      grids += `<line x1="${Y_W}" y1="${y}" x2="${svgW - PAD}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+      grids += `<text x="${Y_W - 6}" y="${y + 3.5}" text-anchor="end" font-family="monospace" font-size="9" fill="rgba(255,255,255,0.2)">${label}</text>`;
+    }
+
+    let bars = '';
+    const showEvery = daily.length <= 10 ? 1 : daily.length <= 20 ? 2 : Math.ceil(daily.length / 12);
+    daily.forEach((d, i) => {
+      const x      = Y_W + i * (BAR_W + BAR_GAP);
+      const v      = values[i];
+      const barH   = Math.max(v > 0 ? (v / maxVal) * H : 0, v > 0 ? 4 : 0);
+      const y      = PAD + H - barH;
+      const dp     = d.date.split('-');
+      const lbl    = dp[2] + '/' + dp[1];
+      const costBRL = (d.cost_usd * BRL_RATE).toFixed(3).replace('.',',');
+      const avgBRL  = d.prompts > 0 ? (d.cost_usd * BRL_RATE / d.prompts).toFixed(4).replace('.',',') : '0';
+      const tip = `${lbl}|${d.prompts} prompt${d.prompts!==1?'s':''} · R$\u00a0${costBRL} · média R$\u00a0${avgBRL}`;
+
+      bars += `<rect class="chart-bar" x="${x}" y="${y}" width="${BAR_W}" height="${barH}" rx="5"
+        fill="url(#barGrad)" opacity="0.88"
+        data-tip="${tip}"
+        onmouseenter="showChartTip(event,this)" onmouseleave="hideChartTip()"/>`;
+
+      if (i % showEvery === 0) {
+        bars += `<text x="${x + BAR_W/2}" y="${svgH - 5}" text-anchor="middle"
+          font-family="monospace" font-size="8.5" fill="rgba(255,255,255,0.22)">${lbl}</text>`;
+      }
+    });
+
+    wrap.innerHTML = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="overflow:visible">${defs}${grids}${bars}</svg>`;
+  }
+
+  function setActivityPeriod(btn) {
+    document.querySelectorAll('#periodGroup .ctrl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const days = parseInt(btn.dataset.days, 10);
+    _activityDays = days;
+    const customRow = document.getElementById('customRangeRow');
+    if (days === -1) {
+      customRow.style.display = 'flex';
+      // Pré-preenche
+      document.getElementById('dateTo').value   = isoToday();
+      document.getElementById('dateFrom').value = isoOffset(30);
+    } else {
+      customRow.style.display = 'none';
+      loadActivityStats();
+    }
+  }
+
+  function setActivityMetric(btn) {
+    document.querySelectorAll('#metricGroup .ctrl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _activityMetric = btn.dataset.metric;
+    if (_activityData.length) renderActivityChart(_activityData, _activityMetric);
+  }
+
+  // Tooltip
+  function showChartTip(e, el) {
+    const tip  = document.getElementById('chartTip');
+    const text = el.getAttribute('data-tip') || '';
+    const [header, details] = text.split('|');
+    tip.innerHTML = `<strong>${header}</strong><br><span style="color:rgba(255,255,255,0.55);font-size:10.5px">${details || ''}</span>`;
+    tip.style.display = 'block';
+    moveChartTip(e);
+    el.addEventListener('mousemove', moveChartTip);
+  }
+  function moveChartTip(e) {
+    const tip = document.getElementById('chartTip');
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 32) + 'px';
+  }
+  function hideChartTip() {
+    const tip = document.getElementById('chartTip');
+    tip.style.display = 'none';
+    document.querySelectorAll('.chart-bar').forEach(b => b.removeEventListener('mousemove', moveChartTip));
+  }
+
+  // Init batch slots
+  renderBatchSlots();
+
+  document.getElementById('priceInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') generate();
+  });
+</script>
+
+</body>
+</html>
