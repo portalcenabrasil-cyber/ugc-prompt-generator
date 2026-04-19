@@ -1717,6 +1717,12 @@
       .gallery-modal-body { grid-template-columns: 140px 1fr; }
       /* Oculta empty state — resultados aparecem abaixo do formulário */
       .empty-state { display: none !important; }
+
+      /* ── Fix: tabs Gerar/Galeria centralizados quando dots estão ocultos ── */
+      .app-titlebar { justify-content: center; }
+      .app-titlebar > div:last-child { display: none; } /* oculta espaçador de 52px */
+      .app-tabs { width: 100%; justify-content: center; box-sizing: border-box; }
+      .app-tab  { flex: 1; text-align: center; }
     }
 
     @media (max-width: 768px) {
@@ -1743,7 +1749,9 @@
       .panel-left  { padding: 16px 14px; height: auto; max-height: none; overflow-y: visible; border-bottom: 1px solid var(--border); }
       .panel-right { padding: 16px 14px; height: auto; max-height: none; overflow-y: visible; }
 
-      .mode-btn { font-size: 11px; padding: 10px 8px; min-height: 42px; }
+      /* ── Fix: toggle Individual/Lote ocupa 100% e botões ficam simétricos ── */
+      .mode-toggle { width: 100%; box-sizing: border-box; }
+      .mode-btn { flex: 1; font-size: 11px; padding: 10px 8px; min-height: 42px; text-align: center; box-sizing: border-box; }
       .seg-btn  { font-size: 11px; padding: 11px 4px; min-height: 42px; }
 
       .upload-area { padding: 20px 12px; }
@@ -1787,7 +1795,8 @@
       .field { margin-bottom: 12px; }
       .field-label { font-size: 10px; }
 
-      .mode-btn { font-size: 11px; padding: 11px 8px; min-height: 44px; }
+      .mode-toggle { width: 100%; box-sizing: border-box; }
+      .mode-btn { flex: 1; font-size: 11px; padding: 11px 8px; min-height: 44px; text-align: center; box-sizing: border-box; }
       .seg-btn  { font-size: 11px; padding: 12px 4px; min-height: 44px; }
       .seg-group { gap: 5px; }
       .seg-group.cols-3 { grid-template-columns: repeat(3, 1fr); }
