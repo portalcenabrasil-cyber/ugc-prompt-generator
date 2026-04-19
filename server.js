@@ -359,25 +359,22 @@ app.post('/api/auth/register', requireSupabase, async (req, res) => {
   if (existing) return res.status(409).json({ error: 'Email já cadastrado' });
 
   const password_hash = await bcrypt.hash(password, 12);
-  const now = new Date().toISOString();
 
-  // Tenta inserir com accepted_terms_at; se a coluna não existir ainda, insere sem ela
-  let { data: user, error } = await supabase
+  // Insere o usuário (sem depender de colunas opcionais)
+  const { data: user, error } = await supabase
     .from('users')
-    .insert({ email: email.toLowerCase(), password_hash, name: name?.trim() || null, accepted_terms_at: now })
+    .insert({ email: email.toLowerCase(), password_hash, name: name?.trim() || null })
     .select('id, email, is_admin, name, prompts_count, tokens_used')
     .single();
 
-  if (error && error.code === '42703') {
-    // Coluna accepted_terms_at ainda não foi criada no banco — insere sem ela
-    ({ data: user, error } = await supabase
-      .from('users')
-      .insert({ email: email.toLowerCase(), password_hash, name: name?.trim() || null })
-      .select('id, email, is_admin, name, prompts_count, tokens_used')
-      .single());
-  }
-
   if (error) return res.status(500).json({ error: 'Erro ao criar conta' });
+
+  // Tenta salvar o timestamp de aceite dos termos (ignora silenciosamente se a coluna não existir)
+  supabase.from('users')
+    .update({ accepted_terms_at: new Date().toISOString() })
+    .eq('id', user.id)
+    .then(() => {})
+    .catch(() => {});
 
   const token = jwt.sign(
     { id: user.id, email: user.email, is_admin: user.is_admin },
