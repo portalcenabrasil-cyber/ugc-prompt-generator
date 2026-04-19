@@ -398,11 +398,18 @@ app.post('/api/auth/login', requireSupabase, async (req, res) => {
 app.get('/api/auth/me', requireSupabase, requireAuth, async (req, res) => {
   const { data: user } = await supabase
     .from('users')
-    .select('id, email, is_admin, name, prompts_count, tokens_used')
+    .select('id, email, is_admin, name, prompts_count, tokens_used, plan, plan_active, generations_used, generations_limit')
     .eq('id', req.user.id)
     .maybeSingle();
   if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
-  res.json({ user: { id: user.id, email: user.email, is_admin: user.is_admin, name: user.name, prompts_count: user.prompts_count || 0, tokens_used: user.tokens_used || 0 } });
+  res.json({ user: {
+    id: user.id, email: user.email, is_admin: user.is_admin, name: user.name,
+    prompts_count: user.prompts_count || 0, tokens_used: user.tokens_used || 0,
+    plan: user.plan || 'free',
+    plan_active: user.plan_active || false,
+    generations_used: user.generations_used || 0,
+    generations_limit: user.generations_limit || 0,
+  }});
 });
 
 // One-time admin setup — protected by ADMIN_SETUP_SECRET
@@ -534,6 +541,58 @@ app.post('/api/auth/reset-password', requireSupabase, async (req, res) => {
   res.json({ message: 'Senha atualizada com sucesso' });
 });
 
+// ── KIWIFY WEBHOOK ──
+
+const PLAN_CONFIG = {
+  6990:  { plan: 'starter', generations_limit: 200 },   // R$69,90
+  12790: { plan: 'pro',     generations_limit: 500 },   // R$127,90
+  24790: { plan: 'agencia', generations_limit: 1200 },  // R$247,90
+};
+
+app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
+  try {
+    const body = req.body;
+    const status = body?.order_status;
+    const email  = body?.Customer?.email?.toLowerCase();
+
+    if (!email) return res.status(400).json({ error: 'Email não encontrado no payload' });
+
+    if (status === 'paid') {
+      // Identifica o plano pelo valor cobrado (em centavos)
+      const amountCents = body?.Charges?.[0]?.amount || body?.amount || 0;
+      const config = PLAN_CONFIG[amountCents];
+
+      if (!config) {
+        console.warn(`[kiwify] Valor não mapeado: ${amountCents} centavos — email: ${email}`);
+        return res.status(200).json({ message: 'Valor não mapeado, ignorado' });
+      }
+
+      const { error } = await supabase.from('users')
+        .update({ plan: config.plan, plan_active: true, generations_limit: config.generations_limit })
+        .eq('email', email);
+
+      if (error) return res.status(500).json({ error: error.message });
+      console.log(`[kiwify] Plano ${config.plan} ativado para ${email}`);
+      return res.json({ message: `Plano ${config.plan} ativado` });
+
+    } else if (status === 'refunded' || status === 'chargedback') {
+      const { error } = await supabase.from('users')
+        .update({ plan_active: false })
+        .eq('email', email);
+
+      if (error) return res.status(500).json({ error: error.message });
+      console.log(`[kiwify] Plano desativado para ${email} (${status})`);
+      return res.json({ message: 'Plano desativado' });
+
+    } else {
+      return res.status(200).json({ message: `Status ${status} ignorado` });
+    }
+  } catch (err) {
+    console.error('[kiwify] Erro:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GENERATE (Protected) ──
 
 app.post('/api/generate', requireAuth, async (req, res) => {
@@ -544,6 +603,22 @@ app.post('/api/generate', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Configure sua ANTHROPIC_API_KEY no arquivo .env' });
   }
 
+  // ── Verificação de plano ──
+  if (supabase && !req.user.is_admin) {
+    const { data: u } = await supabase
+      .from('users')
+      .select('plan_active, generations_used, generations_limit, plan')
+      .eq('id', req.user.id)
+      .maybeSingle();
+
+    if (!u?.plan_active) {
+      return res.status(403).json({ error: 'no_plan', message: 'Você não tem um plano ativo.' });
+    }
+    if ((u.generations_used || 0) >= (u.generations_limit || 0)) {
+      return res.status(403).json({ error: 'limit_reached', message: 'Você usou todas as suas gerações deste mês.' });
+    }
+  }
+
   try {
     const result = await callClaude(image_base64, image_type, tipo, promo, price, gender);
 
@@ -551,13 +626,14 @@ app.post('/api/generate', requireAuth, async (req, res) => {
     const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo);
 
     // Update user stats (fire-and-forget)
-    if (supabase && result._usage) {
-      const totalTok = (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0);
-      supabase.from('users').select('prompts_count, tokens_used').eq('id', req.user.id).maybeSingle()
+    if (supabase) {
+      const totalTok = result._usage ? (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0) : 0;
+      supabase.from('users').select('prompts_count, tokens_used, generations_used').eq('id', req.user.id).maybeSingle()
         .then(({ data }) => {
           if (data) supabase.from('users').update({
-            prompts_count: (data.prompts_count || 0) + 1,
-            tokens_used:   (data.tokens_used   || 0) + totalTok
+            prompts_count:    (data.prompts_count    || 0) + 1,
+            tokens_used:      (data.tokens_used      || 0) + totalTok,
+            generations_used: (data.generations_used || 0) + 1,
           }).eq('id', req.user.id).then(() => {});
         });
     }
@@ -577,6 +653,25 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Nenhum item enviado' });
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui')
     return res.status(500).json({ error: 'Configure sua ANTHROPIC_API_KEY no arquivo .env' });
+
+  // ── Verificação de plano ──
+  if (supabase && !req.user.is_admin) {
+    const { data: u } = await supabase
+      .from('users')
+      .select('plan_active, generations_used, generations_limit')
+      .eq('id', req.user.id)
+      .maybeSingle();
+
+    if (!u?.plan_active) {
+      return res.status(403).json({ error: 'no_plan', message: 'Você não tem um plano ativo.' });
+    }
+    const remaining = (u.generations_limit || 0) - (u.generations_used || 0);
+    if (remaining <= 0) {
+      return res.status(403).json({ error: 'limit_reached', message: 'Você usou todas as suas gerações deste mês.' });
+    }
+    // Limita o lote ao que ainda resta
+    if (items.length > remaining) items.splice(remaining);
+  }
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -663,11 +758,12 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
 
   // Update user stats (fire-and-forget)
   if (supabase && batchPrompts > 0) {
-    supabase.from('users').select('prompts_count, tokens_used').eq('id', req.user.id).maybeSingle()
+    supabase.from('users').select('prompts_count, tokens_used, generations_used').eq('id', req.user.id).maybeSingle()
       .then(({ data }) => {
         if (data) supabase.from('users').update({
-          prompts_count: (data.prompts_count || 0) + batchPrompts,
-          tokens_used:   (data.tokens_used   || 0) + batchTokens
+          prompts_count:    (data.prompts_count    || 0) + batchPrompts,
+          tokens_used:      (data.tokens_used      || 0) + batchTokens,
+          generations_used: (data.generations_used || 0) + batchPrompts,
         }).eq('id', req.user.id).then(() => {});
       });
   }

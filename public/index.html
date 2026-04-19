@@ -2319,6 +2319,19 @@
   </div>
 </div>
 
+<!-- ── PLAN GATE OVERLAY ── -->
+<div id="planGate" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:0;padding:24px;">
+  <div style="max-width:440px;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:40px 36px;text-align:center;">
+    <div style="font-size:40px;margin-bottom:16px;">🔒</div>
+    <h2 id="planGateTitle" style="font-size:22px;font-weight:700;color:#fff;margin-bottom:12px;">Acesso Restrito</h2>
+    <p id="planGateMsg" style="color:rgba(255,255,255,0.55);font-size:15px;line-height:1.6;margin-bottom:28px;">Você ainda não tem um plano ativo.<br>Escolha seu plano para começar a gerar prompts.</p>
+    <a id="planGateBtn" href="https://ugcai-landing.vercel.app/#pricing" target="_blank" style="display:inline-block;padding:14px 32px;background:#FF6B00;color:#fff;font-weight:700;font-size:15px;border-radius:12px;text-decoration:none;">Ver planos →</a>
+    <div style="margin-top:16px;">
+      <button onclick="handleLogout()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;text-decoration:underline;">Sair da conta</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
   // ── AUTH ──
@@ -2536,6 +2549,33 @@
   }
 
   function applyAccessRestriction(user) {
+    const isAdmin = user.is_admin || user.plan === 'admin';
+    const hasAccess = isAdmin || user.plan_active;
+    const limitReached = !isAdmin && user.plan_active &&
+      (user.generations_used || 0) >= (user.generations_limit || 0);
+
+    // Mostra o plan gate se não tem plano ativo
+    if (!hasAccess) {
+      showPlanGate(
+        'Você ainda não tem um plano ativo.<br>Escolha seu plano para começar a gerar prompts.',
+        'Ver planos →',
+        'https://ugcai-landing.vercel.app/#pricing'
+      );
+      return;
+    }
+
+    // Mostra plan gate se esgotou as gerações
+    if (limitReached) {
+      showPlanGate(
+        'Você usou todas as suas <strong>' + (user.generations_limit || 0) + '</strong> gerações deste mês.<br>Faça upgrade para continuar.',
+        'Ver planos →',
+        'https://ugcai-landing.vercel.app/#pricing'
+      );
+      return;
+    }
+
+    hidePlanGate();
+
     const btnGen = document.getElementById('btnGenerate');
     const btnBatch = document.getElementById('btnBatch');
     if (btnGen) {
@@ -2770,6 +2810,17 @@
     }
     hideSplash();
   })();
+
+  function showPlanGate(msg, btnText, btnHref) {
+    const gate = document.getElementById('planGate');
+    if (msg) document.getElementById('planGateMsg').innerHTML = msg;
+    if (btnText) document.getElementById('planGateBtn').textContent = btnText;
+    if (btnHref) document.getElementById('planGateBtn').href = btnHref;
+    gate.style.display = 'flex';
+  }
+  function hidePlanGate() {
+    document.getElementById('planGate').style.display = 'none';
+  }
 
   // ── STATE ──
   let imageBase64 = null;
@@ -3078,7 +3129,19 @@
       });
       const data = await res.json();
       clearInterval(_simInterval);
-      if (!res.ok) { rejectPendingCard(tempId); showError(data.error || 'Erro desconhecido na API.'); return; }
+      if (!res.ok) {
+        rejectPendingCard(tempId);
+        if (data.error === 'no_plan') {
+          showPlanGate('Você ainda não tem um plano ativo.<br>Escolha seu plano para começar a gerar prompts.', 'Ver planos →', 'https://ugcai-landing.vercel.app/#pricing');
+        } else if (data.error === 'limit_reached') {
+          showPlanGate('Você usou todas as suas gerações deste mês.<br>Faça upgrade para continuar.', 'Ver planos →', 'https://ugcai-landing.vercel.app/#pricing');
+        } else {
+          showError(data.error || 'Erro desconhecido na API.');
+        }
+        return;
+      }
+      // Atualiza contador local
+      if (_authUser) { _authUser.generations_used = (_authUser.generations_used || 0) + 1; }
       updatePendingProgress(tempId, 100);
       renderResults(data);
       // Gallery saved server-side — resolve card directly from response
