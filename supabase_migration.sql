@@ -19,6 +19,10 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS generations_used   INTEGER   NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS generations_limit  INTEGER   NOT NULL DEFAULT 0;
 
+-- ── Aceite de Termos de Uso ──
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS accepted_terms_at  TIMESTAMPTZ;
+
 -- Atualiza o admin
 UPDATE public.users
   SET plan = 'admin', plan_active = true, generations_limit = 999999

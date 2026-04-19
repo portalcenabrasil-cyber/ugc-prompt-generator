@@ -349,9 +349,10 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender) 
 // ── AUTH ROUTES ──
 
 app.post('/api/auth/register', requireSupabase, async (req, res) => {
-  const { email, password, name } = req.body;
+  const { email, password, name, accepted_terms } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email e senha obrigatórios' });
   if (password.length < 6) return res.status(400).json({ error: 'Senha deve ter mínimo 6 caracteres' });
+  if (!accepted_terms) return res.status(400).json({ error: 'Você precisa aceitar os Termos de Uso para continuar.' });
 
   const { data: existing } = await supabase
     .from('users').select('id').eq('email', email.toLowerCase()).maybeSingle();
@@ -360,7 +361,7 @@ app.post('/api/auth/register', requireSupabase, async (req, res) => {
   const password_hash = await bcrypt.hash(password, 12);
   const { data: user, error } = await supabase
     .from('users')
-    .insert({ email: email.toLowerCase(), password_hash, name: name?.trim() || null })
+    .insert({ email: email.toLowerCase(), password_hash, name: name?.trim() || null, accepted_terms_at: new Date().toISOString() })
     .select('id, email, is_admin, name, prompts_count, tokens_used')
     .single();
 
@@ -543,7 +544,15 @@ app.post('/api/auth/reset-password', requireSupabase, async (req, res) => {
 
 // ── KIWIFY WEBHOOK ──
 
-const PLAN_CONFIG = {
+// Mapeamento por nome do produto (Kiwify v2 format: event + product.name)
+const PLAN_CONFIG_BY_NAME = {
+  'starter': { plan: 'starter', generations_limit: 200 },
+  'pro':     { plan: 'pro',     generations_limit: 500 },
+  'agencia': { plan: 'agencia', generations_limit: 1200 },
+};
+
+// Mapeamento legado por valor em centavos (Kiwify v1 format)
+const PLAN_CONFIG_BY_AMOUNT = {
   6990:  { plan: 'starter', generations_limit: 200 },   // R$69,90
   12790: { plan: 'pro',     generations_limit: 500 },   // R$127,90
   24790: { plan: 'agencia', generations_limit: 1200 },  // R$247,90
@@ -552,40 +561,84 @@ const PLAN_CONFIG = {
 app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
   try {
     const body = req.body;
+
+    // Suporta Kiwify v2 (event + customer) e v1 (order_status + Customer)
+    const event  = body?.event;
     const status = body?.order_status;
-    const email  = body?.Customer?.email?.toLowerCase();
+    const email  = (body?.customer?.email || body?.Customer?.email)?.toLowerCase();
 
     if (!email) return res.status(400).json({ error: 'Email não encontrado no payload' });
 
-    if (status === 'paid') {
-      // Identifica o plano pelo valor cobrado (em centavos)
-      const amountCents = body?.Charges?.[0]?.amount || body?.amount || 0;
-      const config = PLAN_CONFIG[amountCents];
+    // ── Ativação de plano ──
+    // v2: event === 'order.approved'  |  v1: order_status === 'paid'
+    if (event === 'order.approved' || status === 'paid') {
+      let config;
 
-      if (!config) {
-        console.warn(`[kiwify] Valor não mapeado: ${amountCents} centavos — email: ${email}`);
-        return res.status(200).json({ message: 'Valor não mapeado, ignorado' });
+      // v2: identifica pelo nome do produto
+      if (body?.product?.name) {
+        const productKey = body.product.name.toLowerCase().replace(/ê/g, 'e').replace(/[^a-z]/g, '');
+        config = PLAN_CONFIG_BY_NAME[productKey];
       }
 
-      const { error } = await supabase.from('users')
-        .update({ plan: config.plan, plan_active: true, generations_limit: config.generations_limit })
-        .eq('email', email);
+      // v1 (ou fallback): identifica pelo valor em centavos
+      if (!config) {
+        const amountCents = body?.Charges?.[0]?.amount || body?.amount || 0;
+        config = PLAN_CONFIG_BY_AMOUNT[amountCents];
+      }
 
-      if (error) return res.status(500).json({ error: error.message });
-      console.log(`[kiwify] Plano ${config.plan} ativado para ${email}`);
-      return res.json({ message: `Plano ${config.plan} ativado` });
+      if (!config) {
+        const productName = body?.product?.name || 'desconhecido';
+        console.warn(`[kiwify] Plano não mapeado: "${productName}" — email: ${email}`);
+        return res.status(200).json({ message: `Plano "${productName}" não mapeado, ignorado` });
+      }
 
-    } else if (status === 'refunded' || status === 'chargedback') {
+      // Tenta atualizar usuário existente primeiro
+      const { data: existing, error: selectErr } = await supabase.from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (selectErr) return res.status(500).json({ error: selectErr.message });
+
+      if (existing) {
+        // Usuário já existe — apenas atualiza o plano
+        const { error: updateErr } = await supabase.from('users')
+          .update({ plan: config.plan, plan_active: true, generations_limit: config.generations_limit })
+          .eq('email', email);
+        if (updateErr) return res.status(500).json({ error: updateErr.message });
+      } else {
+        // Usuário ainda não registrou — pré-cria com plano ativo (senha temporária)
+        const { error: insertErr } = await supabase.from('users')
+          .insert({
+            email,
+            name: body?.customer?.name || body?.Customer?.name || email,
+            password_hash: 'PENDING_REGISTRATION',
+            plan: config.plan,
+            plan_active: true,
+            generations_limit: config.generations_limit,
+            generations_used: 0,
+          });
+        if (insertErr) return res.status(500).json({ error: insertErr.message });
+      }
+
+      console.log(`[kiwify] Plano ${config.plan} ativado para ${email} (${existing ? 'atualizado' : 'pré-criado'})`);
+      return res.json({ message: `Plano ${config.plan} ativado`, plan: config.plan, email, created: !existing });
+
+    // ── Cancelamento ──
+    // v2: event === 'subscription.cancelled'  |  v1: order_status === 'refunded'/'chargedback'
+    } else if (event === 'subscription.cancelled' || status === 'refunded' || status === 'chargedback') {
       const { error } = await supabase.from('users')
         .update({ plan_active: false })
         .eq('email', email);
 
       if (error) return res.status(500).json({ error: error.message });
-      console.log(`[kiwify] Plano desativado para ${email} (${status})`);
-      return res.json({ message: 'Plano desativado' });
+      const reason = event || status;
+      console.log(`[kiwify] Plano desativado para ${email} (${reason})`);
+      return res.json({ message: 'Plano desativado', email });
 
     } else {
-      return res.status(200).json({ message: `Status ${status} ignorado` });
+      const ignored = event || status || 'desconhecido';
+      return res.status(200).json({ message: `Evento "${ignored}" ignorado` });
     }
   } catch (err) {
     console.error('[kiwify] Erro:', err.message);
@@ -961,6 +1014,84 @@ app.get('/api/fal/balance', requireSupabase, requireAuth, async (req, res) => {
     usd_brl_rate:  rate,
     estimated: true,
   });
+});
+
+// ── TERMOS DE USO (oculto, acessível só por link direto) ──
+app.get('/termos', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Termos de Uso — UGC·AI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #0d0d0d; --surface: #161616; --border: rgba(255,255,255,0.08); --text: #e8e8e8; --text-dim: rgba(255,255,255,0.5); --orange: #FF6B00; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif; line-height: 1.7; padding: 0 16px 80px; }
+    .wrap { max-width: 720px; margin: 0 auto; padding-top: 64px; }
+    .logo { font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--orange); margin-bottom: 48px; display: block; text-decoration: none; }
+    h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .meta { font-size: 12px; color: var(--text-dim); margin-bottom: 48px; }
+    h2 { font-size: 14px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--orange); margin: 40px 0 12px; }
+    p { font-size: 15px; color: rgba(255,255,255,0.82); margin-bottom: 12px; }
+    a { color: var(--orange); text-underline-offset: 3px; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+    .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 56px; font-size: 12px; color: var(--text-dim); text-decoration: none; transition: color 0.15s; }
+    .back:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="logo" href="/">UGC·AI</a>
+    <h1>Termos de Uso</h1>
+    <p class="meta">Última atualização: Abril de 2025 &nbsp;·&nbsp; UGC Prompt Generator (ugcai.com.br)</p>
+
+    <p>Ao criar uma conta e utilizar a plataforma UGC·AI, você concorda com os termos descritos abaixo. Leia com atenção antes de prosseguir.</p>
+
+    <hr>
+
+    <h2>1. Sobre o Serviço</h2>
+    <p>O UGC·AI é uma plataforma de geração de prompts de vídeo UGC (User Generated Content) com inteligência artificial, desenvolvida para criadores de conteúdo e lojistas do TikTok Shop Brasil.</p>
+    <p>O acesso às funcionalidades da plataforma está condicionado à contratação de um plano pago ativo. Usuários sem plano ativo podem criar conta, mas não poderão gerar prompts.</p>
+
+    <h2>2. Planos e Pagamento</h2>
+    <p>Os planos disponíveis (Starter, Pro e Agência) são cobrados mensalmente por meio da plataforma Kiwify. O valor e as condições de cada plano estão descritos na página de vendas.</p>
+    <p>Reservamo-nos o direito de alterar preços e condições dos planos com aviso prévio de 30 (trinta) dias corridos. Assinantes ativos serão notificados por e-mail.</p>
+
+    <h2>3. Política de Reembolso</h2>
+    <p>O usuário tem direito a reembolso integral em até <strong>7 (sete) dias corridos</strong> contados da data da compra, desde que não tenha utilizado 10 (dez) ou mais gerações de prompts na plataforma.</p>
+    <p><strong>A partir da 10ª geração realizada, o serviço é considerado consumido e não há direito a reembolso</strong>, independentemente do prazo de 7 dias ainda estar em vigor.</p>
+    <p>Para solicitar reembolso dentro das condições acima, entre em contato pelo e-mail <a href="mailto:portalcenabrasil@gmail.com">portalcenabrasil@gmail.com</a>.</p>
+
+    <h2>4. Cancelamento</h2>
+    <p>O usuário pode cancelar sua assinatura a qualquer momento diretamente pela plataforma Kiwify, sem necessidade de entrar em contato com o suporte. O acesso permanece ativo até o fim do período já pago.</p>
+    <p>Não há reembolso proporcional por dias não utilizados após o cancelamento.</p>
+
+    <h2>5. Uso Permitido</h2>
+    <p>O acesso à plataforma é estritamente pessoal e intransferível — exclusivo do titular da conta. É proibido compartilhar credenciais de acesso, revender, sublicenciar ou redistribuir os outputs gerados pela plataforma como serviço próprio.</p>
+
+    <h2>6. Propriedade Intelectual dos Outputs</h2>
+    <p>Os prompts e textos gerados pela plataforma a partir das imagens e configurações do usuário são de uso livre pelo próprio usuário, podendo ser utilizados em vídeos, publicações e materiais de marketing sem necessidade de atribuição ao UGC·AI.</p>
+    <p>O código-fonte, design, marca e demais ativos da plataforma pertencem exclusivamente à UGC·AI e não podem ser reproduzidos ou copiados.</p>
+
+    <h2>7. Limitação de Responsabilidade</h2>
+    <p>O UGC·AI fornece uma ferramenta de assistência criativa baseada em inteligência artificial. Não garantimos resultados específicos de vendas, visualizações ou performance dos conteúdos produzidos a partir dos prompts gerados.</p>
+    <p>A plataforma é fornecida "como está" (as-is), sem garantias de disponibilidade ininterrupta.</p>
+
+    <h2>8. Privacidade</h2>
+    <p>Os dados pessoais coletados (e-mail, nome e imagens enviadas para análise) são utilizados exclusivamente para a prestação do serviço. Nenhum dado pessoal é vendido ou compartilhado com terceiros para fins comerciais.</p>
+    <p>As imagens enviadas para geração de prompts são processadas em tempo real e não são armazenadas permanentemente em nossos servidores.</p>
+
+    <h2>9. Contato</h2>
+    <p>Para dúvidas, solicitações de reembolso ou suporte, entre em contato pelo e-mail: <a href="mailto:portalcenabrasil@gmail.com">portalcenabrasil@gmail.com</a></p>
+
+    <hr>
+    <p style="font-size:13px;color:var(--text-dim);">Ao continuar utilizando a plataforma após alterações nestes Termos, você concorda com as novas condições.</p>
+
+    <a class="back" href="/">← Voltar para o app</a>
+  </div>
+</body>
+</html>`);
 });
 
 app.get('*', (req, res) => {
