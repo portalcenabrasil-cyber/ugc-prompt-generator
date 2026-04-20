@@ -147,6 +147,7 @@
       height: 100%;
       object-fit: cover;
       z-index: 0;
+      pointer-events: none;
     }
     .hero-overlay {
       position: absolute;
@@ -1979,7 +1980,7 @@
 
 <!-- ── HERO ── -->
 <section class="hero fade-in-3">
-  <video class="hero-video" autoplay muted loop playsinline>
+  <video class="hero-video" autoplay muted loop playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false" disablePictureInPicture>
     <source src="/hero.mp4" type="video/mp4">
   </video>
   <div class="hero-overlay"></div>
