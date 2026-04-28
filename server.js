@@ -73,16 +73,31 @@ function requireAuth(req, res, next) {
 
 // ── Server-side gallery save helper ──
 async function _saveGalleryItem(userId, result, image_base64, image_type, price, tipo) {
-  if (!supabase || !result?.prompt_video) return null;
+  if (!supabase || (!result?.prompt_video && !result?.character_sheet)) return null;
+
+  // For serie results, assemble prompt_video from character_sheet + all cenas
+  let prompt_video = result.prompt_video || null;
+  let legenda      = result.legenda      || null;
+  let nicho        = result.nicho        || null;
+  let emocao       = result.emocao       || null;
+
+  if (result.character_sheet) {
+    const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4].filter(Boolean);
+    prompt_video = [result.character_sheet, ...cenas].join('\n\n---\n\n');
+    legenda = '🛏️ Edredons Premium';
+    nicho   = 'Edredons Premium';
+    emocao  = 'serie';
+  }
+
   const newItem = {
     id:           Date.now() + '-' + Math.random().toString(36).substr(2, 9),
     user_id:      userId,
     created_at:   new Date().toISOString(),
     image:        image_base64 ? `data:${image_type};base64,${image_base64}` : null,
-    prompt_video: result.prompt_video || null,
-    legenda:      result.legenda      || null,
-    nicho:        result.nicho        || null,
-    emocao:       result.emocao       || null,
+    prompt_video: prompt_video,
+    legenda:      legenda,
+    nicho:        nicho,
+    emocao:       emocao,
     tipo:         tipo                || null,
     price:        price               || null,
     cost:         result._usage       || null,
@@ -91,7 +106,7 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
     const { data, error } = await supabase.from('gallery').insert(newItem).select().single();
     if (error) { console.error('Gallery save error:', error.message); return null; }
     return data;
-  } catch (e) { console.error('Gallery save exception:', e.message); return null; }
+  } catch (e) { console.error('[gallery] save exception:', e.message); return null; }
 }
 
 // ── Queue job status helper (graceful — silent if table doesn't exist) ──
@@ -111,7 +126,10 @@ app.use((req, res, next) => { res.setHeader('bypass-tunnel-reminder', 'true'); n
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const SYSTEM_PROMPT = `Você é um especialista em criação de UGC (User Generated Content) autêntico para TikTok Shop e Instagram Reels no mercado brasileiro.
+const PROMPT_FILE = './PROMPT.md';
+const SYSTEM_PROMPT_BASE = fs.existsSync(PROMPT_FILE)
+  ? fs.readFileSync(PROMPT_FILE, 'utf8')
+  : `Você é um especialista em criação de UGC (User Generated Content) autêntico para TikTok Shop e Instagram Reels no mercado brasileiro.
 
 ═══════════════════════════════════
 REGRAS FIXAS — NUNCA VIOLAR
@@ -197,7 +215,21 @@ Retorne APENAS um JSON válido, sem markdown, sem texto antes ou depois:
   "emocao": "Principal emoção que o produto evoca (ex: alívio, empolgação, nostalgia, confiança, pertencimento, etc.)"
 }`;
 
-function buildUserMessage(tipo, promo, price, gender) {
+// Keep SYSTEM_PROMPT as alias for compatibility
+const SYSTEM_PROMPT = SYSTEM_PROMPT_BASE;
+
+// Loads the system prompt for a given style.
+// style='base' → PROMPT.md (or hardcoded fallback)
+// style='cinematografico' → PROMPT-cinematografico.md (or falls back to base)
+function loadSystemPrompt(style) {
+  if (style && style !== 'base') {
+    const styleFile = `./PROMPT-${style}.md`;
+    if (fs.existsSync(styleFile)) return fs.readFileSync(styleFile, 'utf8');
+  }
+  return SYSTEM_PROMPT_BASE;
+}
+
+function buildUserMessage(tipo, promo, price, gender, duracao) {
   const tipoLabels = {
     caseiro:  'Caseiro (ambiente doméstico, cotidiano real)',
     fabrica:  'Fábrica / Bastidores (mostra processo de produção)',
@@ -220,6 +252,10 @@ function buildUserMessage(tipo, promo, price, gender) {
     ? `- Preço do produto: R$ ${price} — use esse valor para criar ancoragem de preço e senso de urgência na legenda e no CTA`
     : `- Preço: não informado — gere normalmente sem mencionar valor`;
 
+  const duracaoInfo = duracao
+    ? `- Duração selecionada: ${duracao}s — use EXATAMENTE esta opção do Passo 4, sem variação`
+    : '';
+
   return `Analise a imagem do produto e gere conteúdo UGC para o mercado brasileiro.
 
 CONFIGURAÇÕES:
@@ -227,6 +263,7 @@ CONFIGURAÇÕES:
 - Promoção ativa: ${promoLabels[promo] || promo}
 ${precoInfo}
 - Gênero do criador: ${genderLabels[gender] || gender}
+${duracaoInfo}
 
 Retorne apenas o JSON, sem texto adicional.`;
 }
@@ -266,7 +303,7 @@ function safeParseJSON(str) {
   return JSON.parse(out);
 }
 
-async function callClaude(image_base64, image_type, tipo, promo, price, gender) {
+async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null) {
   const MAX_RETRIES = 3;
   let lastError;
 
@@ -286,7 +323,7 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender) 
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system: loadSystemPrompt(style),
         messages: [{
           role: 'user',
           content: [
@@ -296,7 +333,7 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender) 
             },
             {
               type: 'text',
-              text: buildUserMessage(tipo, promo, price, gender)
+              text: buildUserMessage(tipo, promo, price, gender, duracao)
             }
           ]
         }]
@@ -435,7 +472,17 @@ app.post('/api/auth/setup-admin', requireSupabase, async (req, res) => {
 
   const { data: existing } = await supabase
     .from('users').select('id').eq('email', email.toLowerCase()).maybeSingle();
-  if (existing) return res.json({ message: 'Admin já existe', id: existing.id });
+
+  if (existing) {
+    // Garante que is_admin = true mesmo se o usuário já existia
+    const password_hash = await bcrypt.hash(password, 12);
+    const { error: updErr } = await supabase
+      .from('users')
+      .update({ is_admin: true, password_hash })
+      .eq('id', existing.id);
+    if (updErr) return res.status(500).json({ error: updErr.message });
+    return res.json({ message: 'Admin atualizado com sucesso', id: existing.id });
+  }
 
   const password_hash = await bcrypt.hash(password, 12);
   const { data: user, error } = await supabase
@@ -658,7 +705,8 @@ app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
 // ── GENERATE (Protected) ──
 
 app.post('/api/generate', requireAuth, async (req, res) => {
-  const { image_base64, image_type, tipo, promo, price, gender } = req.body;
+  const { image_base64, image_type, tipo, promo, price, gender, style = 'base' } = req.body;
+  const duracao = style === 'serie' ? (req.body.duracao || null) : null;
 
   if (!image_base64) return res.status(400).json({ error: 'Imagem é obrigatória' });
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui') {
@@ -682,7 +730,7 @@ app.post('/api/generate', requireAuth, async (req, res) => {
   }
 
   try {
-    const result = await callClaude(image_base64, image_type, tipo, promo, price, gender);
+    const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao);
 
     // Save to gallery server-side immediately
     const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo);
@@ -708,7 +756,8 @@ app.post('/api/generate', requireAuth, async (req, res) => {
 });
 
 app.post('/api/generate-batch', requireAuth, async (req, res) => {
-  const { items, tipo, promo, gender, jobIds } = req.body;
+  const { items, tipo, promo, gender, jobIds, style = 'base' } = req.body;
+  const duracao = style === 'serie' ? (req.body.duracao || null) : null;
   // jobIds: optional string[] from /api/queue/submit, one per item
 
   if (!items || !Array.isArray(items) || items.length === 0)
@@ -752,7 +801,7 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
     let lastErr;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       try {
-        return await callClaude(image_base64, image_type, tipo, promo, price, gender);
+        return await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao);
       } catch (err) {
         lastErr = err;
         if (attempt < MAX_ATTEMPTS - 1) await new Promise(r => setTimeout(r, RETRY_DELAY));
@@ -803,7 +852,7 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
     const { image_base64, image_type, price } = items[index];
     const jobId = Array.isArray(jobIds) ? (jobIds[index] ?? null) : null;
     try {
-      const result = await callClaude(image_base64, image_type, tipo, promo, price, gender);
+      const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao);
       if (result._usage) {
         batchPrompts++;
         batchTokens += (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0);

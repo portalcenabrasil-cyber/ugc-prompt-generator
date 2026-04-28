@@ -403,6 +403,46 @@
       border-color: rgba(255,107,0,0.45);
       color: var(--orange);
     }
+    .seg-btn--soon {
+      opacity: 0.38;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .soon-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: 4px;
+      vertical-align: middle;
+      color: rgba(255,255,255,0.5);
+    }
+    .serie-card-header { align-items: flex-start !important; }
+    .serie-card-title-wrap { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; margin-right: 10px; }
+    .serie-card-tag {
+      font-size: 11px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-weight: 500;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .resumo-card {
+      background: rgba(255,107,0,0.04);
+      border: 1px solid rgba(255,107,0,0.18);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: 'DM Mono', 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 2;
+      color: rgba(255,255,255,0.72);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
     input[type="number"] {
       width: 100%;
@@ -1670,7 +1710,7 @@
     .fade-in-6  { animation: fadeUp 0.7s ease 0.65s both; }
 
     .result-card {
-      animation: fadeUp 0.35s ease both;
+      animation: fadeUp 0.35s ease forwards;
     }
 
     /* ── RESPONSIVE ── */
@@ -2022,6 +2062,26 @@
             <button class="mode-btn" id="modeBatch" onclick="setMode('batch')">📦 Lote</button>
           </div>
 
+          <!-- Estilo de Prompt -->
+          <div class="field">
+            <label class="field-label">Estilo de Prompt</label>
+            <div class="seg-group" style="grid-template-columns:1fr 1fr" id="styleGroup">
+              <button class="seg-btn active" data-value="base" onclick="selectSeg(this,'styleGroup');onStyleChange('base')">⚡ Base</button>
+              <button class="seg-btn" data-value="serie" onclick="selectSeg(this,'styleGroup');onStyleChange('serie')">🛏️ Edredons Premium</button>
+              <button class="seg-btn seg-btn--soon" style="grid-column:span 2" data-value="cinematografico" disabled>🎬 Cinematográfico <span class="soon-badge">em breve</span></button>
+            </div>
+
+          <!-- Duração (visível só para Edredons Premium) -->
+          <div class="field" id="durationField" style="display:none">
+            <label class="field-label">Duração do Vídeo</label>
+            <div class="seg-group cols-3" id="durationGroup">
+              <button class="seg-btn active" data-value="22" onclick="selectSeg(this,'durationGroup')">⏱ 22s<br><span style="font-size:10px;opacity:0.6">3.300cr</span></button>
+              <button class="seg-btn" data-value="26" onclick="selectSeg(this,'durationGroup')">⏱ 26s<br><span style="font-size:10px;opacity:0.6">3.900cr</span></button>
+              <button class="seg-btn" data-value="32" onclick="selectSeg(this,'durationGroup')">⏱ 32s<br><span style="font-size:10px;opacity:0.6">4.800cr</span></button>
+            </div>
+          </div>
+          </div>
+
           <!-- Produto -->
           <div class="field" id="uploadField">
             <label class="field-label">Imagem do Produto</label>
@@ -2117,6 +2177,12 @@
             </div>
             <div id="cardPromptVideo"></div>
             <div id="cardLegenda"></div>
+            <div id="cardCharacterSheet" style="display:none"></div>
+            <div id="cardCena1" style="display:none"></div>
+            <div id="cardCena2" style="display:none"></div>
+            <div id="cardCena3" style="display:none"></div>
+            <div id="cardCena4" style="display:none"></div>
+            <div id="serieResumo" style="display:none"></div>
             <div id="costBox"></div>
             <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
               <div class="spinner"></div>
@@ -3074,6 +3140,10 @@
     return active ? active.dataset.value : '';
   }
 
+  function onStyleChange(style) {
+    document.getElementById('durationField').style.display = style === 'serie' ? 'block' : 'none';
+  }
+
   // ── GENERATE SINGLE ──
   async function generate() {
     if (!imageBase64) { showError('Envie uma imagem do produto antes de gerar.'); return; }
@@ -3106,7 +3176,9 @@
           tipo:   getSelected('tipoGroup'),
           promo:  getSelected('promoGroup'),
           price,
-          gender: getSelected('genderGroup')
+          gender: getSelected('genderGroup'),
+          style:   getSelected('styleGroup') || 'base',
+          duracao: (getSelected('styleGroup') || 'base') === 'serie' ? (getSelected('durationGroup') || null) : null
         })
       });
       const data = await res.json();
@@ -3154,6 +3226,7 @@
     const tipo   = getSelected('tipoGroup');
     const promo  = getSelected('promoGroup');
     const gender = getSelected('genderGroup');
+    const style  = getSelected('styleGroup') || 'base';
 
     const batchEl = document.getElementById('batchResults');
     batchEl.innerHTML = '';
@@ -3210,7 +3283,8 @@
           price:        it.price
         })),
         jobIds,
-        tipo, promo, gender
+        tipo, promo, gender, style,
+        duracao: style === 'serie' ? (getSelected('durationGroup') || null) : null
       };
 
       const res = await authFetch('/api/generate-batch', {
@@ -3349,20 +3423,76 @@
   }
 
   // ── RENDER SINGLE ──
+  const SERIE_CARD_CONFIG = [
+    { id: 'cardCharacterSheet', field: 'character_sheet', title: 'Character Sheet', emoji: '📋' },
+    { id: 'cardCena1',          field: 'cena_1',          title: 'Cena 1',          emoji: '🎬' },
+    { id: 'cardCena2',          field: 'cena_2',          title: 'Cena 2',          emoji: '🎬' },
+    { id: 'cardCena3',          field: 'cena_3',          title: 'Cena 3',          emoji: '🎬' },
+    { id: 'cardCena4',          field: 'cena_4',          title: 'Cena 4',          emoji: '🎬' },
+  ];
+
   function renderResults(data) {
     Object.assign(_stored, data);
+    // Detect mode from data, not from UI state (prevents timing bugs if user switches style during generation)
+    const isSerie = !!(data.character_sheet);
 
     const meta = document.getElementById('metaBadges');
     const copyAllBtn = document.getElementById('btnCopyAll');
     meta.innerHTML = '';
-    if (data.nicho)  meta.innerHTML += `<span class="badge nicho">🏷 ${data.nicho}</span>`;
-    if (data.emocao) meta.innerHTML += `<span class="badge emocao">💫 ${data.emocao}</span>`;
+    if (!isSerie) {
+      const tipoBtn = document.querySelector('#tipoGroup .seg-btn.active');
+      if (tipoBtn)     meta.innerHTML += `<span class="badge">${tipoBtn.textContent.trim()}</span>`;
+      if (data.nicho)  meta.innerHTML += `<span class="badge nicho">🏷 ${data.nicho}</span>`;
+      if (data.emocao) meta.innerHTML += `<span class="badge emocao">💫 ${data.emocao}</span>`;
+    }
     meta.appendChild(copyAllBtn);
 
-    CARD_CONFIG.forEach((cfg, i) => {
-      const content = data[cfg.field] || '';
-      document.getElementById(cfg.id).innerHTML = makeCard(cfg.title, cfg.emoji, content, cfg.field, i);
-    });
+    if (isSerie) {
+      CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+
+      // Encontra a última cena com conteúdo para extrair o resumo
+      const lastCenaField = ['cena_4','cena_3','cena_2','cena_1'].find(f => data[f]);
+      const RESUMO_MARKER = '\n\n💰 Resumo final';
+
+      SERIE_CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        let content = data[cfg.field] || '';
+        if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+        // Remove resumo da última cena antes de renderizar o card
+        if (cfg.field === lastCenaField) {
+          const idx = content.indexOf(RESUMO_MARKER);
+          if (idx !== -1) content = content.slice(0, idx).trim();
+        }
+
+        el.style.display = 'block';
+        // character_sheet usa card padrão; cenas usam card com header parseado
+        el.innerHTML = cfg.field === 'character_sheet'
+          ? makeCard(cfg.title, cfg.emoji, content, cfg.field, i)
+          : makeSerieCard(content, cfg.field, i);
+      });
+
+      // Renderiza resumo em bloco separado
+      const resumoEl = document.getElementById('serieResumo');
+      const lastContent = data[lastCenaField] || '';
+      const resumoIdx = lastContent.indexOf(RESUMO_MARKER);
+      if (resumoIdx !== -1) {
+        const resumoText = lastContent.slice(resumoIdx + 2).trim();
+        resumoEl.style.display = 'block';
+        resumoEl.innerHTML = `<div class="resumo-card">${resumoText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+      } else {
+        resumoEl.style.display = 'none';
+        resumoEl.innerHTML = '';
+      }
+    } else {
+      SERIE_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+      document.getElementById('serieResumo').style.display = 'none';
+      CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        el.style.display = 'block';
+        el.innerHTML = makeCard(cfg.title, cfg.emoji, data[cfg.field] || '', cfg.field, i);
+      });
+    }
 
     if (data._usage) renderCostBox(data._usage);
 
@@ -3392,6 +3522,8 @@
           tipo:  getSelected('tipoGroup'),
           promo: getSelected('promoGroup'),
           gender: getSelected('genderGroup'),
+          style:   getSelected('styleGroup') || 'base',
+          duracao: getSelected('durationGroup') || null,
           price: price || undefined
         })
       });
@@ -3461,6 +3593,47 @@
     badge.classList.add('has-cost');
   }
 
+  // ── SERIE CARD HELPERS ──
+  function parseSerieCard(raw) {
+    const lines = raw.split('\n');
+    const header = lines[0] || '';
+    const second = lines[1] || '';
+    const isTag  = second.startsWith('✅') || second.startsWith('❌');
+    const body   = lines.slice(isTag ? 2 : 1).join('\n').trim();
+    return { header, tag: isTag ? second : '', body };
+  }
+
+  function makeSerieCard(raw, field, idx) {
+    const { header, tag, body } = parseSerieCard(raw);
+    const safeHeader = header.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const safeBody   = body.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const tagHtml = tag
+      ? `<div class="serie-card-tag">${tag.replace(/</g,'&lt;')}</div>`
+      : '';
+    return `
+      <div class="result-card" style="animation-delay:${idx * 80}ms">
+        <div class="result-card-header serie-card-header">
+          <div class="serie-card-title-wrap">
+            <div class="result-card-title"><span class="title-dot"></span>${safeHeader}</div>
+            ${tagHtml}
+          </div>
+          <button class="btn-copy" style="flex-shrink:0" onclick="copySerieBody('${field}',this)">
+            <span>⎘</span> COPIAR
+          </button>
+        </div>
+        <div class="result-card-body">${safeBody}</div>
+      </div>`;
+  }
+
+  function copySerieBody(field, btn) {
+    const { body } = parseSerieCard(_stored[field] || '');
+    navigator.clipboard.writeText(body).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<span>✓</span> COPIADO';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span>⎘</span> COPIAR'; }, 2000);
+    });
+  }
+
   function makeCard(title, emoji, content, field, idx) {
     const safe = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return `
@@ -3486,10 +3659,19 @@
   }
 
   function copyAll(btn) {
-    const parts = [
-      _stored.prompt_video ? `=== PROMPT — VÍDEO UGC ===\n${_stored.prompt_video}` : '',
-      _stored.legenda      ? `=== LEGENDA ===\n${_stored.legenda}`                  : '',
-    ].filter(Boolean);
+    const isSerie = !!(_stored.character_sheet);
+    const parts = isSerie
+      ? [
+          _stored.character_sheet ? `=== CHARACTER SHEET ===\n${_stored.character_sheet}` : '',
+          _stored.cena_1          ? `=== CENA 1 ===\n${_stored.cena_1}`                    : '',
+          _stored.cena_2          ? `=== CENA 2 ===\n${_stored.cena_2}`                    : '',
+          _stored.cena_3          ? `=== CENA 3 ===\n${_stored.cena_3}`                    : '',
+          _stored.cena_4          ? `=== CENA 4 ===\n${_stored.cena_4}`                    : '',
+        ].filter(Boolean)
+      : [
+          _stored.prompt_video ? `=== PROMPT — VÍDEO UGC ===\n${_stored.prompt_video}` : '',
+          _stored.legenda      ? `=== LEGENDA ===\n${_stored.legenda}`                  : '',
+        ].filter(Boolean);
     if (!parts.length) return;
     navigator.clipboard.writeText(parts.join('\n\n')).then(() => {
       btn.classList.add('copied');
