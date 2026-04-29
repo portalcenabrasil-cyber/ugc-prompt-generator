@@ -133,7 +133,7 @@ app.use((req, res, next) => { res.setHeader('bypass-tunnel-reminder', 'true'); n
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const PROMPT_FILE = './PROMPT.md';
+const PROMPT_FILE = path.join(__dirname, 'PROMPT.md');
 const SYSTEM_PROMPT_BASE = fs.existsSync(PROMPT_FILE)
   ? fs.readFileSync(PROMPT_FILE, 'utf8')
   : `Você é um especialista em criação de UGC (User Generated Content) autêntico para TikTok Shop e Instagram Reels no mercado brasileiro.
@@ -230,7 +230,7 @@ const SYSTEM_PROMPT = SYSTEM_PROMPT_BASE;
 // style='cinematografico' → PROMPT-cinematografico.md (or falls back to base)
 function loadSystemPrompt(style) {
   if (style && style !== 'base') {
-    const styleFile = `./PROMPT-${style}.md`;
+    const styleFile = path.join(__dirname, `PROMPT-${style}.md`);
     if (fs.existsSync(styleFile)) return fs.readFileSync(styleFile, 'utf8');
   }
   return SYSTEM_PROMPT_BASE;
