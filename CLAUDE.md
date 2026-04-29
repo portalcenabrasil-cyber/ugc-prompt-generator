@@ -5,6 +5,35 @@
 
 ---
 
+```
+═══════════════════════════════════════════════════════
+REGRA SAGRADA — DEPLOY
+═══════════════════════════════════════════════════════
+```
+
+**Toda alteração no código (server.js, index.html, prompts .md, qualquer arquivo) DEVE seguir este fluxo obrigatório:**
+
+1. Faz a alteração localmente
+2. Sobe o servidor local (`npm start` ou `node server.js`)
+3. Acessa `http://localhost:3000` e TESTA pessoalmente o que mexeu
+4. Confirma que TODOS os estilos continuam funcionando:
+   - ⚡ Base
+   - 🛏️ Edredons Premium
+   - 🎬 Edredom Nano + Vídeos
+   - 🧪 Nano + Vídeos 2
+5. SÓ DEPOIS de tudo passar no teste local → `git commit` + `git push`
+6. Aguarda o deploy terminar na Vercel
+7. Testa novamente em produção (`https://ugc-prompt-generator-six.vercel.app`) para confirmar que subiu igual ao local
+
+> **NUNCA faça commit/push direto sem testar local primeiro.**
+> Se o usuário pedir "deploy", entenda como: *testa local primeiro — SE passar, deploya.*
+
+```
+═══════════════════════════════════════════════════════
+```
+
+---
+
 ## 1. A LÓGICA DO SISTEMA UGC
 
 Ao receber um produto, identificar AUTOMATICAMENTE 3 coisas:
