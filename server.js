@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const Jimp = require('jimp');
 const { createClient } = require('@supabase/supabase-js');
 
 // ── Supabase (inicializa só quando a URL for válida) ──
@@ -89,11 +90,17 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
     emocao  = 'serie';
   }
 
+  // ── Crop automático por detecção de pixels — remove card de marketplace do fundo ──
+  let gallery_image_base64 = image_base64;
+  if (image_base64) {
+    gallery_image_base64 = await cropImageBase64(image_base64, image_type || 'image/jpeg');
+  }
+
   const newItem = {
     id:           Date.now() + '-' + Math.random().toString(36).substr(2, 9),
     user_id:      userId,
     created_at:   new Date().toISOString(),
-    image:        image_base64 ? `data:${image_type};base64,${image_base64}` : null,
+    image:        gallery_image_base64 ? `data:${image_type};base64,${gallery_image_base64}` : null,
     prompt_video: prompt_video,
     legenda:      legenda,
     nicho:        nicho,
@@ -281,26 +288,184 @@ function calcCost(inputTokens, outputTokens) {
   return { inputCost, outputCost, totalCost: inputCost + outputCost };
 }
 
-// Parseia JSON tolerando newlines literais dentro de strings (Claude às vezes os gera)
-function safeParseJSON(str) {
-  try { return JSON.parse(str); } catch (_) {}
-  // Percorre char a char e escapa chars de controle dentro de strings JSON
-  let out = '';
-  let inStr = false;
-  let esc = false;
-  for (let i = 0; i < str.length; i++) {
-    const c = str[i];
-    if (esc) { out += c; esc = false; continue; }
-    if (c === '\\' && inStr) { out += c; esc = true; continue; }
-    if (c === '"') { inStr = !inStr; out += c; continue; }
-    if (inStr) {
-      if      (c === '\n') { out += '\\n'; continue; }
-      else if (c === '\r') { out += '\\r'; continue; }
-      else if (c === '\t') { out += '\\t'; continue; }
+// ── Detecção de card de marketplace ──
+// Método 1: contraste de brilho (fundo colorido vs card claro)
+// Método 2: densidade de bordas por linha (texto do card cria muitas transições)
+async function detectCardBoundary(img) {
+  const w = img.getWidth();
+  const h = img.getHeight();
+  const xStep = Math.max(1, Math.floor(w / 100));
+
+  // Brilho médio de uma linha
+  const rowBrightness = (y) => {
+    let sum = 0, n = 0;
+    for (let x = 0; x < w; x += xStep) {
+      const { r, g, b } = Jimp.intToRGBA(img.getPixelColor(x, y));
+      sum += (r + g + b) / 3; n++;
     }
-    out += c;
+    return sum / n;
+  };
+
+  // Densidade de bordas de uma linha (transições bruscas = texto/UI)
+  const rowEdges = (y) => {
+    let edges = 0, prev = null;
+    for (let x = 0; x < w; x += xStep) {
+      const { r, g, b } = Jimp.intToRGBA(img.getPixelColor(x, y));
+      const brightness = (r + g + b) / 3;
+      if (prev !== null && Math.abs(brightness - prev) > 25) edges++;
+      prev = brightness;
+    }
+    return edges / (w / xStep); // proporção de transições (0–1)
+  };
+
+  // Brilho médio de zona
+  const zoneAvg = (yFrom, yTo) => {
+    let sum = 0, n = 0;
+    for (let y = yFrom; y < yTo; y++) { sum += rowBrightness(y); n++; }
+    return sum / n;
+  };
+
+  const cardRef  = zoneAvg(Math.floor(h * 0.88), h);
+  const photoRef = zoneAvg(Math.floor(h * 0.40), Math.floor(h * 0.70));
+  const diff = Math.abs(cardRef - photoRef);
+  console.log(`[autoCrop] cardRef=${cardRef.toFixed(1)} photoRef=${photoRef.toFixed(1)} diff=${diff.toFixed(1)}`);
+
+  // ── Método 1: contraste de brilho (para fundos coloridos) ──
+  if (diff >= 22) {
+    const threshold = (cardRef + photoRef) / 2;
+    const cardIsBrighter = cardRef > photoRef;
+    const REQUIRED = 20;
+    let consecutive = 0, firstNonCard = null, cutY = null;
+
+    for (let y = h - 1; y >= Math.floor(h * 0.50); y--) {
+      const avg = rowBrightness(y);
+      const isCard = cardIsBrighter ? avg >= threshold : avg <= threshold;
+      if (!isCard) {
+        if (!firstNonCard) firstNonCard = y;
+        if (++consecutive >= REQUIRED) { cutY = firstNonCard; break; }
+      } else { consecutive = 0; firstNonCard = null; }
+    }
+
+    // Só aceita se cortou mais de 10% — senão é falso positivo, cai no método 2
+    if (cutY && cutY < h * 0.90) {
+      console.log(`[autoCrop] método1 (brilho) borda y=${cutY} (${Math.round(cutY/h*100)}%)`);
+      return cutY;
+    }
+    if (cutY) console.log(`[autoCrop] método1 retornou ${Math.round(cutY/h*100)}% — improvável, tentando método2`);
   }
-  return JSON.parse(out);
+
+  // ── Método 2: densidade de bordas (para fundos brancos / baixo contraste) ──
+  // O card de marketplace tem texto que cria muitas transições por linha.
+  // Foto com fundo branco limpo tem poucas transições. Procura cluster de texto no fundo.
+  const EDGE_THRESHOLD = 0.12; // 12% das amostragens são bordas = linha com texto
+  const WINDOW = 30;           // janela de busca (linhas)
+  const MIN_TEXT_ROWS = 5;     // mínimo de linhas-texto no cluster
+
+  // Calcula densidade de bordas para o terço inferior da imagem
+  const searchFrom = Math.floor(h * 0.60);
+  const edgeMap = [];
+  for (let y = searchFrom; y < h; y++) {
+    edgeMap.push({ y, e: rowEdges(y) });
+  }
+
+  // Desliza janela de cima para baixo: encontra o cluster de texto mais próximo do topo
+  let topCluster = null;
+  for (let i = 0; i <= edgeMap.length - WINDOW; i++) {
+    const window = edgeMap.slice(i, i + WINDOW);
+    const textRows = window.filter(r => r.e >= EDGE_THRESHOLD).length;
+    if (textRows >= MIN_TEXT_ROWS) {
+      topCluster = window[0].y; // y mais alto do cluster = borda do card
+      break;
+    }
+  }
+
+  if (topCluster) {
+    console.log(`[autoCrop] método2 (bordas) cluster y=${topCluster} (${Math.round(topCluster/h*100)}%)`);
+    return topCluster;
+  }
+
+  console.log('[autoCrop] sem card detectado — imagem mantida');
+  return null;
+}
+
+// ── Crop automático do produto (remove card/interface de marketplace no fundo) ──
+async function cropImageBase64(base64, mimeType) {
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    const img = await Jimp.read(buffer);
+    const w = img.getWidth();
+    const h = img.getHeight();
+
+    const cutY = await detectCardBoundary(img);
+    if (!cutY) { console.log('[autoCrop] nenhum card detectado — imagem original mantida'); return base64; }
+
+    // Proteção: preserva no mínimo 60% da imagem
+    const finalCutY = Math.max(Math.floor(h * 0.60), cutY);
+
+    img.crop(0, 0, w, finalCutY);
+    const mime = mimeType === 'image/png' ? Jimp.MIME_PNG : Jimp.MIME_JPEG;
+    const out = await img.getBufferAsync(mime);
+    console.log(`[autoCrop] cortado em y=${finalCutY}/${h} (${Math.round(finalCutY/h*100)}%)`);
+    return out.toString('base64');
+  } catch (err) {
+    console.warn('[autoCrop] falha, mantendo original:', err.message);
+    return base64;
+  }
+}
+
+// Parseia JSON tolerando chars de controle dentro de strings (Claude às vezes os gera)
+function safeParseJSON(str) {
+  // Tentativa 1: JSON.parse direto
+  try { return JSON.parse(str); } catch (_) {}
+
+  // Tentativa 2: escapa todos os chars de controle (0x00–0x1F) dentro de strings
+  try {
+    let out = '';
+    let inStr = false;
+    let esc = false;
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+      const code = str.charCodeAt(i);
+      if (esc) { out += c; esc = false; continue; }
+      if (c === '\\' && inStr) { out += c; esc = true; continue; }
+      if (c === '"') { inStr = !inStr; out += c; continue; }
+      if (inStr && code < 0x20) {
+        if      (c === '\n') out += '\\n';
+        else if (c === '\r') out += '\\r';
+        else if (c === '\t') out += '\\t';
+        else out += `\\u${code.toString(16).padStart(4, '0')}`;
+        continue;
+      }
+      out += c;
+    }
+    return JSON.parse(out);
+  } catch (_) {}
+
+  // Tentativa 3: extração campo a campo por regex (fallback para JSON muito quebrado)
+  const extractStr = (key) => {
+    // Captura o conteúdo da string após "key": ignorando escapes
+    const re = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\[\\s\\S])*)"`, 's');
+    const m = str.match(re);
+    if (!m) return null;
+    try { return JSON.parse(`"${m[1]}"`); } catch { return m[1]; }
+  };
+  const extractNum = (key) => {
+    const re = new RegExp(`"${key}"\\s*:\\s*(\\d+(?:\\.\\d+)?)`);
+    const m = str.match(re);
+    return m ? parseFloat(m[1]) : null;
+  };
+
+  const result = {
+    prompt_video: extractStr('prompt_video'),
+    legenda:      extractStr('legenda'),
+    nicho:        extractStr('nicho'),
+    emocao:       extractStr('emocao'),
+  };
+
+  if (!result.prompt_video && !result.legenda) {
+    throw new Error('Não foi possível extrair dados da resposta da API');
+  }
+  return result;
 }
 
 async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null) {
@@ -322,7 +487,7 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender, 
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: loadSystemPrompt(style),
         messages: [{
           role: 'user',
