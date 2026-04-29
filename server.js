@@ -11,6 +11,24 @@ const nodemailer = require('nodemailer');
 const Jimp = require('jimp');
 const { createClient } = require('@supabase/supabase-js');
 
+// ── Logging em arquivo para debug de batch ──
+const LOGS_DIR  = path.join(__dirname, 'logs');
+const BATCH_LOG = path.join(LOGS_DIR, 'batch-debug.log');
+const MAX_LOG_BYTES = 2 * 1024 * 1024; // 2 MB — trunca para evitar disco cheio
+fs.mkdirSync(LOGS_DIR, { recursive: true });
+
+function batchLog(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  console.log(msg);
+  try {
+    // Rotação simples: se passou de 2 MB, recomeça do zero
+    try {
+      if (fs.statSync(BATCH_LOG).size > MAX_LOG_BYTES) fs.writeFileSync(BATCH_LOG, '');
+    } catch { /* arquivo ainda não existe */ }
+    fs.appendFileSync(BATCH_LOG, line);
+  } catch { /* falha silenciosa — log em arquivo nunca trava o servidor */ }
+}
+
 // ── Supabase (inicializa só quando a URL for válida) ──
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
@@ -73,36 +91,37 @@ function requireAuth(req, res, next) {
 }
 
 // ── Server-side gallery save helper ──
-async function _saveGalleryItem(userId, result, image_base64, image_type, price, tipo) {
-  if (!supabase || (!result?.prompt_video && !result?.character_sheet)) return null;
+async function _saveGalleryItem(userId, result, image_base64, image_type, price, tipo, style) {
+  const isNanoVeo2 = style === 'nano-veo-2';
+  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2)) return null;
 
-  // For serie results, assemble prompt_video from character_sheet + all cenas
+  // For serie/nano/nano-veo-2: assemble prompt_video from all cena fields
   let prompt_video = result.prompt_video || null;
   let legenda      = result.legenda      || null;
   let nicho        = result.nicho        || null;
   let emocao       = result.emocao       || null;
 
-  if (result.character_sheet) {
-    if (result.cena_1_imagem !== undefined) {
-      // nano-veo-2 style — separate image/video fields per cena
-      const parts = [result.character_sheet];
-      for (let i = 1; i <= 5; i++) {
-        if (result[`cena_${i}_imagem`]) parts.push(result[`cena_${i}_imagem`]);
-        if (result[`cena_${i}_video`])  parts.push(result[`cena_${i}_video`]);
-      }
-      if (result.ancora_fixa) parts.push(result.ancora_fixa);
-      prompt_video = parts.join('\n\n---\n\n');
-      legenda = '🧪 Nano + Vídeos 2';
-      nicho   = 'Nano + Vídeos 2';
-      emocao  = 'nano-veo-2';
-    } else {
-      const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4, result.cena_5].filter(Boolean);
-      prompt_video = [result.character_sheet, ...cenas].join('\n\n---\n\n');
-      const isNano = cenas.some(c => c && c.includes('NANO BANANA'));
-      legenda = isNano ? '🎬 Edredom Nano + Vídeos' : '🛏️ Edredons Premium';
-      nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
-      emocao  = isNano ? 'nano'                      : 'serie';
+  if (isNanoVeo2) {
+    // Nano + Vídeos 2 — campos separados imagem/vídeo por cena
+    const parts = [];
+    if (result.character_sheet) parts.push(result.character_sheet);
+    for (let i = 1; i <= 5; i++) {
+      if (result[`cena_${i}_imagem`]) parts.push(result[`cena_${i}_imagem`]);
+      if (result[`cena_${i}_video`])  parts.push(result[`cena_${i}_video`]);
     }
+    if (result.ancora_fixa) parts.push(result.ancora_fixa);
+    if (result.resumo)      parts.push(result.resumo);
+    prompt_video = parts.join('\n\n---\n\n');
+    legenda = '🧪 Nano + Vídeos 2';
+    nicho   = 'Nano + Vídeos 2';
+    emocao  = 'nano-veo-2';
+  } else if (result.character_sheet) {
+    const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4, result.cena_5].filter(Boolean);
+    prompt_video = [result.character_sheet, ...cenas].join('\n\n---\n\n');
+    const isNano = cenas.some(c => c && c.includes('NANO BANANA'));
+    legenda = isNano ? '🎬 Edredom Nano + Vídeos' : '🛏️ Edredons Premium';
+    nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
+    emocao  = isNano ? 'nano'                      : 'serie';
   }
 
   // ── Crop automático por detecção de pixels — remove card de marketplace do fundo ──
@@ -428,12 +447,22 @@ async function cropImageBase64(base64, mimeType) {
   }
 }
 
-// Parseia JSON tolerando chars de controle dentro de strings (Claude às vezes os gera)
+// Parseia JSON tolerando chars de controle e aspas sem escape dentro de strings (Claude às vezes os gera)
 function safeParseJSON(str) {
   // Tentativa 1: JSON.parse direto
   try { return JSON.parse(str); } catch (_) {}
 
-  // Tentativa 2: escapa todos os chars de controle (0x00–0x1F) dentro de strings
+  // Tentativa 2: corrige chars de controle (0x00–0x1F) E aspas duplas sem escape dentro de valores.
+  //
+  // BUG ORIGINAL: quando inStr=true e aparecia '"', o código sempre alternava inStr para false,
+  // tratando TODA aspas como fechamento de string. Isso fazia o parser dessincronizar quando Claude
+  // gerava diálogos com aspas literais (ex: mais: "Gente!"), corrompendo o JSON e fazendo o
+  // fallback para a tentativa 3, que capturava apenas o trecho antes da primeira aspas — causando
+  // truncamento do prompt_video.
+  //
+  // FIX: lookahead — ao encontrar '"' dentro de string, verifica o próximo char significativo.
+  // Se for char estrutural JSON (:  , } ] "), é fechamento legítimo. Caso contrário, é aspas
+  // interior sem escape — escapa como \" e permanece dentro da string.
   try {
     let out = '';
     let inStr = false;
@@ -443,7 +472,23 @@ function safeParseJSON(str) {
       const code = str.charCodeAt(i);
       if (esc) { out += c; esc = false; continue; }
       if (c === '\\' && inStr) { out += c; esc = true; continue; }
-      if (c === '"') { inStr = !inStr; out += c; continue; }
+      if (c === '"') {
+        if (!inStr) {
+          inStr = true; out += c; continue;
+        }
+        // Dentro de string: lookahead para distinguir fechamento de aspas interior
+        let j = i + 1;
+        while (j < str.length && ' \t\r\n'.includes(str[j])) j++;
+        const next = str[j] || '';
+        if (next === ':' || next === ',' || next === '}' || next === ']' || next === '"') {
+          // Char estrutural do JSON → fechamento legítimo da string
+          inStr = false; out += c;
+        } else {
+          // Char não-estrutural → aspas interior sem escape → escapa e permanece na string
+          out += '\\"';
+        }
+        continue;
+      }
       if (inStr && code < 0x20) {
         if      (c === '\n') out += '\\n';
         else if (c === '\r') out += '\\r';
@@ -458,7 +503,6 @@ function safeParseJSON(str) {
 
   // Tentativa 3: extração campo a campo por regex (fallback para JSON muito quebrado)
   const extractStr = (key) => {
-    // Captura o conteúdo da string após "key": ignorando escapes
     const re = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\[\\s\\S])*)"`, 's');
     const m = str.match(re);
     if (!m) return null;
@@ -469,6 +513,8 @@ function safeParseJSON(str) {
     const m = str.match(re);
     return m ? parseFloat(m[1]) : null;
   };
+
+  batchLog('[safeParseJSON] FALLBACK tentativa 3 — JSON muito quebrado, extração por regex');
 
   const result = {
     prompt_video: extractStr('prompt_video'),
@@ -530,12 +576,21 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender, 
 
     if (!response.ok) throw new Error(data.error?.message || 'Erro na API Claude');
 
+    const stopReason   = data.stop_reason || 'unknown';
+    const inputTokens  = data.usage?.input_tokens  || 0;
+    const outputTokens = data.usage?.output_tokens || 0;
+
+    batchLog(`[callClaude] style=${style} attempt=${attempt} stop_reason=${stopReason} input=${inputTokens} output=${outputTokens}`);
+
+    if (stopReason === 'max_tokens') {
+      batchLog(`[callClaude] TRUNCADO — stop_reason=max_tokens (output=${outputTokens}). Tentando retry...`);
+      lastError = new Error('Resposta truncada pela IA (max_tokens atingido)');
+      continue;
+    }
+
     const rawText = data.content[0].text.trim();
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Resposta inesperada da API');
-
-    const inputTokens  = data.usage?.input_tokens  || 0;
-    const outputTokens = data.usage?.output_tokens || 0;
 
     sessionTokens.input  += inputTokens;
     sessionTokens.output += outputTokens;
@@ -913,7 +968,7 @@ app.post('/api/generate', requireAuth, async (req, res) => {
     const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao);
 
     // Save to gallery server-side immediately
-    const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo);
+    const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo, style);
 
     // Update user stats (fire-and-forget)
     if (supabase) {
@@ -1005,7 +1060,12 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
         batchTokens += (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0);
       }
 
-      const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo);
+      const pv = result?.prompt_video || '';
+      const pvOk = pv.includes('pure video frame only') || pv.includes('9:16 photorealistic') || pv.length > 1200;
+      batchLog(`[processItem] index=${index} pv.length=${pv.length} ${pvOk ? 'OK' : 'POSSIVEL_TRUNCAMENTO'} | tail: "${pv.slice(-100).replace(/\n/g, '↵')}"`);
+
+      const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo, style);
+      batchLog(`[processItem] index=${index} saved gallery_id=${galleryItem?.id || 'null'}`);
       await _updateJobStatus(jobId, 'done', galleryItem?.id ?? null);
       res.write(`data: ${JSON.stringify({ type: 'result', index, data: result, gallery: galleryItem })}\n\n`);
 
@@ -1037,7 +1097,10 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
         batchPrompts++;
         batchTokens += (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0);
       }
-      const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo);
+      const pvR = result?.prompt_video || '';
+      const pvROk = pvR.includes('pure video frame only') || pvR.includes('9:16 photorealistic') || pvR.length > 1200;
+      batchLog(`[finalRetry] index=${index} pv.length=${pvR.length} ${pvROk ? 'OK' : 'POSSIVEL_TRUNCAMENTO'} | tail: "${pvR.slice(-100).replace(/\n/g, '↵')}"`);
+      const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo, style);
       await _updateJobStatus(jobId, 'done', galleryItem?.id ?? null);
       res.write(`data: ${JSON.stringify({ type: 'result', index, data: result, gallery: galleryItem })}\n\n`);
     } catch (err) {
@@ -1061,6 +1124,20 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
 
   res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
   res.end();
+});
+
+// ── DEBUG — leitura do log de batch (somente admin) ──
+app.get('/api/debug/last-batch', requireAuth, (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ error: 'Apenas admin' });
+  try {
+    const content = fs.existsSync(BATCH_LOG) ? fs.readFileSync(BATCH_LOG, 'utf8') : '(log vazio)';
+    // Devolve as últimas 500 linhas para não sobrecarregar
+    const lines = content.split('\n');
+    const tail  = lines.slice(-500).join('\n');
+    res.type('text/plain').send(tail);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── QUEUE (Job tracking — requires queue_jobs table in Supabase) ──

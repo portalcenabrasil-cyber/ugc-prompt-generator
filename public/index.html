@@ -3356,7 +3356,7 @@
           try {
             const msg = JSON.parse(line.slice(6));
             handleBatchEvent(msg, filledItems, tempIds);
-          } catch { /* malformed SSE line */ }
+          } catch (err) { console.error('[batch] SSE parse falhou:', err.message, '| linha:', line.slice(0, 120)); }
         }
       }
     } catch (err) {
@@ -4197,18 +4197,8 @@
         </div>`;
     }
 
-    content.innerHTML = `
-      ${chips ? `<div class="gallery-detail-section"><div class="gallery-detail-chips">${chips}</div></div>` : ''}
-      <div class="gallery-detail-section">
-        <span class="gallery-detail-label">Legenda</span>
-        <div class="gallery-detail-text">${(item.legenda||'—').replace(/</g,'&lt;')}</div>
-        ${item.legenda ? copyBtn(item.legenda) : ''}
-      </div>
-      <div class="gallery-detail-section">
-        <span class="gallery-detail-label">Prompt — Vídeo UGC</span>
-        <div class="gallery-detail-text">${(item.prompt_video||'—').replace(/</g,'&lt;')}</div>
-        ${item.prompt_video ? copyBtn(item.prompt_video) : ''}
-      </div>
+    const chipsHtml = chips ? `<div class="gallery-detail-section"><div class="gallery-detail-chips">${chips}</div></div>` : '';
+    const footerHtml = `
       ${costHtml}
       <button class="btn-used${getUsedItems().includes(id) ? ' active' : ''}" id="btnUsed" onclick="toggleUsed('${id}')">
         ${getUsedItems().includes(id) ? '✅ Já usado' : '☐ Marcar como usado'}
@@ -4217,6 +4207,80 @@
         <div class="spinner"></div>
         <span class="regen-label">↻ GERAR UM NOVO PROMPT</span>
       </button>`;
+
+    // Detecção nano-veo-2: via emocao (novos saves) OU via conteúdo do prompt_video (saves antigos)
+    const isNano2GalleryItem = item.emocao === 'nano-veo-2' ||
+      (item.nicho === 'Nano + Vídeos 2') ||
+      (item.prompt_video || '').includes('📸 CENA') ||
+      (item.prompt_video || '').includes('Consistent character:');
+
+    if (isNano2GalleryItem) {
+      // Nano + Vídeos 2 — split prompt_video de volta em seções separadas
+      const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
+
+      // Mapa de emoji por tipo de seção (detectado pela primeira linha)
+      function sectionLabel(raw) {
+        const first = (raw.split('\n')[0] || '').trim();
+        if (first.startsWith('📸')) return first;
+        if (first.startsWith('🎬')) return first;
+        if (/consistent character/i.test(first)) return '⚓ Âncora Fixa';
+        if (/💰/.test(first) || /resumo/i.test(first)) return '💰 Resumo';
+        return '📋 Character Sheet';
+      }
+
+      // Para cada seção: retorna apenas o corpo (prompt puro, sem header/tag)
+      function sectionBody(raw) {
+        const lines = raw.split('\n');
+        const first = (lines[0] || '').trim();
+        // Cenas têm cabeçalho com emoji 📸/🎬 — pula cabeçalho + tag opcional
+        if (first.startsWith('📸') || first.startsWith('🎬')) {
+          const second = (lines[1] || '').trim();
+          const isTag = second.startsWith('✅') || second.startsWith('❌');
+          return lines.slice(isTag ? 2 : 1).join('\n').trim();
+        }
+        // Resumo começa com 💰 — pula só a primeira linha de label
+        if (first.startsWith('💰') || /resumo/i.test(first)) {
+          return lines.slice(1).join('\n').trim();
+        }
+        // Character sheet e âncora fixa — conteúdo completo (não tem header separado)
+        return raw.trim();
+      }
+
+      let sectionsHtml = '';
+      sections.forEach((sec) => {
+        const label = sectionLabel(sec);
+        const body = sectionBody(sec);
+        const safeLabel = label.replace(/</g,'&lt;');
+        const safeBody  = body.replace(/</g,'&lt;');
+        const safeSec   = JSON.stringify(body).replace(/"/g,'&quot;');
+        sectionsHtml += `
+          <div class="gallery-detail-section">
+            <span class="gallery-detail-label">${safeLabel}</span>
+            <div class="gallery-detail-text">${safeBody}</div>
+            <button class="btn-copy" style="align-self:flex-start;margin-top:4px" onclick="copyRaw(${safeSec},this)"><span>⎘</span> COPIAR</button>
+          </div>`;
+      });
+
+      content.innerHTML = `
+        ${chipsHtml}
+        ${sectionsHtml}
+        ${footerHtml}`;
+
+    } else {
+      content.innerHTML = `
+        ${chipsHtml}
+        <div class="gallery-detail-section">
+          <span class="gallery-detail-label">Legenda</span>
+          <div class="gallery-detail-text">${(item.legenda||'—').replace(/</g,'&lt;')}</div>
+          ${item.legenda ? copyBtn(item.legenda) : ''}
+        </div>
+        <div class="gallery-detail-section">
+          <span class="gallery-detail-label">Prompt — Vídeo UGC</span>
+          <div class="gallery-detail-text">${(item.prompt_video||'—').replace(/</g,'&lt;')}</div>
+          ${item.prompt_video ? copyBtn(item.prompt_video) : ''}
+        </div>
+        ${footerHtml}`;
+    }
 
     document.getElementById('galleryModal').classList.remove('hidden');
   }
