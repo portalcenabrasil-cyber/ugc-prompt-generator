@@ -12,10 +12,13 @@ const Jimp = require('jimp');
 const { createClient } = require('@supabase/supabase-js');
 
 // ── Logging em arquivo para debug de batch ──
-const LOGS_DIR  = path.join(__dirname, 'logs');
+// Em produção serverless (Vercel Lambda), __dirname é read-only — usa /tmp.
+// Em desenvolvimento local, usa logs/ na raiz do projeto.
+const IS_SERVERLESS = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const LOGS_DIR  = IS_SERVERLESS ? '/tmp/ugc-logs' : path.join(__dirname, 'logs');
 const BATCH_LOG = path.join(LOGS_DIR, 'batch-debug.log');
 const MAX_LOG_BYTES = 2 * 1024 * 1024; // 2 MB — trunca para evitar disco cheio
-fs.mkdirSync(LOGS_DIR, { recursive: true });
+try { fs.mkdirSync(LOGS_DIR, { recursive: true }); } catch { /* ignora se não puder criar */ }
 
 function batchLog(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
@@ -1409,8 +1412,25 @@ app.get('/termos', (req, res) => {
 </html>`);
 });
 
+// Lê index.html no startup. Em serverless (Vercel) o sistema de arquivos é
+// read-only exceto /tmp — mas os arquivos bundlados via includeFiles são
+// acessíveis via __dirname em modo leitura. readFileSync no startup é mais
+// confiável que sendFile em ambientes Lambda (evita ENOENT em runtime).
+const INDEX_HTML_PATH = path.join(__dirname, 'public', 'index.html');
+let INDEX_HTML = '';
+try {
+  INDEX_HTML = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
+} catch (e) {
+  console.error('[startup] ERRO ao ler index.html:', e.message);
+}
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  if (INDEX_HTML) {
+    res.type('html').send(INDEX_HTML);
+  } else {
+    // Fallback: tenta sendFile se readFileSync falhou no startup
+    res.sendFile(INDEX_HTML_PATH);
+  }
 });
 
 const PORT = process.env.PORT || 3000;
