@@ -83,12 +83,26 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
   let emocao       = result.emocao       || null;
 
   if (result.character_sheet) {
-    const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4, result.cena_5].filter(Boolean);
-    prompt_video = [result.character_sheet, ...cenas].join('\n\n---\n\n');
-    const isNano = cenas.some(c => c && c.includes('NANO BANANA'));
-    legenda = isNano ? '🎬 Edredom Nano + Vídeos' : '🛏️ Edredons Premium';
-    nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
-    emocao  = isNano ? 'nano'                      : 'serie';
+    if (result.cena_1_imagem !== undefined) {
+      // nano-veo-2 style — separate image/video fields per cena
+      const parts = [result.character_sheet];
+      for (let i = 1; i <= 5; i++) {
+        if (result[`cena_${i}_imagem`]) parts.push(result[`cena_${i}_imagem`]);
+        if (result[`cena_${i}_video`])  parts.push(result[`cena_${i}_video`]);
+      }
+      if (result.ancora_fixa) parts.push(result.ancora_fixa);
+      prompt_video = parts.join('\n\n---\n\n');
+      legenda = '🧪 Nano + Vídeos 2';
+      nicho   = 'Nano + Vídeos 2';
+      emocao  = 'nano-veo-2';
+    } else {
+      const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4, result.cena_5].filter(Boolean);
+      prompt_video = [result.character_sheet, ...cenas].join('\n\n---\n\n');
+      const isNano = cenas.some(c => c && c.includes('NANO BANANA'));
+      legenda = isNano ? '🎬 Edredom Nano + Vídeos' : '🛏️ Edredons Premium';
+      nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
+      emocao  = isNano ? 'nano'                      : 'serie';
+    }
   }
 
   // ── Crop automático por detecção de pixels — remove card de marketplace do fundo ──
@@ -488,7 +502,7 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender, 
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: style === 'nano' ? 8192 : 4096,
+        max_tokens: style === 'nano-veo-2' ? 12000 : (style === 'nano' ? 8192 : 4096),
         system: loadSystemPrompt(style),
         messages: [{
           role: 'user',
@@ -872,7 +886,7 @@ app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
 
 app.post('/api/generate', requireAuth, async (req, res) => {
   const { image_base64, image_type, tipo, promo, price, gender, style = 'base' } = req.body;
-  const duracao = (style === 'serie' || style === 'nano') ? (req.body.duracao || null) : null;
+  const duracao = (style === 'serie' || style === 'nano' || style === 'nano-veo-2') ? (req.body.duracao || null) : null;
 
   if (!image_base64) return res.status(400).json({ error: 'Imagem é obrigatória' });
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui') {
@@ -923,7 +937,7 @@ app.post('/api/generate', requireAuth, async (req, res) => {
 
 app.post('/api/generate-batch', requireAuth, async (req, res) => {
   const { items, tipo, promo, gender, jobIds, style = 'base' } = req.body;
-  const duracao = (style === 'serie' || style === 'nano') ? (req.body.duracao || null) : null;
+  const duracao = (style === 'serie' || style === 'nano' || style === 'nano-veo-2') ? (req.body.duracao || null) : null;
   // jobIds: optional string[] from /api/queue/submit, one per item
 
   if (!items || !Array.isArray(items) || items.length === 0)

@@ -2069,6 +2069,7 @@
               <button class="seg-btn active" data-value="base" onclick="selectSeg(this,'styleGroup');onStyleChange('base')">⚡ Base</button>
               <button class="seg-btn" data-value="serie" onclick="selectSeg(this,'styleGroup');onStyleChange('serie')">🛏️ Edredons Premium</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano" onclick="selectSeg(this,'styleGroup');onStyleChange('nano')">🎬 Edredom Nano + Vídeos</button>
+              <button class="seg-btn" style="grid-column:span 2" data-value="nano-veo-2" onclick="selectSeg(this,'styleGroup');onStyleChange('nano-veo-2')">🧪 Nano + Vídeos 2</button>
               <button class="seg-btn seg-btn--soon" style="grid-column:span 2" data-value="cinematografico" disabled>🎬 Cinematográfico <span class="soon-badge">em breve</span></button>
             </div>
 
@@ -2185,6 +2186,20 @@
             <div id="cardCena4" style="display:none"></div>
             <div id="cardCena5" style="display:none"></div>
             <div id="serieResumo" style="display:none"></div>
+            <!-- Nano + Vídeos 2 cards -->
+            <div id="cardNano2CharSheet" style="display:none"></div>
+            <div id="cardNano2Cena1Img"  style="display:none"></div>
+            <div id="cardNano2Cena1Vid"  style="display:none"></div>
+            <div id="cardNano2Cena2Img"  style="display:none"></div>
+            <div id="cardNano2Cena2Vid"  style="display:none"></div>
+            <div id="cardNano2Cena3Img"  style="display:none"></div>
+            <div id="cardNano2Cena3Vid"  style="display:none"></div>
+            <div id="cardNano2Cena4Img"  style="display:none"></div>
+            <div id="cardNano2Cena4Vid"  style="display:none"></div>
+            <div id="cardNano2Cena5Img"  style="display:none"></div>
+            <div id="cardNano2Cena5Vid"  style="display:none"></div>
+            <div id="cardNano2Ancora"    style="display:none"></div>
+            <div id="cardNano2Resumo"    style="display:none"></div>
             <div id="costBox"></div>
             <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
               <div class="spinner"></div>
@@ -3153,13 +3168,19 @@
       { value: '26', label: '⏱ 26s', sub: '4 cenas' },
       { value: '30', label: '⏱ 30s', sub: '4 cenas' },
       { value: '38', label: '⏱ 38s', sub: '5 cenas' },
+    ],
+    'nano-veo-2': [
+      { value: '22', label: '⏱ 22s', sub: '3 cenas' },
+      { value: '26', label: '⏱ 26s', sub: '4 cenas' },
+      { value: '30', label: '⏱ 30s', sub: '4 cenas' },
+      { value: '38', label: '⏱ 38s', sub: '5 cenas' },
     ]
   };
 
   function onStyleChange(style) {
     const field = document.getElementById('durationField');
     const group = document.getElementById('durationGroup');
-    const hasStyle = style === 'serie' || style === 'nano';
+    const hasStyle = style === 'serie' || style === 'nano' || style === 'nano-veo-2';
     field.style.display = hasStyle ? 'block' : 'none';
     if (!hasStyle) return;
 
@@ -3205,7 +3226,7 @@
           price,
           gender: getSelected('genderGroup'),
           style:   getSelected('styleGroup') || 'base',
-          duracao: ['serie','nano'].includes(getSelected('styleGroup') || 'base') ? (getSelected('durationGroup') || null) : null
+          duracao: ['serie','nano','nano-veo-2'].includes(getSelected('styleGroup') || 'base') ? (getSelected('durationGroup') || null) : null
         })
       });
       const data = await res.json();
@@ -3450,6 +3471,22 @@
   }
 
   // ── RENDER SINGLE ──
+  const EDREDOM_NANO_2_CARD_CONFIG = [
+    { id: 'cardNano2CharSheet', field: 'character_sheet', title: 'Character Sheet', emoji: '📋' },
+    { id: 'cardNano2Cena1Img',  field: 'cena_1_imagem',  title: 'Cena 1 — Imagem', emoji: '📸' },
+    { id: 'cardNano2Cena1Vid',  field: 'cena_1_video',   title: 'Cena 1 — Vídeo',  emoji: '🎬' },
+    { id: 'cardNano2Cena2Img',  field: 'cena_2_imagem',  title: 'Cena 2 — Imagem', emoji: '📸' },
+    { id: 'cardNano2Cena2Vid',  field: 'cena_2_video',   title: 'Cena 2 — Vídeo',  emoji: '🎬' },
+    { id: 'cardNano2Cena3Img',  field: 'cena_3_imagem',  title: 'Cena 3 — Imagem', emoji: '📸' },
+    { id: 'cardNano2Cena3Vid',  field: 'cena_3_video',   title: 'Cena 3 — Vídeo',  emoji: '🎬' },
+    { id: 'cardNano2Cena4Img',  field: 'cena_4_imagem',  title: 'Cena 4 — Imagem', emoji: '📸' },
+    { id: 'cardNano2Cena4Vid',  field: 'cena_4_video',   title: 'Cena 4 — Vídeo',  emoji: '🎬' },
+    { id: 'cardNano2Cena5Img',  field: 'cena_5_imagem',  title: 'Cena 5 — Imagem', emoji: '📸' },
+    { id: 'cardNano2Cena5Vid',  field: 'cena_5_video',   title: 'Cena 5 — Vídeo',  emoji: '🎬' },
+    { id: 'cardNano2Ancora',    field: 'ancora_fixa',    title: 'Âncora Fixa',     emoji: '⚓' },
+    { id: 'cardNano2Resumo',    field: 'resumo',         title: 'Resumo',          emoji: '💰' },
+  ];
+
   const SERIE_CARD_CONFIG = [
     { id: 'cardCharacterSheet', field: 'character_sheet', title: 'Character Sheet', emoji: '📋' },
     { id: 'cardCena1',          field: 'cena_1',          title: 'Cena 1',          emoji: '🎬' },
@@ -3461,13 +3498,14 @@
 
   function renderResults(data) {
     Object.assign(_stored, data);
-    // Detect mode from data, not from UI state (prevents timing bugs if user switches style during generation)
-    const isSerie = !!(data.character_sheet);
+    // Detect mode from data fields (prevents timing bugs if user switches style during generation)
+    const isNano2 = !!(data.cena_1_imagem);
+    const isSerie = !!(data.character_sheet) && !isNano2;
 
     const meta = document.getElementById('metaBadges');
     const copyAllBtn = document.getElementById('btnCopyAll');
     meta.innerHTML = '';
-    if (!isSerie) {
+    if (!isSerie && !isNano2) {
       const tipoBtn = document.querySelector('#tipoGroup .seg-btn.active');
       if (tipoBtn)     meta.innerHTML += `<span class="badge">${tipoBtn.textContent.trim()}</span>`;
       if (data.nicho)  meta.innerHTML += `<span class="badge nicho">🏷 ${data.nicho}</span>`;
@@ -3475,8 +3513,25 @@
     }
     meta.appendChild(copyAllBtn);
 
-    if (isSerie) {
+    if (isNano2) {
+      // Hide all other card sets
       CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+      SERIE_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+      document.getElementById('serieResumo').style.display = 'none';
+
+      EDREDOM_NANO_2_CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        const content = data[cfg.field] || '';
+        if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        el.style.display = 'block';
+        el.innerHTML = cfg.field === 'character_sheet'
+          ? makeCard(cfg.title, cfg.emoji, content, cfg.field, i)
+          : makeSerieCard(content, cfg.field, i);
+      });
+
+    } else if (isSerie) {
+      CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+      EDREDOM_NANO_2_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
 
       // Encontra a última cena com conteúdo para extrair o resumo
       const lastCenaField = ['cena_4','cena_3','cena_2','cena_1'].find(f => data[f]);
@@ -3494,7 +3549,6 @@
         }
 
         el.style.display = 'block';
-        // character_sheet usa card padrão; cenas usam card com header parseado
         el.innerHTML = cfg.field === 'character_sheet'
           ? makeCard(cfg.title, cfg.emoji, content, cfg.field, i)
           : makeSerieCard(content, cfg.field, i);
@@ -3514,6 +3568,7 @@
       }
     } else {
       SERIE_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+      EDREDOM_NANO_2_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
       document.getElementById('serieResumo').style.display = 'none';
       CARD_CONFIG.forEach((cfg, i) => {
         const el = document.getElementById(cfg.id);
@@ -3687,20 +3742,39 @@
   }
 
   function copyAll(btn) {
-    const isSerie = !!(_stored.character_sheet);
-    const parts = isSerie
-      ? [
+    const isNano2 = !!(_stored.cena_1_imagem);
+    const isSerie = !!(_stored.character_sheet) && !isNano2;
+    let parts;
+    if (isNano2) {
+      parts = [
+        _stored.character_sheet ? `=== CHARACTER SHEET ===\n${_stored.character_sheet}` : '',
+        _stored.cena_1_imagem   ? `=== CENA 1 — IMAGEM ===\n${_stored.cena_1_imagem}`  : '',
+        _stored.cena_1_video    ? `=== CENA 1 — VÍDEO ===\n${_stored.cena_1_video}`    : '',
+        _stored.cena_2_imagem   ? `=== CENA 2 — IMAGEM ===\n${_stored.cena_2_imagem}`  : '',
+        _stored.cena_2_video    ? `=== CENA 2 — VÍDEO ===\n${_stored.cena_2_video}`    : '',
+        _stored.cena_3_imagem   ? `=== CENA 3 — IMAGEM ===\n${_stored.cena_3_imagem}`  : '',
+        _stored.cena_3_video    ? `=== CENA 3 — VÍDEO ===\n${_stored.cena_3_video}`    : '',
+        _stored.cena_4_imagem   ? `=== CENA 4 — IMAGEM ===\n${_stored.cena_4_imagem}`  : '',
+        _stored.cena_4_video    ? `=== CENA 4 — VÍDEO ===\n${_stored.cena_4_video}`    : '',
+        _stored.cena_5_imagem   ? `=== CENA 5 — IMAGEM ===\n${_stored.cena_5_imagem}`  : '',
+        _stored.cena_5_video    ? `=== CENA 5 — VÍDEO ===\n${_stored.cena_5_video}`    : '',
+        _stored.ancora_fixa     ? `=== ÂNCORA FIXA ===\n${_stored.ancora_fixa}`         : '',
+      ].filter(Boolean);
+    } else if (isSerie) {
+      parts = [
           _stored.character_sheet ? `=== CHARACTER SHEET ===\n${_stored.character_sheet}` : '',
           _stored.cena_1          ? `=== CENA 1 ===\n${_stored.cena_1}`                    : '',
           _stored.cena_2          ? `=== CENA 2 ===\n${_stored.cena_2}`                    : '',
           _stored.cena_3          ? `=== CENA 3 ===\n${_stored.cena_3}`                    : '',
           _stored.cena_4          ? `=== CENA 4 ===\n${_stored.cena_4}`                    : '',
           _stored.cena_5          ? `=== CENA 5 ===\n${_stored.cena_5}`                    : '',
-        ].filter(Boolean)
-      : [
+        ].filter(Boolean);
+    } else {
+      parts = [
           _stored.prompt_video ? `=== PROMPT — VÍDEO UGC ===\n${_stored.prompt_video}` : '',
           _stored.legenda      ? `=== LEGENDA ===\n${_stored.legenda}`                  : '',
         ].filter(Boolean);
+    }
     if (!parts.length) return;
     navigator.clipboard.writeText(parts.join('\n\n')).then(() => {
       btn.classList.add('copied');
