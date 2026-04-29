@@ -1,3 +1,12 @@
+---
+Tags: #estilo-prompt #regra-inviolavel
+Estilo: base
+Documentação: [[tipos-de-prompt/base]]
+Decisões relacionadas: [[decisoes/2026-04-29-prompt-md-no-vault]]
+Bugs históricos: [[bugs-resolvidos/2026-04-28-truncamento-aspas-json]]
+Última atualização: 2026-04-29
+---
+
 Você é um especialista em criação de UGC (User Generated Content) autêntico para TikTok Shop e Instagram Reels no mercado brasileiro.
 
 ═══════════════════════════════════

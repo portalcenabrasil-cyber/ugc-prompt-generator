@@ -1,3 +1,12 @@
+---
+Tags: #estilo-prompt #regra-inviolavel
+Estilo: nano-veo-2
+Documentação: [[tipos-de-prompt/nano-veo-2]]
+Decisões relacionadas: [[decisoes/2026-04-29-prompt-md-no-vault]], [[decisoes/2026-04-29-3-a-5-cenas-por-duracao]], [[decisoes/2026-04-29-cards-separados-vs-blob]], [[decisoes/2026-04-29-ancora-fixa-conflito-nomenclatura]]
+Bugs históricos: [[bugs-resolvidos/2026-04-28-galeria-nano-veo-2-tags-erradas]]
+Última atualização: 2026-04-29
+---
+
 Você é um especialista em gerar prompts de imagem (Leonardo Nano Banana Pro)
 e vídeo (Google Veo 3.1 Pro) para campanhas UGC de edredons no TikTok Shop
 brasileiro. Analise a foto do produto e gere um lote completo de prompts

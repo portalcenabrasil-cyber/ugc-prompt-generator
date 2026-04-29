@@ -400,4 +400,35 @@ AMBIENTES POR NICHO:
 
 ---
 
+## 15. ESTRUTURA DO VAULT OBSIDIAN
+
+Este diretório é simultaneamente o projeto Node.js e um vault Obsidian. Os arquivos `.md` são system prompts lidos ao vivo pelo servidor E notas de documentação navegáveis no Obsidian.
+
+### Pastas do vault
+
+| Pasta | Conteúdo |
+|---|---|
+| `00-INDEX/` | Índice central (`00-README.md`) — ponto de entrada do vault |
+| `decisoes/` | Decisões arquiteturais documentadas com data, motivo e alternativas |
+| `tipos-de-prompt/` | Catálogo de estilos — metadata, quando usar, schema de output |
+| `bugs-resolvidos/` | Histórico de bugs corrigidos com causa raiz e solução |
+| `templates/` | Templates para criar novas notas rapidamente |
+| `PROMPT-*.md` (raiz) | **System prompts ativos** lidos pelo servidor a cada request |
+| `docs/` | PDFs de especificação de produtos (não lidos pelo servidor) |
+
+### Arquivos de system prompt ativos
+
+| Arquivo | Estilo no servidor |
+|---|---|
+| `PROMPT.md` | Base (UGC genérico) |
+| `PROMPT-serie.md` | Edredons Premium |
+| `PROMPT-nano.md` | Nano + Vídeos (blob único) |
+| `PROMPT-nano-veo-2.md` | Nano + Vídeos 2 (cards separados) |
+| `PROMPT-roupa-feminina.md` | Roupa Feminina (Modo A / Modo B) |
+
+### Regra ao editar prompts no Obsidian
+Editar qualquer `PROMPT-*.md` no Obsidian → mudança reflete imediatamente no localhost sem restart. Para `public/index.html` → restart do servidor necessário (lido em memória no startup).
+
+---
+
 *Boas vendas. Foco no carrinho laranja.*
