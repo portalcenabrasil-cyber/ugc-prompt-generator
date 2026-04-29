@@ -2068,10 +2068,11 @@
             <div class="seg-group" style="grid-template-columns:1fr 1fr" id="styleGroup">
               <button class="seg-btn active" data-value="base" onclick="selectSeg(this,'styleGroup');onStyleChange('base')">⚡ Base</button>
               <button class="seg-btn" data-value="serie" onclick="selectSeg(this,'styleGroup');onStyleChange('serie')">🛏️ Edredons Premium</button>
+              <button class="seg-btn" style="grid-column:span 2" data-value="nano" onclick="selectSeg(this,'styleGroup');onStyleChange('nano')">🎬 Edredom Nano + Vídeos</button>
               <button class="seg-btn seg-btn--soon" style="grid-column:span 2" data-value="cinematografico" disabled>🎬 Cinematográfico <span class="soon-badge">em breve</span></button>
             </div>
 
-          <!-- Duração (visível só para Edredons Premium) -->
+          <!-- Duração (visível para Edredons Premium e Nano + Vídeos) -->
           <div class="field" id="durationField" style="display:none">
             <label class="field-label">Duração do Vídeo</label>
             <div class="seg-group cols-3" id="durationGroup">
@@ -2182,6 +2183,7 @@
             <div id="cardCena2" style="display:none"></div>
             <div id="cardCena3" style="display:none"></div>
             <div id="cardCena4" style="display:none"></div>
+            <div id="cardCena5" style="display:none"></div>
             <div id="serieResumo" style="display:none"></div>
             <div id="costBox"></div>
             <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
@@ -3140,8 +3142,33 @@
     return active ? active.dataset.value : '';
   }
 
+  const DURATION_CONFIGS = {
+    serie: [
+      { value: '22', label: '⏱ 22s', sub: '3.300cr' },
+      { value: '26', label: '⏱ 26s', sub: '3.900cr' },
+      { value: '32', label: '⏱ 32s', sub: '4.800cr' },
+    ],
+    nano: [
+      { value: '22', label: '⏱ 22s', sub: '3 cenas' },
+      { value: '26', label: '⏱ 26s', sub: '4 cenas' },
+      { value: '30', label: '⏱ 30s', sub: '4 cenas' },
+      { value: '38', label: '⏱ 38s', sub: '5 cenas' },
+    ]
+  };
+
   function onStyleChange(style) {
-    document.getElementById('durationField').style.display = style === 'serie' ? 'block' : 'none';
+    const field = document.getElementById('durationField');
+    const group = document.getElementById('durationGroup');
+    const hasStyle = style === 'serie' || style === 'nano';
+    field.style.display = hasStyle ? 'block' : 'none';
+    if (!hasStyle) return;
+
+    const cfg = DURATION_CONFIGS[style] || DURATION_CONFIGS.serie;
+    const cols = cfg.length === 4 ? 'cols-4' : 'cols-3';
+    group.className = `seg-group ${cols}`;
+    group.innerHTML = cfg.map((d, i) =>
+      `<button class="seg-btn${i === 0 ? ' active' : ''}" data-value="${d.value}" onclick="selectSeg(this,'durationGroup')">${d.label}<br><span style="font-size:10px;opacity:0.6">${d.sub}</span></button>`
+    ).join('');
   }
 
   // ── GENERATE SINGLE ──
@@ -3178,7 +3205,7 @@
           price,
           gender: getSelected('genderGroup'),
           style:   getSelected('styleGroup') || 'base',
-          duracao: (getSelected('styleGroup') || 'base') === 'serie' ? (getSelected('durationGroup') || null) : null
+          duracao: ['serie','nano'].includes(getSelected('styleGroup') || 'base') ? (getSelected('durationGroup') || null) : null
         })
       });
       const data = await res.json();
@@ -3284,7 +3311,7 @@
         })),
         jobIds,
         tipo, promo, gender, style,
-        duracao: style === 'serie' ? (getSelected('durationGroup') || null) : null
+        duracao: ['serie','nano'].includes(style) ? (getSelected('durationGroup') || null) : null
       };
 
       const res = await authFetch('/api/generate-batch', {
@@ -3429,6 +3456,7 @@
     { id: 'cardCena2',          field: 'cena_2',          title: 'Cena 2',          emoji: '🎬' },
     { id: 'cardCena3',          field: 'cena_3',          title: 'Cena 3',          emoji: '🎬' },
     { id: 'cardCena4',          field: 'cena_4',          title: 'Cena 4',          emoji: '🎬' },
+    { id: 'cardCena5',          field: 'cena_5',          title: 'Cena 5',          emoji: '🎬' },
   ];
 
   function renderResults(data) {
@@ -3667,6 +3695,7 @@
           _stored.cena_2          ? `=== CENA 2 ===\n${_stored.cena_2}`                    : '',
           _stored.cena_3          ? `=== CENA 3 ===\n${_stored.cena_3}`                    : '',
           _stored.cena_4          ? `=== CENA 4 ===\n${_stored.cena_4}`                    : '',
+          _stored.cena_5          ? `=== CENA 5 ===\n${_stored.cena_5}`                    : '',
         ].filter(Boolean)
       : [
           _stored.prompt_video ? `=== PROMPT — VÍDEO UGC ===\n${_stored.prompt_video}` : '',

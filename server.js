@@ -83,11 +83,12 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
   let emocao       = result.emocao       || null;
 
   if (result.character_sheet) {
-    const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4].filter(Boolean);
+    const cenas = [result.cena_1, result.cena_2, result.cena_3, result.cena_4, result.cena_5].filter(Boolean);
     prompt_video = [result.character_sheet, ...cenas].join('\n\n---\n\n');
-    legenda = '🛏️ Edredons Premium';
-    nicho   = 'Edredons Premium';
-    emocao  = 'serie';
+    const isNano = cenas.some(c => c && c.includes('NANO BANANA'));
+    legenda = isNano ? '🎬 Edredom Nano + Vídeos' : '🛏️ Edredons Premium';
+    nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
+    emocao  = isNano ? 'nano'                      : 'serie';
   }
 
   // ── Crop automático por detecção de pixels — remove card de marketplace do fundo ──
@@ -487,7 +488,7 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender, 
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        max_tokens: style === 'nano' ? 8192 : 4096,
         system: loadSystemPrompt(style),
         messages: [{
           role: 'user',
@@ -871,7 +872,7 @@ app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
 
 app.post('/api/generate', requireAuth, async (req, res) => {
   const { image_base64, image_type, tipo, promo, price, gender, style = 'base' } = req.body;
-  const duracao = style === 'serie' ? (req.body.duracao || null) : null;
+  const duracao = (style === 'serie' || style === 'nano') ? (req.body.duracao || null) : null;
 
   if (!image_base64) return res.status(400).json({ error: 'Imagem é obrigatória' });
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui') {
@@ -922,7 +923,7 @@ app.post('/api/generate', requireAuth, async (req, res) => {
 
 app.post('/api/generate-batch', requireAuth, async (req, res) => {
   const { items, tipo, promo, gender, jobIds, style = 'base' } = req.body;
-  const duracao = style === 'serie' ? (req.body.duracao || null) : null;
+  const duracao = (style === 'serie' || style === 'nano') ? (req.body.duracao || null) : null;
   // jobIds: optional string[] from /api/queue/submit, one per item
 
   if (!items || !Array.isArray(items) || items.length === 0)
