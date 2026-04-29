@@ -21,12 +21,26 @@ REGRA SAGRADA — DEPLOY
    - 🛏️ Edredons Premium
    - 🎬 Edredom Nano + Vídeos
    - 🧪 Nano + Vídeos 2
-5. SÓ DEPOIS de tudo passar no teste local → `git commit` + `git push`
-6. Aguarda o deploy terminar na Vercel
-7. Testa novamente em produção (`https://ugc-prompt-generator-six.vercel.app`) para confirmar que subiu igual ao local
+5. SÓ DEPOIS de tudo passar no teste local → `git commit` + `git push origin main`
+6. O push dispara o deploy automático na Vercel (integração GitHub configurada em 2026-04-29)
+7. Aguarda 1-2 minutos e testa em produção (`https://ugc-prompt-generator-six.vercel.app`)
 
 > **NUNCA faça commit/push direto sem testar local primeiro.**
 > Se o usuário pedir "deploy", entenda como: *testa local primeiro — SE passar, deploya.*
+
+### Notas técnicas importantes sobre deploy
+
+**Arquivos estáticos no Vercel:**
+`vercel.json` tem `includeFiles: ["public/**", "PROMPT*.md", "CONTEXT.md"]` — isso garante
+que esses arquivos sejam bundlados na função serverless. Sem isso, o Vercel só inclui `server.js`
+e `node_modules`, deixando `public/index.html` desatualizado em produção.
+
+**Se o auto-deploy não acontecer:**
+A integração GitHub → Vercel pode eventualmente perder a conexão. Sinal de alerta: você fez
+`git push origin main` mas a produção ficou parada na versão antiga. Nesse caso, forçar deploy:
+```bash
+vercel deploy --prod
+```
 
 ```
 ═══════════════════════════════════════════════════════
