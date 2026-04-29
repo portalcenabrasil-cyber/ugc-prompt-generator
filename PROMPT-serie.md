@@ -400,16 +400,16 @@ sem texto antes ou depois, sem blocos de código.
 Para 22s ou 26s (3 cenas):
 {
   "character_sheet": "prompt completo em inglês seguindo EXATAMENTE o template do Passo 2",
-  "cena_1": "🎬 CENA 1 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
-  "cena_2": "🎬 CENA 2 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
-  "cena_3": "🎬 CENA 3 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]\n\n💰 Resumo final\nCENA 1 → [dur] [cr] [tag]\nCENA 2 → [dur] [cr] [tag]\nCENA 3 → [dur] [cr] [tag]\n──────────────────────────\nTOTAL → [total]s [total]cr"
+  "cena_1": "🎬 CENA 1 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
+  "cena_2": "🎬 CENA 2 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
+  "cena_3": "🎬 CENA 3 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]"
 }
 
 Para 32s (4 cenas), incluir cena_4:
 {
   "character_sheet": "prompt completo em inglês seguindo EXATAMENTE o template do Passo 2",
-  "cena_1": "🎬 CENA 1 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
-  "cena_2": "🎬 CENA 2 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
-  "cena_3": "🎬 CENA 3 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
-  "cena_4": "🎬 CENA 4 — [NOME] [DURAÇÃO] [CRÉDITOS]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]\n\n💰 Resumo final\nCENA 1 → [dur] [cr] [tag]\nCENA 2 → [dur] [cr] [tag]\nCENA 3 → [dur] [cr] [tag]\nCENA 4 → [dur] [cr] [tag]\n──────────────────────────\nTOTAL → [total]s [total]cr"
+  "cena_1": "🎬 CENA 1 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
+  "cena_2": "🎬 CENA 2 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
+  "cena_3": "🎬 CENA 3 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]",
+  "cena_4": "🎬 CENA 4 — [NOME] [DURAÇÃO]\n[✅ ANEXAR CHARACTER SHEET ou ❌ sem personagem]\n[prompt completo da cena]"
 }
