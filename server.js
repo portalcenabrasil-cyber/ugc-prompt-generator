@@ -1409,8 +1409,13 @@ app.get('/termos', (req, res) => {
 </html>`);
 });
 
+// Lê index.html uma vez no startup e serve em memória.
+// Isso garante que o Vercel inclua o conteúdo correto mesmo sem includeFiles explícito,
+// e elimina o hit de disco em cada request no ambiente serverless.
+const INDEX_HTML = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.type('html').send(INDEX_HTML);
 });
 
 const PORT = process.env.PORT || 3000;
