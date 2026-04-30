@@ -11,7 +11,11 @@
           "PROMPT-serie.md",
           "PROMPT-nano.md",
           "PROMPT-nano-veo-2.md",
-          "CONTEXT.md"
+          "PROMPT-roupa-feminina.md",
+          "PROMPT-roupa-feminina-v2.md",
+          "CONTEXT.md",
+          "personagens/**",
+          "cenarios/**"
         ]
       }
     }

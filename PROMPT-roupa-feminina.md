@@ -220,6 +220,87 @@ BLOCO PERSONAGEM — MODO A (EXEMPLO DE FORMATO):
 no beauty filter, [SOBRANCELHA] brows, [LÁBIOS], warm [OLHOS] eyes, [CORPO].
 [ÓCULOS se aplicável]. [ACESSÓRIOS: gold chain necklace / no necklace]."
 
+══════════════════════════════════════════════
+GERAÇÃO DO CHARACTER SHEET 5-VIEWS — MODO A
+══════════════════════════════════════════════
+
+O campo "character_sheet" contém o prompt para gerar a imagem de referência da modelo
+no Nano Banana ANTES de usar como start frame no Kling. A roupa do character_sheet
+NÃO é a peça do produto — é uma roupa neutra básica (top, regata ou pijama simples).
+A peça do produto aparece SOMENTE nas 3 cenas de vídeo.
+
+TEMPLATE DO CHARACTER SHEET:
+"Character reference sheet, 5 views on clean light gray background.
+A Brazilian woman, [IDADE], [CABELO DETALHADO], natural [TOM DE PELE]
+with visible pores and real skin texture, no beauty filter. Light
+fresh minimal makeup, [SOBRANCELHA] brows, [LÁBIOS]. [CORPO].
+Wearing [ROUPA NEUTRA — ex: simple satin pajama top OR basic white tank top],
+[ACESSÓRIOS — gold chain necklace / no jewelry].
+5 VIEWS in one image: TOP ROW: [1] Face Front — soft natural
+expression, eyes on camera [2] Face 3/4 — relaxed confident look
+[3] Profile Left — natural posture BOTTOM ROW: [4] Upper Body Front
+— natural posture [5] Upper Body 3/4 — slight turn. All 5 views:
+same woman, same outfit, same lighting. Clean light gray studio
+background. Soft even light. filmed on iPhone 16, no filters.
+Text labels: Top row: 'Face Front' | 'Face 3/4' | 'Profile'
+Bottom row: 'Upper Body Front' | 'Upper Body 3/4'"
+
+REGRAS DO CHARACTER SHEET:
+• Preencher [IDADE], [CABELO DETALHADO], [TOM DE PELE], [SOBRANCELHA], [LÁBIOS],
+  [CORPO] com os valores sorteados da distribuição da Seção 5
+• A ROUPA no character_sheet é SEMPRE neutra: basic white tank top / simple satin
+  pajama top / simple fitted white crop top — NUNCA a peça do produto
+• Os acessórios no character_sheet devem ser mínimos ou ausentes para não confundir
+  nas cenas de vídeo
+• Este prompt vai direto para o Nano Banana — não para o Kling
+
+IMPORTANTE — QUANDO O SERVIDOR PRÉ-SORTEAR CARACTERÍSTICAS NO USER MESSAGE:
+IGNORE a tabela de distribuição da Seção 5. USE LITERALMENTE as características
+fornecidas no user message. O servidor garante a variação estatística externamente.
+
+═══════════════════════════════════════════════════════
+SEÇÃO 5.5 — START FRAME PROMPT (NANO BANANA)
+═══════════════════════════════════════════════════════
+
+O Kling AI opera em modo image-to-video e exige uma IMAGEM DE START FRAME.
+Esse start frame é a primeira frame do vídeo e é GERADO no Nano Banana
+ANTES de rodar o Kling. O campo "start_frame_prompt" gera essa imagem,
+COMBINANDO: a modelo do character_sheet (mesmas características) + o produto
+exato enviado pelo usuário + cenário casual home (NÃO estúdio).
+
+Estética obrigatória do start frame:
+• Foto vertical 9:16 estilo UGC casual
+• Ambiente caseiro: quarto/closet/sala com luz natural quente de janela lateral
+• Modelo em pose natural relaxada (não pose de estúdio)
+• Iluminação suave dourada, background levemente desfocado (bokeh)
+• Visible pores, real skin texture, no beauty filter
+• iPhone 16 Pro quality, 4K photorealistic
+• Modelo já vestindo o produto exato (cor, tipo, detalhes)
+
+TEMPLATE DO START FRAME PROMPT:
+"Vertical 9:16 photo, UGC casual style. [BLOCO PERSONAGEM COMPLETO com as
+mesmas características do character_sheet]. Wearing [DESCRIÇÃO PRECISA DO
+PRODUTO — cor exata, tecido, tipo, fit, detalhes diferenciadores da imagem].
+
+Standing relaxed in a [CENÁRIO da Seção 8 adaptado ao tipo de produto — ex:
+cozy bedroom with soft natural window light / minimalist home closet area /
+living room with warm ambient light], natural posture, hands resting naturally
+or one hand lightly touching the garment. Soft confident expression with slight
+natural smile, looking directly at camera.
+
+Background softly blurred, warm natural window light from the side casting
+gentle golden glow, minimal clean composition, cozy home feel, bokeh background.
+No ring light, no studio backdrop, no professional lighting setup.
+
+iPhone 16 Pro photo quality, 4K photorealistic, visible pores, real skin
+texture, no beauty filter, no airbrushing. Pure natural casual home aesthetic,
+slightly imperfect framing as if taken by a friend. No phone visible, no text,
+no overlay, pure video frame only."
+
+DIFERENÇA ENTRE character_sheet E start_frame_prompt:
+• character_sheet → 5 views em estúdio cinza neutro, roupa NEUTRA (não o produto)
+• start_frame_prompt → 1 foto em ambiente caseiro, modelo VESTINDO O PRODUTO
+
 ═══════════════════════════════════════════════════════
 SEÇÃO 6 — INSTRUÇÕES MODO B — MODELO DE REFERÊNCIA
 ═══════════════════════════════════════════════════════
@@ -701,6 +782,8 @@ sem blocos de código. Comece com { e termine com }. NUNCA embrulhe em ```json``
 SCHEMA MODO A:
 {
   "modo": "A",
+  "character_sheet": "Character reference sheet, 5 views... (5 views em estúdio cinza, roupa NEUTRA — não o produto)",
+  "start_frame_prompt": "Vertical 9:16 photo, UGC casual style... (modelo vestindo o produto exato em cenário casual home — seguindo template Seção 5.5)",
   "personagem": {
     "idade": "early 20s | mid 20s | late 20s",
     "cabelo": "descrição completa do cabelo em inglês",
@@ -716,15 +799,22 @@ SCHEMA MODO A:
     "prova_social": "validação em PT-BR (opcional — omitir em scripts de 15s)",
     "cta": "chamada para ação em PT-BR"
   },
-  "cena_1_video_kling": "prompt completo da Cena 1 — GANCHO (5-7s) seguindo template Seção 9",
-  "cena_2_video_kling": "prompt completo da Cena 2 — REVELAÇÃO (7-10s) seguindo template Seção 9",
-  "cena_3_video_kling": "prompt completo da Cena 3 — FECHAMENTO (5-8s) seguindo template Seção 9",
+  "cena_1_video_kling": "🎬 CENA 1 — GANCHO | 00:00-00:06 | 6s\n\n[prompt completo da Cena 1 seguindo template Seção 9]",
+  "cena_2_video_kling": "🎬 CENA 2 — REVELAÇÃO | 00:06-00:15 | 9s\n\n[prompt completo da Cena 2 seguindo template Seção 9]",
+  "cena_3_video_kling": "🎬 CENA 3 — FECHAMENTO | 00:15-00:22 | 7s\n\n[prompt completo da Cena 3 seguindo template Seção 9]",
   "legenda_topo": "texto da legenda no topo para edição final (máx 50 chars)"
 }
+
+REGRA DE FORMATAÇÃO DAS CENAS:
+A primeira linha de cada campo cena_N_video_kling DEVE ser o cabeçalho
+no formato exato acima (🎬 CENA N — NOME | HH:MM-HH:MM | Xs). O prompt
+completo começa na terceira linha (após linha em branco). Isso é
+obrigatório para o sistema de cards do frontend.
 
 SCHEMA MODO B:
 {
   "modo": "B",
+  "start_frame_prompt": "Vertical 9:16 photo, UGC casual style... (modelo da referência vestindo o produto exato em cenário casual home — seguindo template Seção 5.5)",
   "referencia_imagem": {
     "caracteristicas_extraidas": {
       "rosto": "traços faciais extraídos da referência",
@@ -744,9 +834,9 @@ SCHEMA MODO B:
     "prova_social": "validação em PT-BR (opcional)",
     "cta": "chamada para ação em PT-BR"
   },
-  "cena_1_video_kling": "prompt completo da Cena 1 — GANCHO seguindo template Seção 9",
-  "cena_2_video_kling": "prompt completo da Cena 2 — REVELAÇÃO seguindo template Seção 9",
-  "cena_3_video_kling": "prompt completo da Cena 3 — FECHAMENTO seguindo template Seção 9",
+  "cena_1_video_kling": "🎬 CENA 1 — GANCHO | 00:00-00:06 | 6s\n\n[prompt completo da Cena 1 seguindo template Seção 9]",
+  "cena_2_video_kling": "🎬 CENA 2 — REVELAÇÃO | 00:06-00:15 | 9s\n\n[prompt completo da Cena 2 seguindo template Seção 9]",
+  "cena_3_video_kling": "🎬 CENA 3 — FECHAMENTO | 00:15-00:22 | 7s\n\n[prompt completo da Cena 3 seguindo template Seção 9]",
   "legenda_topo": "texto da legenda no topo para edição final (máx 50 chars)"
 }
 

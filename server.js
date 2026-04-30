@@ -95,8 +95,9 @@ function requireAuth(req, res, next) {
 
 // ── Server-side gallery save helper ──
 async function _saveGalleryItem(userId, result, image_base64, image_type, price, tipo, style) {
-  const isNanoVeo2 = style === 'nano-veo-2';
-  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2)) return null;
+  const isNanoVeo2      = style === 'nano-veo-2';
+  const isRoupaFeminina = style === 'roupa-feminina-a' || style === 'roupa-feminina-b' || style === 'roupa-feminina-v2';
+  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2 && !isRoupaFeminina)) return null;
 
   // For serie/nano/nano-veo-2: assemble prompt_video from all cena fields
   let prompt_video = result.prompt_video || null;
@@ -104,7 +105,29 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
   let nicho        = result.nicho        || null;
   let emocao       = result.emocao       || null;
 
-  if (isNanoVeo2) {
+  if (isRoupaFeminina) {
+    const parts = [];
+    if (result.character_sheet)                       parts.push(result.character_sheet);
+    if (result.start_frame_prompt)                    parts.push(result.start_frame_prompt);
+    if (result.referencia_imagem?.descricao_completa) parts.push(result.referencia_imagem.descricao_completa);
+    if (result.outfit_detectado)                      parts.push('OUTFIT: ' + result.outfit_detectado);
+    if (result.prompt_kling_video)                    parts.push(result.prompt_kling_video);
+    if (result.script) {
+      const s = result.script;
+      const scriptText = [s.hook, s.beneficio, s.prova_social, s.cta].filter(Boolean).join('\n');
+      if (scriptText) parts.push(scriptText);
+    }
+    if (result.cena_1_video_kling) parts.push(result.cena_1_video_kling);
+    if (result.cena_2_video_kling) parts.push(result.cena_2_video_kling);
+    if (result.cena_3_video_kling) parts.push(result.cena_3_video_kling);
+    if (result.legenda_topo)       parts.push(result.legenda_topo);
+    prompt_video = parts.join('\n\n---\n\n');
+    legenda = style === 'roupa-feminina-v2' ? '👗 Roupa Feminina v2'
+            : style === 'roupa-feminina-a'  ? '👗 Roupa Feminina A'
+            : '👗 Roupa Feminina + Modelo';
+    nicho   = 'Roupa Feminina';
+    emocao  = style;
+  } else if (isNanoVeo2) {
     // Nano + Vídeos 2 — campos separados imagem/vídeo por cena
     const parts = [];
     if (result.character_sheet) parts.push(result.character_sheet);
@@ -127,17 +150,20 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
     emocao  = isNano ? 'nano'                      : 'serie';
   }
 
-  // ── Crop automático por detecção de pixels — remove card de marketplace do fundo ──
-  let gallery_image_base64 = image_base64;
+  // ── Crop automático + resize/compress — remove card e gera thumbnail leve ──
+  let gallery_image_base64 = null;
+  let gallery_image_type   = image_type || 'image/jpeg';
   if (image_base64) {
-    gallery_image_base64 = await cropImageBase64(image_base64, image_type || 'image/jpeg');
+    const cropped = await cropImageBase64(image_base64, image_type || 'image/jpeg');
+    gallery_image_base64 = cropped.base64;
+    gallery_image_type   = cropped.mimeType;
   }
 
   const newItem = {
     id:           Date.now() + '-' + Math.random().toString(36).substr(2, 9),
     user_id:      userId,
     created_at:   new Date().toISOString(),
-    image:        gallery_image_base64 ? `data:${image_type};base64,${gallery_image_base64}` : null,
+    image:        gallery_image_base64 ? `data:${gallery_image_type};base64,${gallery_image_base64}` : null,
     prompt_video: prompt_video,
     legenda:      legenda,
     nicho:        nicho,
@@ -267,7 +293,11 @@ const SYSTEM_PROMPT = SYSTEM_PROMPT_BASE;
 // style='cinematografico' → PROMPT-cinematografico.md (or falls back to base)
 function loadSystemPrompt(style) {
   if (style && style !== 'base') {
-    const styleFile = path.join(__dirname, `PROMPT-${style}.md`);
+    // roupa-feminina-a e roupa-feminina-b usam o mesmo arquivo de sistema
+    const styleKey = (style === 'roupa-feminina-a' || style === 'roupa-feminina-b') ? 'roupa-feminina'
+                   : style === 'roupa-feminina-v2' ? 'roupa-feminina-v2'
+                   : style;
+    const styleFile = path.join(__dirname, `PROMPT-${styleKey}.md`);
     if (fs.existsSync(styleFile)) return fs.readFileSync(styleFile, 'utf8');
   }
   return SYSTEM_PROMPT_BASE;
@@ -425,8 +455,12 @@ async function detectCardBoundary(img) {
   return null;
 }
 
-// ── Crop automático do produto (remove card/interface de marketplace no fundo) ──
+// ── Crop automático do produto + resize/compress para thumbnail de galeria ──
+// Retorna { base64, mimeType } — sempre JPEG ~600px para manter galeria leve.
 async function cropImageBase64(base64, mimeType) {
+  const THUMB_W    = 600;  // largura máxima do thumbnail
+  const JPEG_QUAL  = 82;   // qualidade JPEG (0-100)
+
   try {
     const buffer = Buffer.from(base64, 'base64');
     const img = await Jimp.read(buffer);
@@ -434,19 +468,28 @@ async function cropImageBase64(base64, mimeType) {
     const h = img.getHeight();
 
     const cutY = await detectCardBoundary(img);
-    if (!cutY) { console.log('[autoCrop] nenhum card detectado — imagem original mantida'); return base64; }
+    if (cutY) {
+      // Proteção: preserva no mínimo 60% da imagem
+      const finalCutY = Math.max(Math.floor(h * 0.60), cutY);
+      img.crop(0, 0, w, finalCutY);
+      console.log(`[autoCrop] cortado em y=${finalCutY}/${h} (${Math.round(finalCutY/h*100)}%)`);
+    } else {
+      console.log('[autoCrop] nenhum card detectado — imagem original mantida');
+    }
 
-    // Proteção: preserva no mínimo 60% da imagem
-    const finalCutY = Math.max(Math.floor(h * 0.60), cutY);
+    // Redimensiona para no máximo THUMB_W de largura (mantém proporção)
+    if (img.getWidth() > THUMB_W) {
+      img.resize(THUMB_W, Jimp.AUTO);
+    }
 
-    img.crop(0, 0, w, finalCutY);
-    const mime = mimeType === 'image/png' ? Jimp.MIME_PNG : Jimp.MIME_JPEG;
-    const out = await img.getBufferAsync(mime);
-    console.log(`[autoCrop] cortado em y=${finalCutY}/${h} (${Math.round(finalCutY/h*100)}%)`);
-    return out.toString('base64');
+    // Comprime como JPEG para manter galeria leve
+    img.quality(JPEG_QUAL);
+    const out = await img.getBufferAsync(Jimp.MIME_JPEG);
+    console.log(`[autoCrop] thumb ${img.getWidth()}x${img.getHeight()} ~${Math.round(out.length/1024)}KB`);
+    return { base64: out.toString('base64'), mimeType: 'image/jpeg' };
   } catch (err) {
     console.warn('[autoCrop] falha, mantendo original:', err.message);
-    return base64;
+    return { base64, mimeType: mimeType || 'image/jpeg' };
   }
 }
 
@@ -532,7 +575,114 @@ function safeParseJSON(str) {
   return result;
 }
 
-async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null) {
+// ── Helpers para Roupa Feminina v2 ──
+
+// Parseia o "Bloco curto" de um .md de personagem
+function parseCharBlock(mdContent) {
+  const match = mdContent.match(/##\s+Bloco curto[^\n]*\n+([^#]+)/i);
+  if (!match) return null;
+  return match[1].trim();
+}
+
+// Parseia o character sheet completo (tudo entre o título e o Bloco curto)
+function parseCharSheet(mdContent) {
+  const match = mdContent.match(/^#\s+Character Sheet[^\n]*\n+([\s\S]+?)(?=\n##\s)/m);
+  if (!match) return null;
+  return match[1].trim();
+}
+
+// Parseia frontmatter YAML simples + corpo de um .md de cenário
+function parseCenarioMd(mdContent) {
+  const frontmatter = {};
+  const fmMatch = mdContent.match(/^---\n([\s\S]*?)\n---/);
+  if (fmMatch) {
+    fmMatch[1].split('\n').forEach(line => {
+      const [k, ...v] = line.split(':');
+      if (k && v.length) frontmatter[k.trim()] = v.join(':').trim().replace(/^"|"$/g, '');
+    });
+  }
+  const bgMatch     = mdContent.match(/##\s+Background\n+([\s\S]+?)(?=\n##\s|$)/);
+  const gestureMatch = mdContent.match(/##\s+Gesture\n+([\s\S]+?)(?=\n##\s|$)/);
+  return {
+    id:         frontmatter.id         || '',
+    nome:       frontmatter.nome       || '',
+    tipo:       frontmatter.tipo       || 'video',
+    icone:      frontmatter.icone      || '',
+    camera:     frontmatter.camera     || '',
+    shot_frame: frontmatter.shot_frame || '',
+    bg_desc:    bgMatch     ? bgMatch[1].trim()     : '',
+    gesture_desc: gestureMatch ? gestureMatch[1].trim() : '',
+  };
+}
+
+// Encontra o arquivo de personagem pelo ID (ex: "CH-01") — busca no diretório personagens/
+function findCharFile(personagem_id) {
+  const dir = path.join(__dirname, 'personagens');
+  if (!fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir);
+  const prefix = personagem_id.toUpperCase() + '-';
+  const found = files.find(f => f.startsWith(prefix) && f.endsWith('.md'));
+  return found ? path.join(dir, found) : null;
+}
+
+// Encontra o arquivo de cenário pelo ID (ex: "A" ou "B") — busca no diretório cenarios/
+function findCenarioFile(cenario_id) {
+  const dir = path.join(__dirname, 'cenarios');
+  if (!fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir);
+  const prefix = cenario_id.toUpperCase() + '-';
+  const found = files.find(f => f.startsWith(prefix) && f.endsWith('.md'));
+  return found ? path.join(dir, found) : null;
+}
+
+// ── Weighted random helper ──
+function weightedRandom(items) {
+  const total = items.reduce((s, i) => s + i.weight, 0);
+  let r = Math.random() * total;
+  for (const item of items) { r -= item.weight; if (r <= 0) return item.val; }
+  return items[items.length - 1].val;
+}
+
+// ── Gera seed aleatório de modelo para Roupa Feminina A ──
+function generatePersonagemSeed() {
+  return {
+    pele: weightedRandom([
+      { val: 'morena clara — warm medium-light brown skin with golden undertones', weight: 4 },
+      { val: 'morena média — warm medium brown skin, golden brown complexion', weight: 3 },
+      { val: 'pele clara quente — light skin with warm undertones, light ivory golden undertones', weight: 2 },
+      { val: 'morena escura — warm dark brown skin', weight: 0.5 },
+      { val: 'negra — deep rich brown skin with warm undertones', weight: 0.5 },
+    ]),
+    cabelo: weightedRandom([
+      { val: 'straight dark brown shoulder-length bob, sleek natural movement, slight inward curve at ends', weight: 1 },
+      { val: 'long straight dark brown hair falling past shoulders, natural shine', weight: 1 },
+      { val: 'long wavy dark brown hair with subtle highlights, voluminous natural texture, lived-in', weight: 1 },
+      { val: 'long wavy honey blonde hair with sun-kissed highlights, natural movement', weight: 1 },
+      { val: 'straight golden blonde hair past shoulders, natural highlights, slight wave at ends', weight: 1 },
+      { val: 'natural curly dark hair, loose spiral curls, voluminous authentic texture', weight: 1 },
+      { val: 'natural wavy curly medium brown hair, loose curls, down', weight: 1 },
+      { val: 'long straight black hair sleek shine', weight: 1 },
+    ]),
+    idade: weightedRandom([
+      { val: 'mid 20s', weight: 5 },
+      { val: 'early 20s', weight: 3 },
+      { val: 'late 20s to early 30s', weight: 2 },
+    ]),
+    corpo: weightedRandom([
+      { val: 'naturally full figure: full bust, defined waist, natural hips — authentic Brazilian body proportions', weight: 4 },
+      { val: 'slim toned body, defined shoulders, flat stomach, athletic natural posture', weight: 3.5 },
+      { val: 'athletic toned body, defined arms and shoulders, slim waist, fit natural posture', weight: 2.5 },
+    ]),
+    oculos: Math.random() > 0.7 ? 'round thick black frame glasses' : 'no glasses',
+    joia: Math.random() > 0.3 ? weightedRandom([
+      { val: 'delicate gold chain necklace', weight: 3 },
+      { val: 'delicate gold hoop earrings', weight: 2 },
+      { val: 'simple gold pendant necklace', weight: 1 },
+    ]) : 'no jewelry',
+  };
+}
+
+async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null, image_base64_2 = null, image_type_2 = null, extras = null) {
   const MAX_RETRIES = 3;
   let lastError;
 
@@ -540,6 +690,67 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender, 
     if (attempt > 0) {
       const delay = Math.pow(2, attempt) * 1000; // 2s, 4s
       await new Promise(r => setTimeout(r, delay));
+    }
+
+    const maxTokens = (style === 'nano-veo-2' || style === 'roupa-feminina-a' || style === 'roupa-feminina-b' || style === 'roupa-feminina-v2')
+      ? 8192
+      : (style === 'nano' ? 8192 : 4096);
+
+    // Build user message content based on style
+    let userContent;
+    if (style === 'roupa-feminina-a') {
+      const seed = generatePersonagemSeed();
+      userContent = [
+        { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 } },
+        { type: 'text',  text: `GERAR EM MODO A. USE OBRIGATORIAMENTE ESTAS CARACTERÍSTICAS DE MODELO (pré-sorteadas pelo servidor para garantir variação):
+- Tom de pele: ${seed.pele}
+- Cabelo: ${seed.cabelo}
+- Idade aparente: ${seed.idade}
+- Corpo: ${seed.corpo}
+- Óculos: ${seed.oculos}
+- Joia: ${seed.joia}
+
+NÃO IGNORE essas características. NÃO substitua por "média estatística". Use EXATAMENTE essas no character_sheet, no start_frame_prompt e nas 3 cenas.
+
+Analise a imagem da roupa e retorne o JSON completo com character_sheet + start_frame_prompt + personagem + cenario + script + cena_1_video_kling + cena_2_video_kling + cena_3_video_kling + legenda_topo. Retorne apenas o JSON, sem texto adicional.` }
+      ];
+    } else if (style === 'roupa-feminina-b') {
+      userContent = [
+        { type: 'image', source: { type: 'base64', media_type: image_type  || 'image/jpeg', data: image_base64 } },
+        { type: 'image', source: { type: 'base64', media_type: image_type_2 || 'image/jpeg', data: image_base64_2 } },
+        { type: 'text',  text: 'Modo B — usar modelo de referência da segunda imagem. A primeira imagem é a roupa do produto. A segunda imagem é a modelo de referência (character sheet 5 views). Extraia as características da modelo da segunda imagem e gere o JSON completo com referencia_imagem + start_frame_prompt + cenario + script + cena_1_video_kling + cena_2_video_kling + cena_3_video_kling + legenda_topo. Retorne apenas o JSON, sem texto adicional.' }
+      ];
+    } else if (style === 'roupa-feminina-v2') {
+      const { character_block, cenario, modo } = extras || {};
+      let userText;
+      if (modo === 'ugc-da-137' && image_base64_2) {
+        // Modo referência: extrai características da segunda imagem como character_block
+        userText = `A primeira imagem é a roupa do produto. A segunda imagem é a modelo de referência.
+Extraia as características da modelo da segunda imagem para usar como character_block.
+cenario: ${JSON.stringify(cenario || {})}
+Analisa a roupa da primeira imagem e retorna o JSON conforme schema com campos: outfit_detectado, start_frame_prompt, prompt_kling_video, script, legenda_topo.
+Retorne apenas o JSON, sem texto adicional.`;
+        userContent = [
+          { type: 'image', source: { type: 'base64', media_type: image_type   || 'image/jpeg', data: image_base64   } },
+          { type: 'image', source: { type: 'base64', media_type: image_type_2 || 'image/jpeg', data: image_base64_2 } },
+          { type: 'text', text: userText }
+        ];
+      } else {
+        userText = `Analisa a roupa nesta imagem.
+character_block: ${character_block || ''}
+cenario: ${JSON.stringify(cenario || {})}
+Retorna o JSON conforme schema com campos: outfit_detectado, start_frame_prompt, prompt_kling_video, script, legenda_topo.
+Retorne apenas o JSON, sem texto adicional.`;
+        userContent = [
+          { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 } },
+          { type: 'text', text: userText }
+        ];
+      }
+    } else {
+      userContent = [
+        { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 } },
+        { type: 'text',  text: buildUserMessage(tipo, promo, price, gender, duracao) }
+      ];
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -551,21 +762,9 @@ async function callClaude(image_base64, image_type, tipo, promo, price, gender, 
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: style === 'nano-veo-2' ? 12000 : (style === 'nano' ? 8192 : 4096),
+        max_tokens: maxTokens,
         system: loadSystemPrompt(style),
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 }
-            },
-            {
-              type: 'text',
-              text: buildUserMessage(tipo, promo, price, gender, duracao)
-            }
-          ]
-        }]
+        messages: [{ role: 'user', content: userContent }]
       })
     });
 
@@ -943,10 +1142,38 @@ app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
 // ── GENERATE (Protected) ──
 
 app.post('/api/generate', requireAuth, async (req, res) => {
-  const { image_base64, image_type, tipo, promo, price, gender, style = 'base' } = req.body;
+  const { image_base64, image_type, image_base64_2, image_type_2, tipo, promo, price, gender, style = 'base' } = req.body;
   const duracao = (style === 'serie' || style === 'nano' || style === 'nano-veo-2') ? (req.body.duracao || null) : null;
 
   if (!image_base64) return res.status(400).json({ error: 'Imagem é obrigatória' });
+  if (style === 'roupa-feminina-b' && !image_base64_2) return res.status(400).json({ error: 'Roupa Feminina + Modelo requer duas imagens.' });
+
+  // ── Roupa Feminina v2 — prepara extras ──
+  let extras = null;
+  if (style === 'roupa-feminina-v2') {
+    const { personagem_id, cenario_id, modo } = req.body;
+    let character_block = null;
+    let character_sheet = null;
+
+    if (modo !== 'ugc-da-137') {
+      if (!personagem_id) return res.status(400).json({ error: 'personagem_id é obrigatório no modo biblioteca.' });
+      const charFile = findCharFile(personagem_id);
+      if (!charFile) return res.status(400).json({ error: `Personagem "${personagem_id}" não encontrado.` });
+      const charContent = fs.readFileSync(charFile, 'utf8');
+      character_block = parseCharBlock(charContent);
+      character_sheet = parseCharSheet(charContent);
+    } else if (!image_base64_2) {
+      return res.status(400).json({ error: 'Modo UGC da 137 requer imagem da modelo de referência.' });
+    }
+
+    if (!cenario_id) return res.status(400).json({ error: 'cenario_id é obrigatório.' });
+    const cenFile = findCenarioFile(cenario_id);
+    if (!cenFile) return res.status(400).json({ error: `Cenário "${cenario_id}" não encontrado.` });
+    const cenContent = fs.readFileSync(cenFile, 'utf8');
+    const cenario = parseCenarioMd(cenContent);
+
+    extras = { character_block, character_sheet, cenario, modo: modo || 'biblioteca' };
+  }
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui') {
     return res.status(500).json({ error: 'Configure sua ANTHROPIC_API_KEY no arquivo .env' });
   }
@@ -968,7 +1195,12 @@ app.post('/api/generate', requireAuth, async (req, res) => {
   }
 
   try {
-    const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao);
+    const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao, image_base64_2, image_type_2, extras);
+
+    // For v2, inject character_sheet from file into result so frontend can display it
+    if (style === 'roupa-feminina-v2' && extras?.character_sheet) {
+      result._character_sheet = extras.character_sheet;
+    }
 
     // Save to gallery server-side immediately
     const galleryItem = await _saveGalleryItem(req.user.id, result, image_base64, image_type, price, tipo, style);
@@ -1195,14 +1427,16 @@ app.get('/api/gallery', requireSupabase, requireAuth, async (req, res) => {
   const offset = Math.max(parseInt(req.query.offset) || 0,  0);
 
   const [countRes, dataRes] = await Promise.all([
-    supabase.from('gallery').select('*', { count: 'exact', head: true }).eq('user_id', req.user.id),
+    supabase.from('gallery').select('id', { count: 'exact', head: true }).eq('user_id', req.user.id),
     supabase.from('gallery').select('*').eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
   ]);
 
   if (dataRes.error) return res.status(500).json({ error: dataRes.error.message });
-  res.json({ items: dataRes.data || [], total: countRes.count || 0 });
+  // Return null total when count query fails so frontend can distinguish empty vs unknown
+  const total = (countRes.error || countRes.count == null) ? null : countRes.count;
+  res.json({ items: dataRes.data || [], total });
 });
 
 app.post('/api/gallery', requireSupabase, requireAuth, async (req, res) => {
@@ -1302,6 +1536,31 @@ async function getLiveRate() {
   }
   return _exchangeCache.rate;
 }
+
+// ── Roupa Feminina v2 — lista de personagens (público para o frontend) ──
+app.get('/api/personagens', requireAuth, (req, res) => {
+  const dir = path.join(__dirname, 'personagens');
+  if (!fs.existsSync(dir)) return res.json([]);
+  const files = fs.readdirSync(dir).filter(f => f.match(/^CH-\d+-.+\.md$/));
+  const list = files.map(filename => {
+    const content = fs.readFileSync(path.join(dir, filename), 'utf8');
+    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    const fm = {};
+    if (fmMatch) {
+      fmMatch[1].split('\n').forEach(line => {
+        const [k, ...v] = line.split(':');
+        if (k && v.length) fm[k.trim()] = v.join(':').trim().replace(/^"|"$/g, '');
+      });
+    }
+    return {
+      id:        fm.id        || '',
+      nome:      fm.nome      || '',
+      categoria: fm.categoria || 'morena',
+      idade:     fm.idade     || '',
+    };
+  }).filter(c => c.id).sort((a, b) => a.id.localeCompare(b.id));
+  res.json(list);
+});
 
 app.get('/api/exchange-rate', async (req, res) => {
   const rate = await getLiveRate();

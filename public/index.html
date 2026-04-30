@@ -421,6 +421,24 @@
       vertical-align: middle;
       color: rgba(255,255,255,0.5);
     }
+    /* ── CHAR GRID CARDS ── */
+    .char-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.3;
+    }
+    .char-card:hover { border-color: rgba(255,107,0,0.35); background: rgba(255,107,0,0.06); }
+    .char-card.selected { border-color: var(--orange); background: rgba(255,107,0,0.12); color: #fff; }
+    .char-card-id { font-size: 9px; opacity: 0.5; margin-bottom: 2px; }
+    .char-card-nome { font-weight: 600; font-size: 11px; }
+    .char-card-idade { font-size: 9px; opacity: 0.5; margin-top: 1px; }
     .serie-card-header { align-items: flex-start !important; }
     .serie-card-title-wrap { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; margin-right: 10px; }
     .serie-card-tag {
@@ -2070,6 +2088,7 @@
               <button class="seg-btn" data-value="serie" onclick="selectSeg(this,'styleGroup');onStyleChange('serie')">🛏️ Edredons Premium</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano" onclick="selectSeg(this,'styleGroup');onStyleChange('nano')">🎬 Edredom Nano + Vídeos</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano-veo-2" onclick="selectSeg(this,'styleGroup');onStyleChange('nano-veo-2')">🧪 Nano + Vídeos 2</button>
+              <button class="seg-btn" style="grid-column:span 2" data-value="roupa-feminina-v2" onclick="selectSeg(this,'styleGroup');onStyleChange('roupa-feminina-v2')">👗 Roupa Feminina</button>
               <button class="seg-btn seg-btn--soon" style="grid-column:span 2" data-value="cinematografico" disabled>🎬 Cinematográfico <span class="soon-badge">em breve</span></button>
             </div>
 
@@ -2084,6 +2103,61 @@
           </div>
           </div>
 
+          <!-- Roupa Feminina v2 — Wizard -->
+          <div id="roupaV2Wizard" style="display:none">
+
+            <!-- Step A: Filtro de cabelo -->
+            <div class="field">
+              <label class="field-label">Tipo de Cabelo</label>
+              <div class="seg-group" style="grid-template-columns:repeat(3,1fr)" id="hairFilterGroup">
+                <button class="seg-btn active" data-value="todas"   onclick="filterHair('todas')">Todas</button>
+                <button class="seg-btn"        data-value="loira"   onclick="filterHair('loira')">Loira</button>
+                <button class="seg-btn"        data-value="morena"  onclick="filterHair('morena')">Morena</button>
+                <button class="seg-btn"        data-value="negra"   onclick="filterHair('negra')">Negra</button>
+                <button class="seg-btn"        data-value="asiatica" onclick="filterHair('asiatica')">Asiática</button>
+              </div>
+              <button id="btnUGC137" onclick="toggleUGC137()" style="margin-top:8px;width:100%;padding:8px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;transition:all 0.2s;">📱 UGC da 137 — usar minha modelo</button>
+            </div>
+
+            <!-- Step B: Grid de personagens -->
+            <div class="field" id="charGridField" style="display:block">
+              <label class="field-label">Personagem <span id="charSelLabel" style="color:var(--orange);margin-left:4px;font-size:11px;"></span></label>
+              <div id="charGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:260px;overflow-y:auto;padding-right:2px;"></div>
+              <div id="charGridLoading" style="font-size:11px;color:var(--text-muted);padding:8px 0;">Carregando personagens...</div>
+            </div>
+
+            <!-- UGC da 137 — upload de modelo de referência -->
+            <div class="field" id="roupaRefModelField" style="display:none">
+              <label class="field-label">Imagem da Modelo de Referência (Character Sheet)</label>
+              <div class="preview-wrap" id="previewWrapRef" style="display:none">
+                <img id="previewImgRef" src="" alt="Preview da modelo ref" />
+                <button class="preview-remove" onclick="removeImageRef()" title="Remover">✕</button>
+              </div>
+              <div class="upload-area" id="uploadAreaRef">
+                <input type="file" id="fileInputRef" accept="image/*" onchange="handleFileRef(event)" />
+                <div class="upload-icon">👤</div>
+                <div class="upload-text">Imagem da Modelo (5 views / character sheet)</div>
+                <div class="upload-sub">Use um character sheet do Nano Banana</div>
+              </div>
+            </div>
+
+            <!-- Step C: Cenário -->
+            <div class="field">
+              <label class="field-label">Cenário <span id="cenSelLabel" style="color:var(--orange);margin-left:4px;font-size:11px;"></span></label>
+              <div class="seg-group" style="grid-template-columns:repeat(4,1fr)" id="cenarioGroup">
+                <button class="seg-btn" data-value="A" onclick="selectCenario(this)">🧱<br><span style="font-size:9px">Tijolo</span></button>
+                <button class="seg-btn" data-value="B" onclick="selectCenario(this)">🛏️<br><span style="font-size:9px">Quarto</span></button>
+                <button class="seg-btn" data-value="C" onclick="selectCenario(this)">🪞<br><span style="font-size:9px">Espelho</span></button>
+                <button class="seg-btn" data-value="D" onclick="selectCenario(this)">👗<br><span style="font-size:9px">Closet</span></button>
+                <button class="seg-btn" data-value="E" onclick="selectCenario(this)">🏠<br><span style="font-size:9px">Lifestyle</span></button>
+                <button class="seg-btn" data-value="F" onclick="selectCenario(this)">📐<br><span style="font-size:9px">½ Corpo</span></button>
+                <button class="seg-btn" data-value="G" onclick="selectCenario(this)">📱<br><span style="font-size:9px">Selfie</span></button>
+                <button class="seg-btn" data-value="H" onclick="selectCenario(this)">🪞<br><span style="font-size:9px">Selfie Esp.</span></button>
+              </div>
+            </div>
+
+          </div><!-- /roupaV2Wizard -->
+
           <!-- Produto -->
           <div class="field" id="uploadField">
             <label class="field-label">Imagem do Produto</label>
@@ -2096,6 +2170,21 @@
               <div class="upload-icon">📦</div>
               <div class="upload-text">Arraste ou clique para enviar</div>
               <div class="upload-sub">JPG · PNG · WEBP · até 10MB</div>
+            </div>
+          </div>
+
+          <!-- Modelo de Referência (só Roupa Feminina B) -->
+          <div class="field" id="referenceModelField" style="display:none">
+            <label class="field-label">Imagem da Modelo de Referência (Character Sheet)</label>
+            <div class="preview-wrap" id="previewWrap2" style="display:none">
+              <img id="previewImg2" src="" alt="Preview da modelo" />
+              <button class="preview-remove" onclick="removeImage2()" title="Remover imagem">✕</button>
+            </div>
+            <div class="upload-area" id="uploadArea2">
+              <input type="file" id="fileInput2" accept="image/*" onchange="handleFile2(event)" />
+              <div class="upload-icon">👤</div>
+              <div class="upload-text">Imagem da Modelo (5 views)</div>
+              <div class="upload-sub">Use o character sheet gerado no Nano Banana</div>
             </div>
           </div>
 
@@ -2200,6 +2289,28 @@
             <div id="cardNano2Cena5Vid"  style="display:none"></div>
             <div id="cardNano2Ancora"    style="display:none"></div>
             <div id="cardNano2Resumo"    style="display:none"></div>
+            <!-- Roupa Feminina A -->
+            <div id="cardRoupaCharSheet"  style="display:none"></div>
+            <div id="cardRoupaStartFrame" style="display:none"></div>
+            <div id="cardRoupaScript"     style="display:none"></div>
+            <div id="cardRoupaCena1"     style="display:none"></div>
+            <div id="cardRoupaCena2"     style="display:none"></div>
+            <div id="cardRoupaCena3"     style="display:none"></div>
+            <div id="cardRoupaLegenda"   style="display:none"></div>
+            <!-- Roupa Feminina B -->
+            <div id="cardRoupaBStartFrame" style="display:none"></div>
+            <div id="cardRoupaBRef"        style="display:none"></div>
+            <div id="cardRoupaBScript"     style="display:none"></div>
+            <div id="cardRoupaBCena1"    style="display:none"></div>
+            <div id="cardRoupaBCena2"    style="display:none"></div>
+            <div id="cardRoupaBCena3"    style="display:none"></div>
+            <div id="cardRoupaBLegenda"  style="display:none"></div>
+            <!-- Roupa Feminina v2 -->
+            <div id="cardV2CharSheet"   style="display:none"></div>
+            <div id="cardV2StartFrame"  style="display:none"></div>
+            <div id="cardV2KlingVideo"  style="display:none"></div>
+            <div id="cardV2Script"      style="display:none"></div>
+            <div id="cardV2Legenda"     style="display:none"></div>
             <div id="costBox"></div>
             <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
               <div class="spinner"></div>
@@ -2570,47 +2681,52 @@
   }
 
   function showApp(user) {
-    const overlay = document.getElementById('authOverlay');
-    overlay.classList.add('hidden');
-    overlay.classList.remove('recovery-mode');
-    overlay.style.background = '';
-    const badge = document.getElementById('userEmailBadge');
-    badge.textContent = user.email;
-    badge.style.display = 'inline-block';
-    document.getElementById('btnLogout').style.display = 'inline-flex';
-    document.getElementById('exchangeRateBadge').style.display = 'inline-block';
-    // Nav username — exibe apenas o apelido cadastrado, nunca o email
-    const navUsername = document.getElementById('navUsername');
-    if (user.name) {
-      navUsername.textContent = user.name;
-      navUsername.style.display = 'inline-block';
-    } else {
-      navUsername.textContent = '';
-      navUsername.style.display = 'none';
+    try {
+      const overlay = document.getElementById('authOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('recovery-mode');
+      overlay.style.background = '';
+      const badge = document.getElementById('userEmailBadge');
+      badge.textContent = user.email;
+      badge.style.display = 'inline-block';
+      document.getElementById('btnLogout').style.display = 'inline-flex';
+      document.getElementById('exchangeRateBadge').style.display = 'inline-block';
+      // Nav username — exibe apenas o apelido cadastrado, nunca o email
+      const navUsername = document.getElementById('navUsername');
+      if (user.name) {
+        navUsername.textContent = user.name;
+        navUsername.style.display = 'inline-block';
+      } else {
+        navUsername.textContent = '';
+        navUsername.style.display = 'none';
+      }
+      // Avatar
+      const initial = (user.name || user.email || '?')[0].toUpperCase();
+      const avatarBtn = document.getElementById('btnAvatar');
+      // Restore saved avatar photo if any
+      const savedPhoto = localStorage.getItem('ugc_avatar_photo');
+      if (savedPhoto) {
+        applyAvatarPhoto(avatarBtn, savedPhoto);
+      } else {
+        avatarBtn.textContent = initial;
+      }
+      avatarBtn.style.display = 'inline-flex';
+      // Avatar: single click = toggle profile; double-click = change photo
+      avatarBtn.ondblclick = function(e) {
+        e.stopPropagation();
+        document.getElementById('avatarFileInput').click();
+      };
+      avatarBtn.onclick = function(e) {
+        toggleProfilePage();
+      };
+      // Restrição de acesso — bloqueia geração para não-admins
+      applyAccessRestriction(user);
+      renderProfilePage(user);
+      prefetchGallery();
+    } catch (err) {
+      console.error('[showApp] erro ao montar UI:', err);
     }
-    // Avatar
-    const initial = (user.name || user.email || '?')[0].toUpperCase();
-    const avatarBtn = document.getElementById('btnAvatar');
-    // Restore saved avatar photo if any
-    const savedPhoto = localStorage.getItem('ugc_avatar_photo');
-    if (savedPhoto) {
-      applyAvatarPhoto(avatarBtn, savedPhoto);
-    } else {
-      avatarBtn.textContent = initial;
-    }
-    avatarBtn.style.display = 'inline-flex';
-    // Avatar: single click = toggle profile; double-click = change photo
-    avatarBtn.ondblclick = function(e) {
-      e.stopPropagation();
-      document.getElementById('avatarFileInput').click();
-    };
-    avatarBtn.onclick = function(e) {
-      toggleProfilePage();
-    };
-    // Restrição de acesso — bloqueia geração para não-admins
-    applyAccessRestriction(user);
-    renderProfilePage(user);
-    prefetchGallery();
+    hideSplash();
   }
 
   function applyAccessRestriction(user) {
@@ -2842,6 +2958,15 @@
 
   // Verifica token existente ao carregar a página
   (async function initAuth() {
+    // FORCE hide splash after 3s no matter what
+    setTimeout(() => {
+      const splash = document.getElementById('splashScreen');
+      if (splash && !splash.classList.contains('gone')) {
+        console.warn('[splash] forced hide after timeout');
+        hideSplash();
+      }
+    }, 3000);
+
     // Verifica se há token de reset na URL
     const resetToken = new URLSearchParams(window.location.search).get('reset');
     if (resetToken) {
@@ -2888,9 +3013,11 @@
   }
 
   // ── STATE ──
-  let imageBase64 = null;
-  let imageType   = null;
-  const _stored   = {};
+  let imageBase64   = null;
+  let imageType     = null;
+  let imageBase64_2 = null;
+  let imageType_2   = null;
+  const _stored     = {};
   let currentMode = 'single'; // 'single' | 'batch'
 
   // Batch state: array of { dataUrl, base64, type, name, price }
@@ -2943,6 +3070,30 @@
     document.getElementById('previewWrap').style.display = 'none';
     document.getElementById('uploadArea').style.display  = 'block';
     document.getElementById('fileInput').value = '';
+  }
+
+  // ── SECOND IMAGE (Roupa Feminina B — modelo de referência) ──
+  function handleFile2(e) {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    imageType_2 = file.type;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      imageBase64_2 = dataUrl.split(',')[1];
+      document.getElementById('previewImg2').src = dataUrl;
+      document.getElementById('previewWrap2').style.display = 'block';
+      document.getElementById('uploadArea2').style.display  = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage2() {
+    imageBase64_2 = null;
+    imageType_2   = null;
+    document.getElementById('previewWrap2').style.display = 'none';
+    document.getElementById('uploadArea2').style.display  = 'block';
+    document.getElementById('fileInput2').value = '';
   }
 
   const uploadArea = document.getElementById('uploadArea');
@@ -3178,11 +3329,20 @@
   };
 
   function onStyleChange(style) {
-    const field = document.getElementById('durationField');
-    const group = document.getElementById('durationGroup');
-    const hasStyle = style === 'serie' || style === 'nano' || style === 'nano-veo-2';
-    field.style.display = hasStyle ? 'block' : 'none';
-    if (!hasStyle) return;
+    const field    = document.getElementById('durationField');
+    const group    = document.getElementById('durationGroup');
+    const refField = document.getElementById('referenceModelField');
+
+    const hasDuration = style === 'serie' || style === 'nano' || style === 'nano-veo-2';
+    field.style.display    = hasDuration ? 'block' : 'none';
+    refField.style.display = style === 'roupa-feminina-b' ? 'block' : 'none';
+
+    // v2 wizard
+    const wizard = document.getElementById('roupaV2Wizard');
+    if (wizard) wizard.style.display = style === 'roupa-feminina-v2' ? 'block' : 'none';
+    if (style === 'roupa-feminina-v2') loadCharGrid();
+
+    if (!hasDuration) return;
 
     const cfg = DURATION_CONFIGS[style] || DURATION_CONFIGS.serie;
     const cols = cfg.length === 4 ? 'cols-4' : 'cols-3';
@@ -3190,6 +3350,122 @@
     group.innerHTML = cfg.map((d, i) =>
       `<button class="seg-btn${i === 0 ? ' active' : ''}" data-value="${d.value}" onclick="selectSeg(this,'durationGroup')">${d.label}<br><span style="font-size:10px;opacity:0.6">${d.sub}</span></button>`
     ).join('');
+  }
+
+  // ── Roupa Feminina v2 ──
+  let _selectedCharId  = null;
+  let _selectedCenId   = null;
+  let _roupaV2Modo     = 'biblioteca';
+  let _allChars        = [];
+  let _charsLoaded     = false;
+  let _currentFilter   = 'todas';
+  let imageBase64_Ref  = null;
+  let imageType_Ref    = null;
+
+  async function loadCharGrid() {
+    try {
+      if (_charsLoaded && _allChars.length > 0) { renderCharGrid(); return; }
+      const loadingEl = document.getElementById('charGridLoading');
+      const gridEl    = document.getElementById('charGrid');
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (gridEl)    gridEl.innerHTML = '';
+      try {
+        const res = await authFetch('/api/personagens');
+        if (res.ok) {
+          _allChars = await res.json();
+          _charsLoaded = true;
+        }
+      } catch(e) { console.error('[loadCharGrid] fetch error:', e); }
+      if (loadingEl) loadingEl.style.display = 'none';
+      renderCharGrid();
+    } catch (err) {
+      console.error('[loadCharGrid] erro:', err);
+    }
+  }
+
+  function renderCharGrid() {
+    const grid = document.getElementById('charGrid');
+    if (!grid) return;
+    const filtered = _currentFilter === 'todas'
+      ? _allChars
+      : _allChars.filter(c => c.categoria === _currentFilter);
+    grid.innerHTML = filtered.map(c => {
+      const sel = _selectedCharId === c.id ? ' selected' : '';
+      const safeNome = c.nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      return `<div class="char-card${sel}" data-id="${c.id}" data-nome="${safeNome}" onclick="selectChar(this.dataset.id,this.dataset.nome)">
+        <div class="char-card-id">${c.id}</div>
+        <div class="char-card-nome">${c.nome}</div>
+        <div class="char-card-idade">${c.idade}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function filterHair(cat) {
+    _currentFilter = cat;
+    document.querySelectorAll('#hairFilterGroup .seg-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === cat);
+    });
+    renderCharGrid();
+  }
+
+  function selectChar(id, nome) {
+    _selectedCharId = id;
+    const label = document.getElementById('charSelLabel');
+    if (label) label.textContent = `— ${id} ${nome}`;
+    renderCharGrid();
+  }
+
+  function selectCenario(btn) {
+    document.querySelectorAll('#cenarioGroup .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _selectedCenId = btn.dataset.value;
+    const label = document.getElementById('cenSelLabel');
+    if (label) label.textContent = `— ${btn.textContent.replace(/\s+/g,' ').trim()}`;
+  }
+
+  function toggleUGC137() {
+    _roupaV2Modo = _roupaV2Modo === 'ugc-da-137' ? 'biblioteca' : 'ugc-da-137';
+    const btn = document.getElementById('btnUGC137');
+    const refField = document.getElementById('roupaRefModelField');
+    const charGridField = document.getElementById('charGridField');
+    if (_roupaV2Modo === 'ugc-da-137') {
+      btn.style.background = 'rgba(255,107,0,0.15)';
+      btn.style.borderColor = 'rgba(255,107,0,0.4)';
+      btn.style.color = '#FF8533';
+      if (refField)  refField.style.display = 'block';
+      if (charGridField) charGridField.style.display = 'none';
+    } else {
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      if (refField)  refField.style.display = 'none';
+      if (charGridField) charGridField.style.display = 'block';
+    }
+  }
+
+  function handleFileRef(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const [meta, b64] = dataUrl.split(',');
+      imageBase64_Ref = b64;
+      imageType_Ref   = meta.split(':')[1].split(';')[0];
+      document.getElementById('previewImgRef').src = dataUrl;
+      document.getElementById('previewWrapRef').style.display = 'block';
+      document.getElementById('uploadAreaRef').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImageRef() {
+    imageBase64_Ref = null;
+    imageType_Ref   = null;
+    document.getElementById('previewImgRef').src = '';
+    document.getElementById('previewWrapRef').style.display = 'none';
+    document.getElementById('uploadAreaRef').style.display = 'block';
+    document.getElementById('fileInputRef').value = '';
   }
 
   // ── GENERATE SINGLE ──
@@ -3214,6 +3490,14 @@
       updatePendingProgress(tempId, _simPct);
     }, 700);
 
+    const _style = getSelected('styleGroup') || 'base';
+    // v2 pre-validation
+    if (_style === 'roupa-feminina-v2') {
+      if (_roupaV2Modo !== 'ugc-da-137' && !_selectedCharId) { showError('Selecione um personagem antes de gerar.'); btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return; }
+      if (!_selectedCenId) { showError('Selecione um cenário antes de gerar.'); btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return; }
+      if (_roupaV2Modo === 'ugc-da-137' && !imageBase64_Ref) { showError('Envie a imagem da modelo de referência.'); btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return; }
+    }
+
     try {
       const res = await authFetch('/api/generate', {
         method: 'POST',
@@ -3225,8 +3509,13 @@
           promo:  getSelected('promoGroup'),
           price,
           gender: getSelected('genderGroup'),
-          style:   getSelected('styleGroup') || 'base',
-          duracao: ['serie','nano','nano-veo-2'].includes(getSelected('styleGroup') || 'base') ? (getSelected('durationGroup') || null) : null
+          style:        _style,
+          duracao:      ['serie','nano','nano-veo-2'].includes(_style) ? (getSelected('durationGroup') || null) : null,
+          image_base64_2: _style === 'roupa-feminina-v2' ? (imageBase64_Ref || undefined) : (imageBase64_2 || undefined),
+          image_type_2:   _style === 'roupa-feminina-v2' ? (imageType_Ref   || undefined) : (imageType_2   || undefined),
+          personagem_id: _style === 'roupa-feminina-v2' ? _selectedCharId  : undefined,
+          cenario_id:    _style === 'roupa-feminina-v2' ? _selectedCenId   : undefined,
+          modo:          _style === 'roupa-feminina-v2' ? _roupaV2Modo      : undefined,
         })
       });
       const data = await res.json();
@@ -3496,16 +3785,76 @@
     { id: 'cardCena5',          field: 'cena_5',          title: 'Cena 5',          emoji: '🎬' },
   ];
 
+  // renderer: 'card' = makeCard (título fixo, copyField copia tudo)
+  //           'serie' = makeSerieCard (1ª linha = header, copySerieBody copia body)
+  const ROUPA_A_CARD_CONFIG = [
+    { id: 'cardRoupaCharSheet',  field: 'character_sheet',    title: 'Character Sheet (Nano)',  emoji: '📋', renderer: 'card' },
+    { id: 'cardRoupaStartFrame', field: 'start_frame_prompt', title: 'Start Frame (Nano)',      emoji: '🖼️', renderer: 'card' },
+    { id: 'cardRoupaScript',     field: 'script_formatado',   title: 'Script PT-BR',            emoji: '✍️', renderer: 'card' },
+    { id: 'cardRoupaCena1',      field: 'cena_1_video_kling', title: 'Cena 1 — Gancho (Kling)', emoji: '🎬', renderer: 'serie' },
+    { id: 'cardRoupaCena2',      field: 'cena_2_video_kling', title: 'Cena 2 — Revelação',      emoji: '🎬', renderer: 'serie' },
+    { id: 'cardRoupaCena3',      field: 'cena_3_video_kling', title: 'Cena 3 — Fechamento',     emoji: '🎬', renderer: 'serie' },
+    { id: 'cardRoupaLegenda',    field: 'legenda_topo',        title: 'Legenda Topo',            emoji: '📌', renderer: 'card' },
+  ];
+
+  const ROUPA_B_CARD_CONFIG = [
+    { id: 'cardRoupaBStartFrame', field: 'start_frame_prompt',  title: 'Start Frame (Nano)',           emoji: '🖼️', renderer: 'card' },
+    { id: 'cardRoupaBRef',        field: 'referencia_descricao', title: 'Referência — Modelo Extraída', emoji: '👤', renderer: 'card' },
+    { id: 'cardRoupaBScript',     field: 'script_formatado',     title: 'Script PT-BR',                 emoji: '✍️', renderer: 'card' },
+    { id: 'cardRoupaBCena1',      field: 'cena_1_video_kling',   title: 'Cena 1 — Gancho (Kling)',      emoji: '🎬', renderer: 'serie' },
+    { id: 'cardRoupaBCena2',      field: 'cena_2_video_kling',   title: 'Cena 2 — Revelação',           emoji: '🎬', renderer: 'serie' },
+    { id: 'cardRoupaBCena3',      field: 'cena_3_video_kling',   title: 'Cena 3 — Fechamento',          emoji: '🎬', renderer: 'serie' },
+    { id: 'cardRoupaBLegenda',    field: 'legenda_topo',          title: 'Legenda Topo',                 emoji: '📌', renderer: 'card' },
+  ];
+
+  const ROUPA_V2_CARD_CONFIG = [
+    { id: 'cardV2CharSheet',  field: '_character_sheet',  title: 'Character Sheet',        emoji: '📋', renderer: 'card' },
+    { id: 'cardV2StartFrame', field: 'start_frame_prompt', title: 'Start Frame (Nano)',     emoji: '🖼️', renderer: 'card' },
+    { id: 'cardV2KlingVideo', field: 'prompt_kling_video', title: 'Prompt Kling Vídeo 8s', emoji: '🎬', renderer: 'card' },
+    { id: 'cardV2Script',     field: 'script_v2_fmt',      title: 'Script PT-BR',           emoji: '✍️', renderer: 'card' },
+    { id: 'cardV2Legenda',    field: 'legenda_topo',        title: 'Legenda Topo',           emoji: '📌', renderer: 'card' },
+  ];
+
+  function _hideAllCardSets() {
+    CARD_CONFIG.forEach(cfg            => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+    SERIE_CARD_CONFIG.forEach(cfg      => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+    EDREDOM_NANO_2_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+    ROUPA_A_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+    ROUPA_B_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+    ROUPA_V2_CARD_CONFIG.forEach(cfg   => { const el = document.getElementById(cfg.id); if(el){el.innerHTML = ''; el.style.display = 'none';} });
+    document.getElementById('serieResumo').style.display = 'none';
+  }
+
   function renderResults(data) {
+    // Detect mode from data fields (before Object.assign so derived fields land in _stored)
+    const isNano2   = !!(data.cena_1_imagem);
+    const isRoupaA  = data.modo === 'A' && !!(data.cena_1_video_kling);
+    const isRoupaB  = data.modo === 'B' && !!(data.cena_1_video_kling);
+    const isRoupaV2 = !!(data.prompt_kling_video || data.outfit_detectado);
+    const isSerie   = !!(data.character_sheet) && !isNano2 && !isRoupaA && !isRoupaV2;
+
+    // Derivar campos ANTES do Object.assign para que _stored os contenha
+    if ((isRoupaA || isRoupaB) && data.script) {
+      const s = data.script;
+      data.script_formatado = `🎯 HOOK (0–3s)\n${s.hook}\n\n💎 BENEFÍCIO (3–10s)\n${s.beneficio}` +
+        (s.prova_social ? `\n\n⭐ PROVA SOCIAL (10–18s)\n${s.prova_social}` : '') +
+        `\n\n🛒 CTA (18–25s)\n${s.cta}`;
+    }
+    if (isRoupaB && data.referencia_imagem) {
+      data.referencia_descricao = data.referencia_imagem.descricao_completa ||
+        JSON.stringify(data.referencia_imagem.caracteristicas_extraidas || {}, null, 2);
+    }
+    if (isRoupaV2 && data.script) {
+      const s = data.script;
+      data.script_v2_fmt = `🎙️ HOOK\n${s.hook || ''}\n\n💎 BENEFÍCIO\n${s.beneficio || ''}\n\n🛒 CTA\n${s.cta || ''}`;
+    }
+
     Object.assign(_stored, data);
-    // Detect mode from data fields (prevents timing bugs if user switches style during generation)
-    const isNano2 = !!(data.cena_1_imagem);
-    const isSerie = !!(data.character_sheet) && !isNano2;
 
     const meta = document.getElementById('metaBadges');
     const copyAllBtn = document.getElementById('btnCopyAll');
     meta.innerHTML = '';
-    if (!isSerie && !isNano2) {
+    if (!isSerie && !isNano2 && !isRoupaA && !isRoupaB && !isRoupaV2) {
       const tipoBtn = document.querySelector('#tipoGroup .seg-btn.active');
       if (tipoBtn)     meta.innerHTML += `<span class="badge">${tipoBtn.textContent.trim()}</span>`;
       if (data.nicho)  meta.innerHTML += `<span class="badge nicho">🏷 ${data.nicho}</span>`;
@@ -3513,12 +3862,43 @@
     }
     meta.appendChild(copyAllBtn);
 
-    if (isNano2) {
-      // Hide all other card sets
-      CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
-      SERIE_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
-      document.getElementById('serieResumo').style.display = 'none';
+    if (isRoupaV2) {
+      _hideAllCardSets();
+      ROUPA_V2_CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        if (!el) return;
+        const content = data[cfg.field] || '';
+        if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        el.style.display = 'block';
+        el.innerHTML = makeCard(cfg.title, cfg.emoji, content, cfg.field, i);
+      });
 
+    } else if (isRoupaA) {
+      _hideAllCardSets();
+      ROUPA_A_CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        const content = data[cfg.field] || '';
+        if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        el.style.display = 'block';
+        el.innerHTML = cfg.renderer === 'serie'
+          ? makeSerieCard(content, cfg.field, i)
+          : makeCard(cfg.title, cfg.emoji, content, cfg.field, i);
+      });
+
+    } else if (isRoupaB) {
+      _hideAllCardSets();
+      ROUPA_B_CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        const content = data[cfg.field] || '';
+        if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        el.style.display = 'block';
+        el.innerHTML = cfg.renderer === 'serie'
+          ? makeSerieCard(content, cfg.field, i)
+          : makeCard(cfg.title, cfg.emoji, content, cfg.field, i);
+      });
+
+    } else if (isNano2) {
+      _hideAllCardSets();
       EDREDOM_NANO_2_CARD_CONFIG.forEach((cfg, i) => {
         const el = document.getElementById(cfg.id);
         const content = data[cfg.field] || '';
@@ -3530,8 +3910,7 @@
       });
 
     } else if (isSerie) {
-      CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
-      EDREDOM_NANO_2_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
+      _hideAllCardSets();
 
       // Encontra a última cena com conteúdo para extrair o resumo
       const lastCenaField = ['cena_4','cena_3','cena_2','cena_1'].find(f => data[f]);
@@ -3567,9 +3946,7 @@
         resumoEl.innerHTML = '';
       }
     } else {
-      SERIE_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
-      EDREDOM_NANO_2_CARD_CONFIG.forEach(cfg => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
-      document.getElementById('serieResumo').style.display = 'none';
+      _hideAllCardSets();
       CARD_CONFIG.forEach((cfg, i) => {
         const el = document.getElementById(cfg.id);
         el.style.display = 'block';
@@ -3742,10 +4119,42 @@
   }
 
   function copyAll(btn) {
-    const isNano2 = !!(_stored.cena_1_imagem);
-    const isSerie = !!(_stored.character_sheet) && !isNano2;
+    const isNano2   = !!(_stored.cena_1_imagem);
+    const isRoupaA  = _stored.modo === 'A' && !!(_stored.cena_1_video_kling);
+    const isRoupaB  = _stored.modo === 'B' && !!(_stored.cena_1_video_kling);
+    const isRoupaV2 = !!(_stored.prompt_kling_video || _stored.outfit_detectado);
+    const isSerie   = !!(_stored.character_sheet) && !isNano2 && !isRoupaA && !isRoupaV2;
     let parts;
-    if (isNano2) {
+    if (isRoupaV2) {
+      parts = [
+        _stored._character_sheet  ? `=== CHARACTER SHEET ===\n${_stored._character_sheet}` : '',
+        _stored.outfit_detectado  ? `=== OUTFIT DETECTADO ===\n${_stored.outfit_detectado}` : '',
+        _stored.start_frame_prompt ? `=== START FRAME (NANO) ===\n${_stored.start_frame_prompt}` : '',
+        _stored.prompt_kling_video ? `=== PROMPT KLING VÍDEO 8s ===\n${_stored.prompt_kling_video}` : '',
+        _stored.script_v2_fmt      ? `=== SCRIPT PT-BR ===\n${_stored.script_v2_fmt}` : '',
+        _stored.legenda_topo       ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}` : '',
+      ].filter(Boolean);
+    } else if (isRoupaA) {
+      parts = [
+        _stored.character_sheet    ? `=== CHARACTER SHEET (NANO) ===\n${_stored.character_sheet}`    : '',
+        _stored.start_frame_prompt ? `=== START FRAME (NANO) ===\n${_stored.start_frame_prompt}`     : '',
+        _stored.script_formatado   ? `=== SCRIPT PT-BR ===\n${_stored.script_formatado}`             : '',
+        _stored.cena_1_video_kling ? `=== CENA 1 — GANCHO ===\n${_stored.cena_1_video_kling}`        : '',
+        _stored.cena_2_video_kling ? `=== CENA 2 — REVELAÇÃO ===\n${_stored.cena_2_video_kling}`     : '',
+        _stored.cena_3_video_kling ? `=== CENA 3 — FECHAMENTO ===\n${_stored.cena_3_video_kling}`    : '',
+        _stored.legenda_topo       ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}`                  : '',
+      ].filter(Boolean);
+    } else if (isRoupaB) {
+      parts = [
+        _stored.start_frame_prompt   ? `=== START FRAME (NANO) ===\n${_stored.start_frame_prompt}`   : '',
+        _stored.referencia_descricao ? `=== REFERÊNCIA MODELO ===\n${_stored.referencia_descricao}`  : '',
+        _stored.script_formatado     ? `=== SCRIPT PT-BR ===\n${_stored.script_formatado}`           : '',
+        _stored.cena_1_video_kling   ? `=== CENA 1 — GANCHO ===\n${_stored.cena_1_video_kling}`      : '',
+        _stored.cena_2_video_kling   ? `=== CENA 2 — REVELAÇÃO ===\n${_stored.cena_2_video_kling}`   : '',
+        _stored.cena_3_video_kling   ? `=== CENA 3 — FECHAMENTO ===\n${_stored.cena_3_video_kling}`  : '',
+        _stored.legenda_topo         ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}`                : '',
+      ].filter(Boolean);
+    } else if (isNano2) {
       parts = [
         _stored.character_sheet ? `=== CHARACTER SHEET ===\n${_stored.character_sheet}` : '',
         _stored.cena_1_imagem   ? `=== CENA 1 — IMAGEM ===\n${_stored.cena_1_imagem}`  : '',
@@ -3940,6 +4349,7 @@
         </div>
       </div>`;
     _galleryItems.unshift(item);
+    _galleryTotal++;
     delete _pendingCards[tempId];
   }
 
@@ -4000,7 +4410,7 @@
       const res  = await authFetch(`/api/gallery?limit=${GALLERY_PAGE}&offset=${_galleryOffset}`);
       const data = await res.json();
       const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
-      const total = data?.total ?? items.length;
+      const total = (data?.total != null) ? data.total : items.length;
       if (total > _galleryTotal) _galleryTotal = total; // guarda total real do banco
       if (items.length < GALLERY_PAGE) _galleryServerDone = true;
       _galleryOffset += items.length;
@@ -4213,8 +4623,28 @@
       (item.nicho === 'Nano + Vídeos 2') ||
       (item.prompt_video || '').includes('📸 CENA') ||
       (item.prompt_video || '').includes('Consistent character:');
+    const isRoupaFemGalleryItem = item.emocao === 'roupa-feminina-a' || item.emocao === 'roupa-feminina-b' || item.emocao === 'roupa-feminina-v2';
 
-    if (isNano2GalleryItem) {
+    if (isRoupaFemGalleryItem) {
+      // Roupa Feminina — split por --- igual ao nano-veo-2
+      const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
+      const sectionLabels = ['📋 Character Sheet / Referência', '✍️ Script PT-BR', '🎬 Cena 1 — Gancho', '🎬 Cena 2 — Revelação', '🎬 Cena 3 — Fechamento', '📌 Legenda Topo'];
+      let sectionsHtml = '';
+      sections.forEach((sec, idx) => {
+        const label = sectionLabels[idx] || `Seção ${idx + 1}`;
+        const safeLbl  = label.replace(/</g,'&lt;');
+        const safeBody = sec.replace(/</g,'&lt;');
+        const safeSec  = JSON.stringify(sec).replace(/"/g,'&quot;');
+        sectionsHtml += `
+          <div class="gallery-detail-section">
+            <span class="gallery-detail-label">${safeLbl}</span>
+            <div class="gallery-detail-text">${safeBody}</div>
+            <button class="btn-copy" style="align-self:flex-start;margin-top:4px" onclick="copyRaw(${safeSec},this)"><span>⎘</span> COPIAR</button>
+          </div>`;
+      });
+      content.innerHTML = `${chipsHtml}${sectionsHtml}${footerHtml}`;
+
+    } else if (isNano2GalleryItem) {
       // Nano + Vídeos 2 — split prompt_video de volta em seções separadas
       const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
 
@@ -4325,6 +4755,7 @@
     try {
       await authFetch('/api/gallery/' + _currentItemId, { method: 'DELETE' });
       _galleryItems = _galleryItems.filter(it => it.id !== _currentItemId);
+      if (_galleryTotal > 0) _galleryTotal--;
       closeModal();
       renderGalleryGrid(_galleryItems);
     } catch (e) { alert('Erro ao deletar: ' + e.message); }
@@ -4387,6 +4818,7 @@
       if (saved.ok) {
         const newItem = await saved.json();
         _galleryItems.unshift(newItem);
+        _galleryTotal++;
         _galleryLoaded = false;
       }
 
