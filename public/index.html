@@ -4645,7 +4645,9 @@
     if (isRoupaFemGalleryItem) {
       // Roupa Feminina — split por --- igual ao nano-veo-2
       const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
-      const sectionLabels = ['📋 Character Sheet / Referência', '✍️ Script PT-BR', '🎬 Cena 1 — Gancho', '🎬 Cena 2 — Revelação', '🎬 Cena 3 — Fechamento', '📌 Legenda Topo'];
+      const sectionLabels = item.emocao === 'roupa-feminina-v2'
+        ? ['📋 Character Sheet', '🖼️ Start Frame (Nano)', '🎬 Prompt Kling Vídeo 8s', '✍️ Script PT-BR', '📌 Legenda Topo']
+        : ['📋 Character Sheet / Referência', '✍️ Script PT-BR', '🎬 Cena 1 — Gancho', '🎬 Cena 2 — Revelação', '🎬 Cena 3 — Fechamento', '📌 Legenda Topo'];
       let sectionsHtml = '';
       sections.forEach((sec, idx) => {
         const label = sectionLabels[idx] || `Seção ${idx + 1}`;

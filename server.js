@@ -107,20 +107,38 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
 
   if (isRoupaFeminina) {
     const parts = [];
-    if (result.character_sheet)                       parts.push(result.character_sheet);
-    if (result.start_frame_prompt)                    parts.push(result.start_frame_prompt);
-    if (result.referencia_imagem?.descricao_completa) parts.push(result.referencia_imagem.descricao_completa);
-    if (result.outfit_detectado)                      parts.push('OUTFIT: ' + result.outfit_detectado);
-    if (result.prompt_kling_video)                    parts.push(result.prompt_kling_video);
-    if (result.script) {
-      const s = result.script;
-      const scriptText = [s.hook, s.beneficio, s.prova_social, s.cta].filter(Boolean).join('\n');
-      if (scriptText) parts.push(scriptText);
+    if (style === 'roupa-feminina-v2') {
+      // v2: character_sheet vem de _character_sheet (lido do arquivo pelo servidor)
+      const charSheet = result._character_sheet || result.character_sheet || '';
+      if (charSheet) parts.push(charSheet);
+      if (result.start_frame_prompt) parts.push(result.start_frame_prompt);
+      if (result.prompt_kling_video) parts.push(result.prompt_kling_video);
+      if (result.script) {
+        const s = result.script;
+        const scriptText = [
+          s.hook      ? `🎙️ HOOK\n${s.hook}`           : null,
+          s.beneficio ? `💎 BENEFÍCIO\n${s.beneficio}` : null,
+          s.cta       ? `🛒 CTA\n${s.cta}`              : null
+        ].filter(Boolean).join('\n\n');
+        if (scriptText) parts.push(scriptText);
+      }
+      if (result.legenda_topo) parts.push(result.legenda_topo);
+    } else {
+      // roupa-feminina-a / roupa-feminina-b
+      if (result.character_sheet)                       parts.push(result.character_sheet);
+      if (result.start_frame_prompt)                    parts.push(result.start_frame_prompt);
+      if (result.referencia_imagem?.descricao_completa) parts.push(result.referencia_imagem.descricao_completa);
+      if (result.outfit_detectado)                      parts.push('OUTFIT: ' + result.outfit_detectado);
+      if (result.script) {
+        const s = result.script;
+        const scriptText = [s.hook, s.beneficio, s.prova_social, s.cta].filter(Boolean).join('\n');
+        if (scriptText) parts.push(scriptText);
+      }
+      if (result.cena_1_video_kling) parts.push(result.cena_1_video_kling);
+      if (result.cena_2_video_kling) parts.push(result.cena_2_video_kling);
+      if (result.cena_3_video_kling) parts.push(result.cena_3_video_kling);
+      if (result.legenda_topo)       parts.push(result.legenda_topo);
     }
-    if (result.cena_1_video_kling) parts.push(result.cena_1_video_kling);
-    if (result.cena_2_video_kling) parts.push(result.cena_2_video_kling);
-    if (result.cena_3_video_kling) parts.push(result.cena_3_video_kling);
-    if (result.legenda_topo)       parts.push(result.legenda_topo);
     prompt_video = parts.join('\n\n---\n\n');
     legenda = style === 'roupa-feminina-v2' ? '👗 Roupa Feminina v2'
             : style === 'roupa-feminina-a'  ? '👗 Roupa Feminina A'
