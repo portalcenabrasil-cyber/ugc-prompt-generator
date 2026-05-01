@@ -108,21 +108,14 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
 
   if (isBaseV2) {
     const parts = [];
-    if (result.card1_imagem)  parts.push(result.card1_imagem);
-    if (result.card2_video)   parts.push(result.card2_video);
-    if (result.card3_script) {
-      const s = result.card3_script;
-      const scriptText = [
-        s.hook    ? `🎙️ HOOK\n${s.hook}`       : null,
-        s.produto ? `💎 PRODUTO\n${s.produto}`  : null,
-        s.cta     ? `🛒 CTA\n${s.cta}`          : null,
-      ].filter(Boolean).join('\n\n');
-      if (scriptText) parts.push(scriptText);
-    }
-    if (result.card4_variacao) parts.push(result.card4_variacao);
-    if (result.card5_legendas) {
-      const l = result.card5_legendas;
-      const legendaText = [l.v1_preco, l.v2_solucao, l.v3_presente].filter(Boolean).join('\n');
+    if (result.character_sheet)             parts.push(result.character_sheet);
+    if (result.start_frame_prompt)          parts.push(result.start_frame_prompt);
+    if (result.prompt_video_1)              parts.push(result.prompt_video_1);
+    if (result.prompt_video_2_continuacao)  parts.push(result.prompt_video_2_continuacao);
+    if (result.legenda_topo) {
+      const legendaText = Array.isArray(result.legenda_topo)
+        ? result.legenda_topo.join('\n\n')
+        : result.legenda_topo;
       if (legendaText) parts.push(legendaText);
     }
     prompt_video = parts.join('\n\n---\n\n');
@@ -729,15 +722,15 @@ function generatePersonagemSeed() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NICHOS_V2 = {
-  futebol:     { pools: ['masculino'],                            frasesFile: 'futebol'     },
-  anime:       { pools: ['masculino', 'donas-casa'],              frasesFile: 'anime'       },
-  casa:        { pools: ['donas-casa'],                           frasesFile: 'casa'        },
-  beleza:      { pools: ['donas-casa'],                           frasesFile: 'beleza'      },
-  pet:         { pools: ['donas-casa', 'masculino'],              frasesFile: 'pet'         },
-  ferramentas: { pools: ['masculino'],                            frasesFile: 'ferramentas' },
-  saude:       { pools: ['masculino', 'donas-casa'],              frasesFile: 'saude'       },
-  viagem:      { pools: ['masculino', 'donas-casa'],              frasesFile: 'viagem'      },
-  generico:    { pools: ['masculino', 'donas-casa'],              frasesFile: 'casa'        },
+  futebol:     { pools: ['masculino'],             frasesFile: 'futebol',     voz: 'masculina-trabalho',      cenarios: ['sala de estar com TV mostrando jogo ao fundo, sofá, luz quente', 'carro estacionado, assento do motorista, luz natural do dia'] },
+  anime:       { pools: ['masculino','donas-casa'],frasesFile: 'anime',       voz: 'colecionador-empolgado',  cenarios: ['quarto com setup gamer, luzes RGB roxas ao fundo, prateleira com figuras', 'mesa de escritório, luz azul ambiente, mangás ao fundo'] },
+  casa:        { pools: ['donas-casa'],            frasesFile: 'casa',        voz: 'mae-experiente',          cenarios: ['cozinha caseira com plantas, bancada de madeira, luz natural da janela', 'sala de estar organizada, sofá, prateleiras ao fundo, luz quente'] },
+  beleza:      { pools: ['donas-casa'],            frasesFile: 'beleza',      voz: 'jovem-empolgada',         cenarios: ['banheiro clean, espelho, iluminação suave natural', 'carro estacionado, espelho retrovisor visível, luz natural'] },
+  pet:         { pools: ['donas-casa','masculino'],frasesFile: 'pet',         voz: 'mae-experiente',          cenarios: ['sala com piso de madeira, pet visível ao fundo', 'varanda ou jardim, luz natural, verde ao fundo'] },
+  ferramentas: { pools: ['masculino'],             frasesFile: 'ferramentas', voz: 'masculina-trabalho',      cenarios: ['garagem com carro ao fundo, bancada de ferramentas', 'quintal ou oficina caseira, luz de Edison bulb overhead'] },
+  saude:       { pools: ['masculino','donas-casa'],frasesFile: 'saude',       voz: 'mae-experiente',          cenarios: ['quarto à noite, abajur quente ao fundo, travesseiro visível', 'sala de estar diurna, sofá, planta ao fundo, luz suave'] },
+  viagem:      { pools: ['masculino','donas-casa'],frasesFile: 'viagem',      voz: 'aventureira',             cenarios: ['carro (carona), janela com paisagem ao fundo', 'quarto simples, mala visível ao fundo, luz natural'] },
+  generico:    { pools: ['masculino','donas-casa'],frasesFile: 'casa',        voz: 'mae-experiente',          cenarios: ['sala de estar casual, sofá, iluminação quente', 'cozinha caseira, bancada, plantas ao fundo'] },
 };
 
 // Read all character IDs from a pool directory
@@ -791,57 +784,59 @@ function loadFrasesNicho(nichoName) {
   return result;
 }
 
-// Pick one random phrase from each section, excluding history
-function sortearFrases(nichoName, historyHooks = [], historyProds = [], historyCtas = []) {
-  const { hook, produto, cta } = loadFrasesNicho(nichoName);
-  const pick = (arr, excl) => {
-    const avail = arr.filter(x => !excl.includes(x));
-    const pool = avail.length > 0 ? avail : arr;
-    return pool[Math.floor(Math.random() * pool.length)] || '';
-  };
-  return {
-    hook:    pick(hook,    historyHooks),
-    produto: pick(produto, historyProds),
-    cta:     pick(cta,     historyCtas),
-  };
-}
-
 async function callClaudeBaseV2(image_base64, image_type, price, extras_v2) {
-  const { nicho, chars, frases } = extras_v2;
+  const { nicho, char, cenario, frasesAncora } = extras_v2;
 
-  const [char1, char2] = chars;
-  const c1 = readCharacterContent(char1);
-  const c2 = char2 ? readCharacterContent(char2) : null;
-
+  const charContent = readCharacterContent(char);
   const systemPrompt = loadSystemPrompt('base-v2');
 
-  const userText = `Produto recebido. Gere 5 cards UGC completos para TikTok Shop brasileiro.
+  const { hook: hooks, produto: prods, cta: ctas } = frasesAncora;
+  const hooksStr  = hooks.slice(0, 30).map((h, i) => `${String(i+1).padStart(2,'0')} ${h}`).join('\n');
+  const prodsStr  = prods.slice(0, 30).map((p, i) => `${String(i+1).padStart(2,'0')} ${p}`).join('\n');
+  const ctasStr   = ctas.slice(0, 30).map((c, i)  => `${String(i+1).padStart(2,'0')} ${c}`).join('\n');
 
-NICHO DETECTADO: ${nicho}
+  const voz = (NICHOS_V2[nicho] || NICHOS_V2.generico).voz;
 
-PERSONAGEM PRINCIPAL:
-${c1}
+  const userText = `nicho: ${nicho}
+voz_estilo: ${voz}
 
-PERSONAGEM VARIAÇÃO:
-${c2 || '(usar outro ângulo do mesmo personagem)'}
+PERSONAGEM (mesmo para os 2 vídeos):
+${charContent}
 
-FRASES SORTEADAS PARA ESTE NICHO (USE EXATAMENTE ESTAS):
-- HOOK: ${frases.hook}
-- PRODUTO: ${frases.produto}
-- CTA: ${frases.cta}
+CENÁRIO (mesmo para os 2 vídeos, Vídeo 2 pode usar ângulo diferente):
+${cenario}
 
 ${price ? `PREÇO DO PRODUTO: R$ ${price}` : ''}
 
-Retorne apenas JSON com esta estrutura:
+ÂNCORA DE TOM — Banco do nicho ${nicho}
+(APENAS para captar vocabulário e tom — NUNCA copie literalmente — escreva falas originais)
+
+HOOKS exemplo (30 tons):
+${hooksStr}
+
+PRODUTOS exemplo (30 tons):
+${prodsStr}
+
+CTAS exemplo (30 tons):
+${ctasStr}
+
+INSTRUÇÕES:
+- Analise o produto na imagem
+- Gere VÍDEO 1 (8s): falas ORIGINAIS e ESPECÍFICAS ao produto detectado na imagem, voz_estilo aplicada
+- Gere VÍDEO 2 CONTINUAÇÃO (8s): MESMO personagem físico, MESMO cenário (pode mudar ângulo), falas TOTALMENTE diferentes do Vídeo 1
+- Vídeo 2: aprofunda o produto (outro benefício, prova social, preço, urgência, CTA complementar)
+- Final do Vídeo 1: "The exact person from the reference image attached."
+- Final do Vídeo 2: "The exact person from the reference image attached. Continuation of previous video."
+- Gere 3 legendas variando ângulo (preço, solução, presente) — específicas ao produto
+- 100% PT-BR autêntico. ZERO clichê de IA.
+
+Retorne APENAS o JSON:
 {
-  "nicho_detectado": "${nicho}",
-  "char1_id": "${char1.id}",
-  "char2_id": "${char2 ? char2.id : ''}",
-  "card1_imagem": "...",
-  "card2_video": "...",
-  "card3_script": { "hook": "...", "produto": "...", "cta": "..." },
-  "card4_variacao": "...",
-  "card5_legendas": { "v1_preco": "...", "v2_solucao": "...", "v3_presente": "..." }
+  "character_sheet": "...",
+  "start_frame_prompt": "...",
+  "prompt_video_1": "...",
+  "prompt_video_2_continuacao": "...",
+  "legenda_topo": ["versão preço...", "versão solução...", "versão presente..."]
 }`;
 
   const MAX_RETRIES = 3;
@@ -859,7 +854,7 @@ Retorne apenas JSON com esta estrutura:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 8192,
+        max_tokens: 14000,
         system: systemPrompt,
         messages: [{
           role: 'user',
@@ -897,10 +892,8 @@ Retorne apenas JSON com esta estrutura:
 
     return {
       ...safeParseJSON(jsonMatch[0]),
-      _nicho:   nicho,
-      _char1:   char1.id,
-      _char2:   char2 ? char2.id : null,
-      _frases:  frases,
+      _nicho:  nicho,
+      _char1:  char.id,
       _usage: { input_tokens: inputTokens, output_tokens: outputTokens, input_cost: inputCost, output_cost: outputCost, total_cost: totalCost, session: { input_tokens: sessionTokens.input, output_tokens: sessionTokens.output, total_cost: sessionCost.totalCost } }
     };
   }
@@ -1430,19 +1423,25 @@ app.post('/api/generate', requireAuth, async (req, res) => {
     extras = { character_block, character_sheet, cenario, modo: modo || 'biblioteca' };
   }
 
-  // ── Base v2 — detecta nicho, sorteia personagens e frases ──
+  // ── Base v2 — detecta nicho, sorteia 1 personagem + cenário, carrega banco de frases ──
   let extrasV2 = null;
   if (style === 'base-v2') {
-    const { history_hooks = [], history_prods = [], history_ctas = [], history_chars = [] } = req.body;
+    const { history_chars = [] } = req.body;
     const nicho = await detectarNicho(image_base64, image_type);
     const nichoConfig = NICHOS_V2[nicho] || NICHOS_V2.generico;
 
-    // Build character pool from all relevant pools
+    // Sortear 1 personagem (anti-repetição por history)
     const allChars = nichoConfig.pools.flatMap(pool => listPoolIds(pool));
-    const selected = pickRandom(allChars, 2, history_chars);
-    const frases   = sortearFrases(nichoConfig.frasesFile, history_hooks, history_prods, history_ctas);
+    const [char]   = pickRandom(allChars, 1, history_chars);
 
-    extrasV2 = { nicho, chars: selected, frases };
+    // Sortear 1 cenário
+    const cenarios = nichoConfig.cenarios || ['sala de estar casual, sofá, iluminação quente'];
+    const cenario  = cenarios[Math.floor(Math.random() * cenarios.length)];
+
+    // Carregar banco completo de frases como âncora de tom (não literal)
+    const frasesAncora = loadFrasesNicho(nichoConfig.frasesFile);
+
+    extrasV2 = { nicho, char, cenario, frasesAncora };
   }
 
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui') {

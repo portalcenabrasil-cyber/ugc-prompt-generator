@@ -2313,11 +2313,11 @@
             <div id="cardV2Script"      style="display:none"></div>
             <div id="cardV2Legenda"     style="display:none"></div>
             <!-- Base v2 cards -->
-            <div id="cardBv2Imagem"   style="display:none"></div>
-            <div id="cardBv2Video"    style="display:none"></div>
-            <div id="cardBv2Script"   style="display:none"></div>
-            <div id="cardBv2Variacao" style="display:none"></div>
-            <div id="cardBv2Legendas" style="display:none"></div>
+            <div id="cardBv2CharSheet"  style="display:none"></div>
+            <div id="cardBv2StartFrame" style="display:none"></div>
+            <div id="cardBv2Video1"     style="display:none"></div>
+            <div id="cardBv2Video2"     style="display:none"></div>
+            <div id="cardBv2Legenda"    style="display:none"></div>
             <div id="costBox"></div>
             <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
               <div class="spinner"></div>
@@ -3499,24 +3499,15 @@
   function _getBaseV2History() {
     try {
       const h = JSON.parse(localStorage.getItem(BV2_HISTORY_KEY) || '{}');
-      return {
-        history_hooks: h.hooks || [],
-        history_prods: h.prods || [],
-        history_ctas:  h.ctas  || [],
-        history_chars: h.chars || [],
-      };
+      return { history_chars: h.chars || [] };
     } catch { return {}; }
   }
 
-  function _updateBaseV2History({ hook, produto, cta, char1, char2 }) {
+  function _updateBaseV2History({ char1 }) {
     try {
       const h = JSON.parse(localStorage.getItem(BV2_HISTORY_KEY) || '{}');
       const push = (arr, val) => { if (val) { arr.push(val); if (arr.length > BV2_MAX) arr.shift(); } return arr; };
-      h.hooks = push(h.hooks || [], hook);
-      h.prods = push(h.prods || [], produto);
-      h.ctas  = push(h.ctas  || [], cta);
       h.chars = push(h.chars || [], char1);
-      if (char2) h.chars = push(h.chars, char2);
       localStorage.setItem(BV2_HISTORY_KEY, JSON.stringify(h));
     } catch { /* silent */ }
   }
@@ -3862,11 +3853,11 @@
   ];
 
   const BASE_V2_CARD_CONFIG = [
-    { id: 'cardBv2Imagem',   field: 'card1_imagem',   title: '🖼️ Card 1 — Prompt de Imagem',   emoji: '🖼️', renderer: 'card' },
-    { id: 'cardBv2Video',    field: 'card2_video',    title: '🎬 Card 2 — Prompt de Vídeo',     emoji: '🎬', renderer: 'card' },
-    { id: 'cardBv2Script',   field: 'card3_script',   title: '✍️ Card 3 — Script PT-BR',         emoji: '✍️', renderer: 'script-v2' },
-    { id: 'cardBv2Variacao', field: 'card4_variacao', title: '🔄 Card 4 — Variação Personagem',  emoji: '🔄', renderer: 'card' },
-    { id: 'cardBv2Legendas', field: 'card5_legendas', title: '📌 Card 5 — Legendas TikTok Shop', emoji: '📌', renderer: 'legendas-v2' },
+    { id: 'cardBv2CharSheet',  field: 'character_sheet',            title: 'Character Sheet',                                                                                  emoji: '📋', renderer: 'card' },
+    { id: 'cardBv2StartFrame', field: 'start_frame_prompt',         title: 'Start Frame (Nano) — ✅ ANEXAR CHARACTER SHEET',                                                   emoji: '🖼️', renderer: 'card' },
+    { id: 'cardBv2Video1',     field: 'prompt_video_1',             title: 'Prompt Vídeo 1 (Veo 3.1) — 8s',                                                                   emoji: '🎬', renderer: 'card' },
+    { id: 'cardBv2Video2',     field: 'prompt_video_2_continuacao', title: 'Prompt Vídeo 2 — CONTINUAÇÃO (use o frame final do Vídeo 1 como start frame — mesmo personagem, falas novas)', emoji: '🎬', renderer: 'card' },
+    { id: 'cardBv2Legenda',    field: 'legenda_topo_fmt',           title: 'Legendas (3 variações)',                                                                           emoji: '📌', renderer: 'card' },
   ];
 
   const ROUPA_V2_CARD_CONFIG = [
@@ -3884,13 +3875,13 @@
     ROUPA_A_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
     ROUPA_B_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
     ROUPA_V2_CARD_CONFIG.forEach(cfg   => { const el = document.getElementById(cfg.id); if(el){el.innerHTML = ''; el.style.display = 'none';} });
-    BASE_V2_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); if(el){el.innerHTML = ''; el.style.display = 'none';} });
+    BASE_V2_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); if (el) { el.innerHTML = ''; el.style.display = 'none'; } });
     document.getElementById('serieResumo').style.display = 'none';
   }
 
   function renderResults(data) {
     // Detect mode from data fields (before Object.assign so derived fields land in _stored)
-    const isBaseV2  = !!(data.card1_imagem || data.card2_video);
+    const isBaseV2  = !!(data.prompt_video_1);
     const isNano2   = !!(data.cena_1_imagem);
     const isRoupaA  = data.modo === 'A' && !!(data.cena_1_video_kling);
     const isRoupaB  = data.modo === 'B' && !!(data.cena_1_video_kling);
@@ -3898,17 +3889,10 @@
     const isSerie   = !!(data.character_sheet) && !isNano2 && !isRoupaA && !isRoupaV2;
 
     // Derivar campos ANTES do Object.assign para que _stored os contenha
-    if (isBaseV2 && data.card3_script) {
-      const s = data.card3_script;
-      data.card3_script_fmt = `🎙️ HOOK\n${s.hook || ''}\n\n💎 PRODUTO\n${s.produto || ''}\n\n🛒 CTA\n${s.cta || ''}`;
-    }
-    if (isBaseV2 && data.card5_legendas) {
-      const l = data.card5_legendas;
-      data.card5_legendas_fmt = [
-        l.v1_preco   ? `📌 Versão 1 (Preço)\n${l.v1_preco}`     : null,
-        l.v2_solucao ? `📌 Versão 2 (Solução)\n${l.v2_solucao}` : null,
-        l.v3_presente? `📌 Versão 3 (Presente)\n${l.v3_presente}`: null,
-      ].filter(Boolean).join('\n\n');
+    if (isBaseV2 && data.legenda_topo) {
+      data.legenda_topo_fmt = Array.isArray(data.legenda_topo)
+        ? data.legenda_topo.map((l, i) => `📌 Versão ${i+1}\n${l}`).join('\n\n')
+        : data.legenda_topo;
     }
     if ((isRoupaA || isRoupaB) && data.script) {
       const s = data.script;
@@ -3927,13 +3911,7 @@
 
     // Update base-v2 history in localStorage after successful generation
     if (isBaseV2) {
-      _updateBaseV2History({
-        hook:    data.card3_script?.hook    || '',
-        produto: data.card3_script?.produto || '',
-        cta:     data.card3_script?.cta     || '',
-        char1:   data._char1 || '',
-        char2:   data._char2 || '',
-      });
+      _updateBaseV2History({ char1: data._char1 || '' });
     }
 
     Object.assign(_stored, data);
@@ -3957,14 +3935,11 @@
       BASE_V2_CARD_CONFIG.forEach((cfg, i) => {
         const el = document.getElementById(cfg.id);
         if (!el) return;
-        let content;
-        if (cfg.renderer === 'script-v2')   content = data.card3_script_fmt   || '';
-        else if (cfg.renderer === 'legendas-v2') content = data.card5_legendas_fmt || '';
-        else                                content = data[cfg.field] || '';
+        // legenda_topo_fmt is a derived field stored under that name
+        const content = data[cfg.field] || '';
         if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
         el.style.display = 'block';
-        const storeField = cfg.renderer === 'script-v2' ? 'card3_script_fmt' : cfg.renderer === 'legendas-v2' ? 'card5_legendas_fmt' : cfg.field;
-        el.innerHTML = makeCard(cfg.title, cfg.emoji, content, storeField, i);
+        el.innerHTML = makeCard(cfg.title, cfg.emoji, content, cfg.field, i);
       });
 
     } else if (isRoupaV2) {
@@ -4224,7 +4199,7 @@
   }
 
   function copyAll(btn) {
-    const isBaseV2  = !!(_stored.card1_imagem || _stored.card2_video);
+    const isBaseV2  = !!(_stored.prompt_video_1);
     const isNano2   = !!(_stored.cena_1_imagem);
     const isRoupaA  = _stored.modo === 'A' && !!(_stored.cena_1_video_kling);
     const isRoupaB  = _stored.modo === 'B' && !!(_stored.cena_1_video_kling);
@@ -4233,11 +4208,11 @@
     let parts;
     if (isBaseV2) {
       parts = [
-        _stored.card1_imagem       ? `=== CARD 1 — PROMPT DE IMAGEM ===\n${_stored.card1_imagem}`      : '',
-        _stored.card2_video        ? `=== CARD 2 — PROMPT DE VÍDEO ===\n${_stored.card2_video}`         : '',
-        _stored.card3_script_fmt   ? `=== CARD 3 — SCRIPT PT-BR ===\n${_stored.card3_script_fmt}`       : '',
-        _stored.card4_variacao     ? `=== CARD 4 — VARIAÇÃO ===\n${_stored.card4_variacao}`              : '',
-        _stored.card5_legendas_fmt ? `=== CARD 5 — LEGENDAS ===\n${_stored.card5_legendas_fmt}`          : '',
+        _stored.character_sheet             ? `=== CHARACTER SHEET ===\n${_stored.character_sheet}`                         : '',
+        _stored.start_frame_prompt          ? `=== START FRAME (NANO) ===\n${_stored.start_frame_prompt}`                   : '',
+        _stored.prompt_video_1              ? `=== PROMPT VÍDEO 1 (8s) ===\n${_stored.prompt_video_1}`                      : '',
+        _stored.prompt_video_2_continuacao  ? `=== PROMPT VÍDEO 2 — CONTINUAÇÃO (8s) ===\n${_stored.prompt_video_2_continuacao}` : '',
+        _stored.legenda_topo_fmt            ? `=== LEGENDAS ===\n${_stored.legenda_topo_fmt}`                                : '',
       ].filter(Boolean);
     } else if (isRoupaV2) {
       parts = [
@@ -4742,7 +4717,7 @@
 
     if (isBaseV2GalleryItem) {
       const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
-      const sectionLabels = ['🖼️ Card 1 — Prompt de Imagem', '🎬 Card 2 — Prompt de Vídeo', '✍️ Card 3 — Script PT-BR', '🔄 Card 4 — Variação', '📌 Card 5 — Legendas'];
+      const sectionLabels = ['📋 Character Sheet', '🖼️ Start Frame (Nano)', '🎬 Prompt Vídeo 1 (8s)', '🎬 Prompt Vídeo 2 — Continuação (8s)', '📌 Legendas'];
       let sectionsHtml = '';
       sections.forEach((sec, idx) => {
         const label = sectionLabels[idx] || `Seção ${idx + 1}`;

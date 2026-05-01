@@ -1,7 +1,7 @@
 # UGC Prompt Generator — Índice Central
 
-**Última atualização:** 2026-04-29
-**Versão estável atual:** stable-v1.1-20260429
+**Última atualização:** 2026-05-01
+**Versão estável atual:** v3.0-base-v2-biblioteca-150-20260501
 **URL produção:** https://ugc-prompt-generator-six.vercel.app
 
 ## Visão Geral
@@ -15,6 +15,7 @@ Plataforma Node.js + Express que gera prompts UGC para TikTok Shop Brasil. Front
 | Nano + Vídeos | [[PROMPT-nano]] | Edredom Nano: output em bloco único (Nano + Veo concatenados por cena) |
 | Nano + Vídeos 2 | [[PROMPT-nano-veo-2]] | Edredom Nano: cards separados (imagem e vídeo em campos distintos) |
 | Roupa Feminina | [[PROMPT-roupa-feminina]] | Roupa feminina + Modo A (modelo nova) e Modo B (referência de imagem) |
+| **⚡ Base v2** | [[PROMPT-base-v2]] | **UGC autêntico: detecta nicho, seleciona personagem do pool de 100, gera 5 cards (character sheet, start frame, vídeo 1, vídeo 2 continuação, legendas)** |
 
 ## Documentação por Tópico
 - [[tipos-de-prompt/index]] — Catálogo de todos os estilos (metadata, quando usar, schema de output)
@@ -45,18 +46,19 @@ Regras gerais em [[CLAUDE]] | Regras de skills em [[CONTEXT]]
 
 ## Pontos de Restauração
 - `stable-v1.0-20260429` — antes do auto-deploy GitHub configurado
-- `stable-v1.1-20260429` — após auto-deploy + fixes serverless (versão estável atual)
+- `stable-v1.1-20260429` — após auto-deploy + fixes serverless
+- `v3.0-base-v2-biblioteca-150-20260501` — Base v2 com 100 personagens + 720 frases nicho + 5 cards sem Script PT-BR (versão estável atual)
 
 ## Comandos de Emergência
 ```bash
 # Restaurar local pra versão estável
-git checkout stable-v1.1-20260429
+git checkout v3.0-base-v2-biblioteca-150-20260501
 
 # Subir o servidor
 npm install && node server.js
 
 # EMERGÊNCIA: forçar produção a voltar pra essa versão
-git push -f origin stable-v1.1-20260429:main
+git push -f origin v3.0-base-v2-biblioteca-150-20260501:main
 ```
 
 ## Tags Usadas no Vault
