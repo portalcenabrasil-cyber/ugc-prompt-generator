@@ -97,7 +97,8 @@ function requireAuth(req, res, next) {
 async function _saveGalleryItem(userId, result, image_base64, image_type, price, tipo, style) {
   const isNanoVeo2      = style === 'nano-veo-2';
   const isRoupaFeminina = style === 'roupa-feminina-a' || style === 'roupa-feminina-b' || style === 'roupa-feminina-v2';
-  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2 && !isRoupaFeminina)) return null;
+  const isBaseV2        = style === 'base-v2';
+  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2 && !isRoupaFeminina && !isBaseV2)) return null;
 
   // For serie/nano/nano-veo-2: assemble prompt_video from all cena fields
   let prompt_video = result.prompt_video || null;
@@ -105,7 +106,30 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
   let nicho        = result.nicho        || null;
   let emocao       = result.emocao       || null;
 
-  if (isRoupaFeminina) {
+  if (isBaseV2) {
+    const parts = [];
+    if (result.card1_imagem)  parts.push(result.card1_imagem);
+    if (result.card2_video)   parts.push(result.card2_video);
+    if (result.card3_script) {
+      const s = result.card3_script;
+      const scriptText = [
+        s.hook    ? `🎙️ HOOK\n${s.hook}`       : null,
+        s.produto ? `💎 PRODUTO\n${s.produto}`  : null,
+        s.cta     ? `🛒 CTA\n${s.cta}`          : null,
+      ].filter(Boolean).join('\n\n');
+      if (scriptText) parts.push(scriptText);
+    }
+    if (result.card4_variacao) parts.push(result.card4_variacao);
+    if (result.card5_legendas) {
+      const l = result.card5_legendas;
+      const legendaText = [l.v1_preco, l.v2_solucao, l.v3_presente].filter(Boolean).join('\n');
+      if (legendaText) parts.push(legendaText);
+    }
+    prompt_video = parts.join('\n\n---\n\n');
+    legenda = '⚡ Base v2';
+    nicho   = result._nicho || 'Base v2';
+    emocao  = 'base-v2';
+  } else if (isRoupaFeminina) {
     const parts = [];
     if (style === 'roupa-feminina-v2') {
       // v2: character_sheet vem de _character_sheet (lido do arquivo pelo servidor)
@@ -700,6 +724,219 @@ function generatePersonagemSeed() {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Base v2 — Biblioteca de 150 personagens + 720 frases
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NICHOS_V2 = {
+  futebol:     { pools: ['masculino'],                            frasesFile: 'futebol'     },
+  anime:       { pools: ['masculino', 'donas-casa'],              frasesFile: 'anime'       },
+  casa:        { pools: ['donas-casa'],                           frasesFile: 'casa'        },
+  beleza:      { pools: ['donas-casa'],                           frasesFile: 'beleza'      },
+  pet:         { pools: ['donas-casa', 'masculino'],              frasesFile: 'pet'         },
+  ferramentas: { pools: ['masculino'],                            frasesFile: 'ferramentas' },
+  saude:       { pools: ['masculino', 'donas-casa'],              frasesFile: 'saude'       },
+  viagem:      { pools: ['masculino', 'donas-casa'],              frasesFile: 'viagem'      },
+  generico:    { pools: ['masculino', 'donas-casa'],              frasesFile: 'casa'        },
+};
+
+// Read all character IDs from a pool directory
+function listPoolIds(pool) {
+  const dirMap = {
+    'masculino':  path.join(__dirname, 'personagens-masc'),
+    'donas-casa': path.join(__dirname, 'personagens-donas-casa'),
+    'curvy-fit':  path.join(__dirname, 'personagens'),
+  };
+  const dir = dirMap[pool];
+  if (!dir || !fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.md') && f !== 'index.md')
+    .map(f => ({ pool, id: f.replace('.md', ''), file: path.join(dir, f) }));
+}
+
+// Read the full content of a character file (returns raw text)
+function readCharacterContent(entry) {
+  try { return fs.readFileSync(entry.file, 'utf8'); } catch { return ''; }
+}
+
+// Pick N distinct random items from an array (no repeats)
+function pickRandom(arr, n, excludeIds = []) {
+  const pool = arr.filter(x => !excludeIds.includes(x.id));
+  const shuffled = pool.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+// Load frases for a nicho — returns { hook: string[], produto: string[], cta: string[] }
+const _frasesCache = {};
+function loadFrasesNicho(nichoName) {
+  if (_frasesCache[nichoName]) return _frasesCache[nichoName];
+  const file = path.join(__dirname, 'frases-nichos', `${nichoName}.md`);
+  if (!fs.existsSync(file)) return { hook: [], produto: [], cta: [] };
+  const text = fs.readFileSync(file, 'utf8');
+
+  const extract = (section) => {
+    const match = text.match(new RegExp(`## ${section}[^\\n]*\\n([\\s\\S]+?)(?=\\n##|$)`, 'i'));
+    if (!match) return [];
+    return match[1].trim().split('\n')
+      .filter(l => /^\d{2}/.test(l.trim()))
+      .map(l => l.trim().replace(/^\d{2}\s*/, '').trim());
+  };
+
+  const result = {
+    hook:    extract('Hook'),
+    produto: extract('Produto'),
+    cta:     extract('CTA'),
+  };
+  _frasesCache[nichoName] = result;
+  return result;
+}
+
+// Pick one random phrase from each section, excluding history
+function sortearFrases(nichoName, historyHooks = [], historyProds = [], historyCtas = []) {
+  const { hook, produto, cta } = loadFrasesNicho(nichoName);
+  const pick = (arr, excl) => {
+    const avail = arr.filter(x => !excl.includes(x));
+    const pool = avail.length > 0 ? avail : arr;
+    return pool[Math.floor(Math.random() * pool.length)] || '';
+  };
+  return {
+    hook:    pick(hook,    historyHooks),
+    produto: pick(produto, historyProds),
+    cta:     pick(cta,     historyCtas),
+  };
+}
+
+async function callClaudeBaseV2(image_base64, image_type, price, extras_v2) {
+  const { nicho, chars, frases } = extras_v2;
+
+  const [char1, char2] = chars;
+  const c1 = readCharacterContent(char1);
+  const c2 = char2 ? readCharacterContent(char2) : null;
+
+  const systemPrompt = loadSystemPrompt('base-v2');
+
+  const userText = `Produto recebido. Gere 5 cards UGC completos para TikTok Shop brasileiro.
+
+NICHO DETECTADO: ${nicho}
+
+PERSONAGEM PRINCIPAL:
+${c1}
+
+PERSONAGEM VARIAÇÃO:
+${c2 || '(usar outro ângulo do mesmo personagem)'}
+
+FRASES SORTEADAS PARA ESTE NICHO (USE EXATAMENTE ESTAS):
+- HOOK: ${frases.hook}
+- PRODUTO: ${frases.produto}
+- CTA: ${frases.cta}
+
+${price ? `PREÇO DO PRODUTO: R$ ${price}` : ''}
+
+Retorne apenas JSON com esta estrutura:
+{
+  "nicho_detectado": "${nicho}",
+  "char1_id": "${char1.id}",
+  "char2_id": "${char2 ? char2.id : ''}",
+  "card1_imagem": "...",
+  "card2_video": "...",
+  "card3_script": { "hook": "...", "produto": "...", "cta": "..." },
+  "card4_variacao": "...",
+  "card5_legendas": { "v1_preco": "...", "v2_solucao": "...", "v3_presente": "..." }
+}`;
+
+  const MAX_RETRIES = 3;
+  let lastError;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': (process.env.ANTHROPIC_API_KEY || '').trim(),
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 } },
+            { type: 'text',  text: userText }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (response.status === 529 || (response.status >= 500 && attempt < MAX_RETRIES - 1)) {
+      lastError = new Error(data.error?.message || 'Servidor sobrecarregado'); continue;
+    }
+    if (!response.ok) throw new Error(data.error?.message || 'Erro na API Claude');
+
+    const stopReason = data.stop_reason || 'unknown';
+    const inputTokens  = data.usage?.input_tokens  || 0;
+    const outputTokens = data.usage?.output_tokens || 0;
+    batchLog(`[callClaudeBaseV2] attempt=${attempt} stop_reason=${stopReason} input=${inputTokens} output=${outputTokens}`);
+
+    if (stopReason === 'max_tokens') {
+      lastError = new Error('Resposta truncada (max_tokens)'); continue;
+    }
+
+    const rawText = data.content[0].text.trim();
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Resposta inesperada da API');
+
+    sessionTokens.input  += inputTokens;
+    sessionTokens.output += outputTokens;
+    const { inputCost, outputCost, totalCost } = calcCost(inputTokens, outputTokens);
+    const sessionCost = calcCost(sessionTokens.input, sessionTokens.output);
+
+    return {
+      ...safeParseJSON(jsonMatch[0]),
+      _nicho:   nicho,
+      _char1:   char1.id,
+      _char2:   char2 ? char2.id : null,
+      _frases:  frases,
+      _usage: { input_tokens: inputTokens, output_tokens: outputTokens, input_cost: inputCost, output_cost: outputCost, total_cost: totalCost, session: { input_tokens: sessionTokens.input, output_tokens: sessionTokens.output, total_cost: sessionCost.totalCost } }
+    };
+  }
+  throw lastError || new Error('Servidor sobrecarregado. Tente novamente.');
+}
+
+// Detect nicho from product image using Claude (fast, no system prompt)
+async function detectarNicho(image_base64, image_type) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': (process.env.ANTHROPIC_API_KEY || '').trim(),
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 50,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 } },
+          { type: 'text',  text: 'Classifique este produto em exatamente um nicho. Responda APENAS com uma das palavras: futebol, anime, casa, beleza, pet, ferramentas, saude, viagem, generico' }
+        ]
+      }]
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) return 'generico';
+  const raw = (data.content?.[0]?.text || '').trim().toLowerCase();
+  const valid = ['futebol','anime','casa','beleza','pet','ferramentas','saude','viagem','generico'];
+  return valid.find(n => raw.includes(n)) || 'generico';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null, image_base64_2 = null, image_type_2 = null, extras = null) {
   const MAX_RETRIES = 3;
   let lastError;
@@ -1192,6 +1429,22 @@ app.post('/api/generate', requireAuth, async (req, res) => {
 
     extras = { character_block, character_sheet, cenario, modo: modo || 'biblioteca' };
   }
+
+  // ── Base v2 — detecta nicho, sorteia personagens e frases ──
+  let extrasV2 = null;
+  if (style === 'base-v2') {
+    const { history_hooks = [], history_prods = [], history_ctas = [], history_chars = [] } = req.body;
+    const nicho = await detectarNicho(image_base64, image_type);
+    const nichoConfig = NICHOS_V2[nicho] || NICHOS_V2.generico;
+
+    // Build character pool from all relevant pools
+    const allChars = nichoConfig.pools.flatMap(pool => listPoolIds(pool));
+    const selected = pickRandom(allChars, 2, history_chars);
+    const frases   = sortearFrases(nichoConfig.frasesFile, history_hooks, history_prods, history_ctas);
+
+    extrasV2 = { nicho, chars: selected, frases };
+  }
+
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui') {
     return res.status(500).json({ error: 'Configure sua ANTHROPIC_API_KEY no arquivo .env' });
   }
@@ -1213,7 +1466,12 @@ app.post('/api/generate', requireAuth, async (req, res) => {
   }
 
   try {
-    const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao, image_base64_2, image_type_2, extras);
+    let result;
+    if (style === 'base-v2') {
+      result = await callClaudeBaseV2(image_base64, image_type, price, extrasV2);
+    } else {
+      result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao, image_base64_2, image_type_2, extras);
+    }
 
     // For v2, inject character_sheet from file into result so frontend can display it
     if (style === 'roupa-feminina-v2' && extras?.character_sheet) {

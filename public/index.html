@@ -2085,6 +2085,7 @@
             <label class="field-label">Estilo de Prompt</label>
             <div class="seg-group" style="grid-template-columns:1fr 1fr" id="styleGroup">
               <button class="seg-btn active" data-value="base" onclick="selectSeg(this,'styleGroup');onStyleChange('base')">⚡ Base</button>
+              <button class="seg-btn" data-value="base-v2" onclick="selectSeg(this,'styleGroup');onStyleChange('base-v2')">⚡ Base v2</button>
               <button class="seg-btn" data-value="serie" onclick="selectSeg(this,'styleGroup');onStyleChange('serie')">🛏️ Edredons Premium</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano" onclick="selectSeg(this,'styleGroup');onStyleChange('nano')">🎬 Edredom Nano + Vídeos</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano-veo-2" onclick="selectSeg(this,'styleGroup');onStyleChange('nano-veo-2')">🧪 Nano + Vídeos 2</button>
@@ -2311,6 +2312,12 @@
             <div id="cardV2KlingVideo"  style="display:none"></div>
             <div id="cardV2Script"      style="display:none"></div>
             <div id="cardV2Legenda"     style="display:none"></div>
+            <!-- Base v2 cards -->
+            <div id="cardBv2Imagem"   style="display:none"></div>
+            <div id="cardBv2Video"    style="display:none"></div>
+            <div id="cardBv2Script"   style="display:none"></div>
+            <div id="cardBv2Variacao" style="display:none"></div>
+            <div id="cardBv2Legendas" style="display:none"></div>
             <div id="costBox"></div>
             <button class="btn-regen" id="btnRegen" onclick="regenPrompt()">
               <div class="spinner"></div>
@@ -3485,6 +3492,35 @@
     document.getElementById('fileInputRef').value = '';
   }
 
+  // ── Base v2 — Anti-pattern localStorage history ──
+  const BV2_HISTORY_KEY = 'ugc_base_v2_history';
+  const BV2_MAX         = 5;
+
+  function _getBaseV2History() {
+    try {
+      const h = JSON.parse(localStorage.getItem(BV2_HISTORY_KEY) || '{}');
+      return {
+        history_hooks: h.hooks || [],
+        history_prods: h.prods || [],
+        history_ctas:  h.ctas  || [],
+        history_chars: h.chars || [],
+      };
+    } catch { return {}; }
+  }
+
+  function _updateBaseV2History({ hook, produto, cta, char1, char2 }) {
+    try {
+      const h = JSON.parse(localStorage.getItem(BV2_HISTORY_KEY) || '{}');
+      const push = (arr, val) => { if (val) { arr.push(val); if (arr.length > BV2_MAX) arr.shift(); } return arr; };
+      h.hooks = push(h.hooks || [], hook);
+      h.prods = push(h.prods || [], produto);
+      h.ctas  = push(h.ctas  || [], cta);
+      h.chars = push(h.chars || [], char1);
+      if (char2) h.chars = push(h.chars, char2);
+      localStorage.setItem(BV2_HISTORY_KEY, JSON.stringify(h));
+    } catch { /* silent */ }
+  }
+
   // ── GENERATE SINGLE ──
   async function generate() {
     if (!imageBase64) { showError('Envie uma imagem do produto antes de gerar.'); return; }
@@ -3533,6 +3569,7 @@
           personagem_id: _style === 'roupa-feminina-v2' ? _selectedCharId  : undefined,
           cenario_id:    _style === 'roupa-feminina-v2' ? _selectedCenId   : undefined,
           modo:          _style === 'roupa-feminina-v2' ? _roupaV2Modo      : undefined,
+          ..._style === 'base-v2' ? _getBaseV2History() : {},
         })
       });
       const data = await res.json();
@@ -3824,6 +3861,14 @@
     { id: 'cardRoupaBLegenda',    field: 'legenda_topo',          title: 'Legenda Topo',                 emoji: '📌', renderer: 'card' },
   ];
 
+  const BASE_V2_CARD_CONFIG = [
+    { id: 'cardBv2Imagem',   field: 'card1_imagem',   title: '🖼️ Card 1 — Prompt de Imagem',   emoji: '🖼️', renderer: 'card' },
+    { id: 'cardBv2Video',    field: 'card2_video',    title: '🎬 Card 2 — Prompt de Vídeo',     emoji: '🎬', renderer: 'card' },
+    { id: 'cardBv2Script',   field: 'card3_script',   title: '✍️ Card 3 — Script PT-BR',         emoji: '✍️', renderer: 'script-v2' },
+    { id: 'cardBv2Variacao', field: 'card4_variacao', title: '🔄 Card 4 — Variação Personagem',  emoji: '🔄', renderer: 'card' },
+    { id: 'cardBv2Legendas', field: 'card5_legendas', title: '📌 Card 5 — Legendas TikTok Shop', emoji: '📌', renderer: 'legendas-v2' },
+  ];
+
   const ROUPA_V2_CARD_CONFIG = [
     { id: 'cardV2CharSheet',  field: '_character_sheet',  title: 'Character Sheet',        emoji: '📋', renderer: 'card' },
     { id: 'cardV2StartFrame', field: 'start_frame_prompt', title: 'Start Frame (Nano)',     emoji: '🖼️', renderer: 'card' },
@@ -3839,11 +3884,13 @@
     ROUPA_A_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
     ROUPA_B_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); el.innerHTML = ''; el.style.display = 'none'; });
     ROUPA_V2_CARD_CONFIG.forEach(cfg   => { const el = document.getElementById(cfg.id); if(el){el.innerHTML = ''; el.style.display = 'none';} });
+    BASE_V2_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); if(el){el.innerHTML = ''; el.style.display = 'none';} });
     document.getElementById('serieResumo').style.display = 'none';
   }
 
   function renderResults(data) {
     // Detect mode from data fields (before Object.assign so derived fields land in _stored)
+    const isBaseV2  = !!(data.card1_imagem || data.card2_video);
     const isNano2   = !!(data.cena_1_imagem);
     const isRoupaA  = data.modo === 'A' && !!(data.cena_1_video_kling);
     const isRoupaB  = data.modo === 'B' && !!(data.cena_1_video_kling);
@@ -3851,6 +3898,18 @@
     const isSerie   = !!(data.character_sheet) && !isNano2 && !isRoupaA && !isRoupaV2;
 
     // Derivar campos ANTES do Object.assign para que _stored os contenha
+    if (isBaseV2 && data.card3_script) {
+      const s = data.card3_script;
+      data.card3_script_fmt = `🎙️ HOOK\n${s.hook || ''}\n\n💎 PRODUTO\n${s.produto || ''}\n\n🛒 CTA\n${s.cta || ''}`;
+    }
+    if (isBaseV2 && data.card5_legendas) {
+      const l = data.card5_legendas;
+      data.card5_legendas_fmt = [
+        l.v1_preco   ? `📌 Versão 1 (Preço)\n${l.v1_preco}`     : null,
+        l.v2_solucao ? `📌 Versão 2 (Solução)\n${l.v2_solucao}` : null,
+        l.v3_presente? `📌 Versão 3 (Presente)\n${l.v3_presente}`: null,
+      ].filter(Boolean).join('\n\n');
+    }
     if ((isRoupaA || isRoupaB) && data.script) {
       const s = data.script;
       data.script_formatado = `🎯 HOOK (0–3s)\n${s.hook}\n\n💎 BENEFÍCIO (3–10s)\n${s.beneficio}` +
@@ -3866,12 +3925,23 @@
       data.script_v2_fmt = `🎙️ HOOK\n${s.hook || ''}\n\n💎 BENEFÍCIO\n${s.beneficio || ''}\n\n🛒 CTA\n${s.cta || ''}`;
     }
 
+    // Update base-v2 history in localStorage after successful generation
+    if (isBaseV2) {
+      _updateBaseV2History({
+        hook:    data.card3_script?.hook    || '',
+        produto: data.card3_script?.produto || '',
+        cta:     data.card3_script?.cta     || '',
+        char1:   data._char1 || '',
+        char2:   data._char2 || '',
+      });
+    }
+
     Object.assign(_stored, data);
 
     const meta = document.getElementById('metaBadges');
     const copyAllBtn = document.getElementById('btnCopyAll');
     meta.innerHTML = '';
-    if (!isSerie && !isNano2 && !isRoupaA && !isRoupaB && !isRoupaV2) {
+    if (!isSerie && !isNano2 && !isRoupaA && !isRoupaB && !isRoupaV2 && !isBaseV2) {
       const tipoBtn = document.querySelector('#tipoGroup .seg-btn.active');
       if (tipoBtn)     meta.innerHTML += `<span class="badge">${tipoBtn.textContent.trim()}</span>`;
       if (data.nicho)  meta.innerHTML += `<span class="badge nicho">🏷 ${data.nicho}</span>`;
@@ -3879,7 +3949,25 @@
     }
     meta.appendChild(copyAllBtn);
 
-    if (isRoupaV2) {
+    if (isBaseV2) {
+      _hideAllCardSets();
+      // Show nicho badge
+      if (data._nicho) meta.innerHTML = `<span class="badge nicho">🏷 ${data._nicho}</span>` + meta.innerHTML;
+      meta.appendChild(copyAllBtn);
+      BASE_V2_CARD_CONFIG.forEach((cfg, i) => {
+        const el = document.getElementById(cfg.id);
+        if (!el) return;
+        let content;
+        if (cfg.renderer === 'script-v2')   content = data.card3_script_fmt   || '';
+        else if (cfg.renderer === 'legendas-v2') content = data.card5_legendas_fmt || '';
+        else                                content = data[cfg.field] || '';
+        if (!content) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        el.style.display = 'block';
+        const storeField = cfg.renderer === 'script-v2' ? 'card3_script_fmt' : cfg.renderer === 'legendas-v2' ? 'card5_legendas_fmt' : cfg.field;
+        el.innerHTML = makeCard(cfg.title, cfg.emoji, content, storeField, i);
+      });
+
+    } else if (isRoupaV2) {
       _hideAllCardSets();
       ROUPA_V2_CARD_CONFIG.forEach((cfg, i) => {
         const el = document.getElementById(cfg.id);
@@ -4136,13 +4224,22 @@
   }
 
   function copyAll(btn) {
+    const isBaseV2  = !!(_stored.card1_imagem || _stored.card2_video);
     const isNano2   = !!(_stored.cena_1_imagem);
     const isRoupaA  = _stored.modo === 'A' && !!(_stored.cena_1_video_kling);
     const isRoupaB  = _stored.modo === 'B' && !!(_stored.cena_1_video_kling);
     const isRoupaV2 = !!(_stored.prompt_kling_video || _stored.outfit_detectado);
     const isSerie   = !!(_stored.character_sheet) && !isNano2 && !isRoupaA && !isRoupaV2;
     let parts;
-    if (isRoupaV2) {
+    if (isBaseV2) {
+      parts = [
+        _stored.card1_imagem       ? `=== CARD 1 — PROMPT DE IMAGEM ===\n${_stored.card1_imagem}`      : '',
+        _stored.card2_video        ? `=== CARD 2 — PROMPT DE VÍDEO ===\n${_stored.card2_video}`         : '',
+        _stored.card3_script_fmt   ? `=== CARD 3 — SCRIPT PT-BR ===\n${_stored.card3_script_fmt}`       : '',
+        _stored.card4_variacao     ? `=== CARD 4 — VARIAÇÃO ===\n${_stored.card4_variacao}`              : '',
+        _stored.card5_legendas_fmt ? `=== CARD 5 — LEGENDAS ===\n${_stored.card5_legendas_fmt}`          : '',
+      ].filter(Boolean);
+    } else if (isRoupaV2) {
       parts = [
         _stored._character_sheet  ? `=== CHARACTER SHEET ===\n${_stored._character_sheet}` : '',
         _stored.outfit_detectado  ? `=== OUTFIT DETECTADO ===\n${_stored.outfit_detectado}` : '',
@@ -4640,9 +4737,28 @@
       (item.nicho === 'Nano + Vídeos 2') ||
       (item.prompt_video || '').includes('📸 CENA') ||
       (item.prompt_video || '').includes('Consistent character:');
+    const isBaseV2GalleryItem   = item.emocao === 'base-v2';
     const isRoupaFemGalleryItem = item.emocao === 'roupa-feminina-a' || item.emocao === 'roupa-feminina-b' || item.emocao === 'roupa-feminina-v2';
 
-    if (isRoupaFemGalleryItem) {
+    if (isBaseV2GalleryItem) {
+      const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
+      const sectionLabels = ['🖼️ Card 1 — Prompt de Imagem', '🎬 Card 2 — Prompt de Vídeo', '✍️ Card 3 — Script PT-BR', '🔄 Card 4 — Variação', '📌 Card 5 — Legendas'];
+      let sectionsHtml = '';
+      sections.forEach((sec, idx) => {
+        const label = sectionLabels[idx] || `Seção ${idx + 1}`;
+        const safeLbl  = label.replace(/</g,'&lt;');
+        const safeBody = sec.replace(/</g,'&lt;');
+        const safeSec  = JSON.stringify(sec).replace(/"/g,'&quot;');
+        sectionsHtml += `
+          <div class="gallery-detail-section">
+            <span class="gallery-detail-label">${safeLbl}</span>
+            <div class="gallery-detail-text">${safeBody}</div>
+            <button class="btn-copy" style="align-self:flex-start;margin-top:4px" onclick="copyRaw(${safeSec},this)"><span>⎘</span> COPIAR</button>
+          </div>`;
+      });
+      content.innerHTML = `${chipsHtml}${sectionsHtml}${footerHtml}`;
+
+    } else if (isRoupaFemGalleryItem) {
       // Roupa Feminina — split por --- igual ao nano-veo-2
       const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
       const sectionLabels = item.emocao === 'roupa-feminina-v2'

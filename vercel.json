@@ -15,7 +15,11 @@
           "PROMPT-roupa-feminina-v2.md",
           "CONTEXT.md",
           "personagens/**",
-          "cenarios/**"
+          "cenarios/**",
+          "personagens-masc/**",
+          "personagens-donas-casa/**",
+          "frases-nichos/**",
+          "PROMPT-base-v2.md"
         ]
       }
     }
