@@ -1750,9 +1750,6 @@ app.delete('/api/gallery/:id', requireSupabase, requireAuth, async (req, res) =>
 
 // ── BIBLIOTECA CUSTOM (leitura pública, escrita/deleção protegida por senha admin) ──
 const BIBLIOTECA_ADMIN_KEY = process.env.BIBLIOTECA_ADMIN_KEY || 'ugc2026';
-const BIBLIOTECA_IMG_MAX_DIM = 400; // px — thumbnail para exibição nos cards
-const BIBLIOTECA_IMG_QUALITY = 65;  // 0-100
-const BIBLIOTECA_IMG_MAX_KB  = 120; // não recomprime se já estiver abaixo disso
 
 function requireBibliotecaAdmin(req, res, next) {
   if (req.headers['x-admin-key'] !== BIBLIOTECA_ADMIN_KEY) {
@@ -1761,50 +1758,17 @@ function requireBibliotecaAdmin(req, res, next) {
   next();
 }
 
-// Comprime imagem base64 com Jimp → retorna { base64, mime } comprimido
-async function compressBase64Image(base64, mime) {
-  const buf = Buffer.from(base64, 'base64');
-  const img = await Jimp.read(buf);
-  img.scaleToFit(BIBLIOTECA_IMG_MAX_DIM, BIBLIOTECA_IMG_MAX_DIM);
-  img.quality(BIBLIOTECA_IMG_QUALITY);
-  const compressed = await img.getBufferAsync('image/jpeg');
-  return { base64: compressed.toString('base64'), mime: 'image/jpeg' };
-}
-
-// Garante que imagem está comprimida; atualiza Supabase se necessário
-async function ensureCompressed(item) {
-  if (!item.imagem_base64) return item;
-  const sizeKB = Math.ceil(item.imagem_base64.length * 3 / 4 / 1024);
-  if (sizeKB <= BIBLIOTECA_IMG_MAX_KB) return item;
-  try {
-    const { base64, mime } = await compressBase64Image(item.imagem_base64, item.imagem_mime);
-    // Atualiza Supabase em background (não bloqueia a resposta)
-    supabase.from('biblioteca_custom')
-      .update({ imagem_base64: base64, imagem_mime: mime })
-      .eq('id', item.id)
-      .then(() => console.log('[auto-compress] atualizado', item.id))
-      .catch(e => console.warn('[auto-compress] falhou update', item.id, e.message));
-    return { ...item, imagem_base64: base64, imagem_mime: mime };
-  } catch (e) {
-    console.warn('[auto-compress] falhou compressão', item.id, e.message);
-    return item; // retorna original se falhar
-  }
-}
-
-// Lista com imagens inline comprimidas (retorna rápido para o browser)
+// Lista — só metadados (imagens carregadas lazily pelo cliente via IDB cache)
 app.get('/api/biblioteca/custom', requireSupabase, async (req, res) => {
   const { data, error } = await supabase
     .from('biblioteca_custom')
-    .select('*')
+    .select('id, created_at, categoria_slug, categoria, categoria_icone, nome_arquivo, prompt')
     .order('created_at', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
-
-  // Comprime imagens grandes (one-time por imagem, atualiza DB em background)
-  const processed = await Promise.all((data || []).map(ensureCompressed));
-  res.json(processed);
+  res.json(data || []);
 });
 
-// Imagem individual (fallback / compatibilidade)
+// Imagem em qualidade original — cache imutável no browser + IDB no cliente
 app.get('/api/biblioteca/custom/:id/image', requireSupabase, async (req, res) => {
   const { data, error } = await supabase
     .from('biblioteca_custom')
@@ -1822,22 +1786,6 @@ app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, asyn
   const item = req.body;
   if (!item?.prompt) return res.status(400).json({ error: 'Campo prompt obrigatório' });
 
-  let { imagem_base64, imagem_mime } = item;
-
-  // Comprime no servidor antes de salvar (garante imagens pequenas mesmo sem canvas)
-  if (imagem_base64) {
-    try {
-      const sizeKB = Math.ceil(imagem_base64.length * 3 / 4 / 1024);
-      if (sizeKB > BIBLIOTECA_IMG_MAX_KB) {
-        const compressed = await compressBase64Image(imagem_base64, imagem_mime);
-        imagem_base64 = compressed.base64;
-        imagem_mime   = compressed.mime;
-      }
-    } catch (e) {
-      console.warn('[save-compress] falhou:', e.message);
-    }
-  }
-
   const newItem = {
     id:              Date.now() + '-' + Math.random().toString(36).substr(2, 9),
     created_at:      new Date().toISOString(),
@@ -1846,8 +1794,8 @@ app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, asyn
     categoria_icone: item.categoria_icone || '',
     nome_arquivo:    item.nome_arquivo    || 'Novo Prompt',
     prompt:          item.prompt,
-    imagem_base64,
-    imagem_mime,
+    imagem_base64:   item.imagem_base64   || null,
+    imagem_mime:     item.imagem_mime     || null,
   };
 
   const { data, error } = await supabase.from('biblioteca_custom').insert(newItem).select().single();

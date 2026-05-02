@@ -1045,14 +1045,26 @@ async function idbDelete(key) {
 }
 // Retorna um objectURL para um path idb://key, ou o próprio path se não for idb://
 async function resolveImgSrc(path) {
-  if (!path || !path.startsWith('idb://')) return path || '';
-  const key = path.slice(6);
-  if (_objUrlCache[key]) return _objUrlCache[key];
-  const blob = await idbGet(key);
-  if (!blob) return '';
-  const url = URL.createObjectURL(blob);
-  _objUrlCache[key] = url;
-  return url;
+  if (!path) return '';
+  // IDB direto
+  if (path.startsWith('idb://')) {
+    const key = path.slice(6);
+    if (_objUrlCache[key]) return _objUrlCache[key];
+    const blob = await idbGet(key);
+    if (!blob) return '';
+    _objUrlCache[key] = URL.createObjectURL(blob);
+    return _objUrlCache[key];
+  }
+  // API image — usa cache IDB se disponível, senão a URL direta
+  if (path.startsWith('/api/biblioteca/custom/')) {
+    const id = path.split('/')[4]; // /api/biblioteca/custom/:id/image
+    const cacheKey = 'api-img-' + id;
+    if (_objUrlCache[cacheKey]) return _objUrlCache[cacheKey];
+    const blob = await idbGet(cacheKey);
+    if (blob) { _objUrlCache[cacheKey] = URL.createObjectURL(blob); return _objUrlCache[cacheKey]; }
+    return path; // fallback: URL direta
+  }
+  return path;
 }
 // Converte Blob para data URL (usado no export JSON)
 function blobToDataUrl(blob) {
@@ -1315,16 +1327,19 @@ function renderGrid(prompts) {
   for (let i = 0; i < prompts.length; i++) {
     const p = prompts[i];
     if (!p || !p.id) continue;
-    const safeId   = String(p.id).replace(/['"<>&]/g, '');
-    const isIdb    = p.imagem_path && p.imagem_path.startsWith('idb://');
-    const idbKey   = isIdb ? p.imagem_path.slice(6) : '';
-    const imgSrc   = isIdb ? '' : (p.imagem_path || '');
-    const idbAttr  = isIdb ? ` data-idb="${escHtml(idbKey)}"` : '';
+    const safeId    = String(p.id).replace(/['"<>&]/g, '');
+    const isIdb     = p.imagem_path && p.imagem_path.startsWith('idb://');
+    const isApiImg  = p.imagem_path && p.imagem_path.startsWith('/api/biblioteca/custom/');
+    const idbKey    = isIdb ? p.imagem_path.slice(6) : '';
+    const imgSrc    = (isIdb || isApiImg) ? '' : (p.imagem_path || '');
+    const idbAttr   = isIdb    ? ` data-idb="${escHtml(idbKey)}"` : '';
+    const apiAttr   = isApiImg ? ` data-api-img="${escHtml(safeId)}"` : '';
+    const lazyAttr  = (isIdb || isApiImg) ? '' : ' loading="lazy"';
     const adminDelete = isAdmin ? `<button class="admin-delete-btn" onclick="deletePrompt('${safeId}')" title="Deletar">🗑</button>` : '';
     parts.push(
       `<div class="prompt-card${isAdmin ? ' admin-mode' : ''}" id="card-${safeId}">` +
         `<div class="prompt-card-image">` +
-          `<img src="${imgSrc}"${idbAttr} alt="${escHtml(p.nome_arquivo || '')}"${isIdb ? '' : ' loading="lazy"'} />` +
+          `<img src="${imgSrc}"${idbAttr}${apiAttr} alt="${escHtml(p.nome_arquivo || '')}"${lazyAttr} />` +
           `<div class="prompt-card-tag">${getIcon(p.categoria_slug)} ${escHtml(getCatLabel(p.categoria_slug))}</div>` +
           `<div class="prompt-card-overlay">` +
             `<button class="btn-card-view" onclick="openModal('${safeId}')">👁 Ver completo</button>` +
@@ -1337,10 +1352,32 @@ function renderGrid(prompts) {
   }
   grid.innerHTML = parts.join('');
 
-  // Resolve imagens IDB de forma async (sem bloquear o render)
+  // Resolve imagens IDB (cache local)
   grid.querySelectorAll('img[data-idb]').forEach(async img => {
     const url = await resolveImgSrc('idb://' + img.dataset.idb);
     if (url) img.src = url;
+  });
+
+  // Resolve imagens de custom prompts via IDB cache → endpoint (qualidade original)
+  grid.querySelectorAll('img[data-api-img]').forEach(async img => {
+    const id = img.dataset.apiImg;
+    const cacheKey = 'api-img-' + id;
+    // 1. Tenta cache IDB (instantâneo em visitas repetidas)
+    const cached = await idbGet(cacheKey);
+    if (cached) {
+      if (!_objUrlCache[cacheKey]) _objUrlCache[cacheKey] = URL.createObjectURL(cached);
+      img.src = _objUrlCache[cacheKey];
+      return;
+    }
+    // 2. Busca do servidor (primeira vez) e guarda em IDB
+    try {
+      const r = await fetch(`/api/biblioteca/custom/${id}/image`);
+      if (!r.ok) return;
+      const blob = await r.blob();
+      await idbPut(cacheKey, blob);
+      _objUrlCache[cacheKey] = URL.createObjectURL(blob);
+      img.src = _objUrlCache[cacheKey];
+    } catch (e) { console.warn('[img-cache] falhou', id, e); }
   });
 
   // Intersection observer for fade-in
