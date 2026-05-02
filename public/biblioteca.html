@@ -1178,7 +1178,7 @@ function renderGrid(prompts) {
     parts.push(
       `<div class="prompt-card${isAdmin ? ' admin-mode' : ''}" id="card-${safeId}">` +
         `<div class="prompt-card-image">` +
-          `<img src="${imgSrc}"${idbAttr} alt="${escHtml(p.nome_arquivo || '')}" loading="lazy" />` +
+          `<img src="${imgSrc}"${idbAttr} alt="${escHtml(p.nome_arquivo || '')}"${isIdb ? '' : ' loading="lazy"'} />` +
           `<div class="prompt-card-tag">${getIcon(p.categoria_slug)} ${escHtml(getCatLabel(p.categoria_slug))}</div>` +
           `<div class="prompt-card-overlay">` +
             `<button class="btn-card-view" onclick="openModal('${safeId}')">👁 Ver completo</button>` +
@@ -1423,8 +1423,8 @@ async function saveNewPrompt() {
     const imgKey = `img-${Date.now()}`;
     try {
       await idbPut(imgKey, newImgFile);
-      // Cache o objectURL gerado na prévia para renderização imediata
-      _objUrlCache[imgKey] = newImgObjUrl || URL.createObjectURL(newImgFile);
+      // Cria um objectURL NOVO para o cache — separado do preview (que será revogado pelo closeNewPromptModal)
+      _objUrlCache[imgKey] = URL.createObjectURL(newImgFile);
       imgPath = 'idb://' + imgKey;
     } catch (err) {
       console.error('[saveNewPrompt] Erro ao salvar imagem no IndexedDB:', err);
