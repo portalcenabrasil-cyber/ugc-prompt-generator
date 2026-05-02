@@ -988,7 +988,7 @@
     </div>
 
     <div class="admin-note">
-      ⚠️ Salvo localmente (localStorage). Clique em <strong>Exportar JSON</strong> quando terminar para persistir no servidor.
+      💾 Imagem salva em qualidade original no IndexedDB do browser. Clique em <strong>Exportar JSON</strong> para persistir no servidor.
     </div>
 
     <div class="admin-new-actions">
@@ -999,6 +999,68 @@
 </div>
 
 <script>
+// ══ INDEXEDDB — armazena imagens como Blob (sem limite de 5MB) ══
+const IDB_NAME    = 'ugc_biblioteca_imgs';
+const IDB_STORE   = 'imgs';
+let   _idb        = null;
+const _objUrlCache = {};     // key → objectURL (evita criar vários URLs pro mesmo blob)
+
+function openIDB() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess  = e => { _idb = e.target.result; res(_idb); };
+    req.onerror    = e => rej(e.target.error);
+  });
+}
+async function idbPut(key, blob) {
+  const db = await openIDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(blob, key);
+    tx.oncomplete = res;
+    tx.onerror    = e => rej(e.target.error);
+  });
+}
+async function idbGet(key) {
+  const db = await openIDB();
+  return new Promise((res, rej) => {
+    const req = db.transaction(IDB_STORE).objectStore(IDB_STORE).get(key);
+    req.onsuccess = e => res(e.target.result || null);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+async function idbDelete(key) {
+  const db = await openIDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = res;
+    tx.onerror    = e => rej(e.target.error);
+  });
+}
+// Retorna um objectURL para um path idb://key, ou o próprio path se não for idb://
+async function resolveImgSrc(path) {
+  if (!path || !path.startsWith('idb://')) return path || '';
+  const key = path.slice(6);
+  if (_objUrlCache[key]) return _objUrlCache[key];
+  const blob = await idbGet(key);
+  if (!blob) return '';
+  const url = URL.createObjectURL(blob);
+  _objUrlCache[key] = url;
+  return url;
+}
+// Converte Blob para data URL (usado no export JSON)
+function blobToDataUrl(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
 // ══ STATE ══
 let allPrompts = [];
 let localPrompts = JSON.parse(localStorage.getItem('biblioteca_local') || '[]');
@@ -1107,12 +1169,16 @@ function renderGrid(prompts) {
   for (let i = 0; i < prompts.length; i++) {
     const p = prompts[i];
     if (!p || !p.id) continue;
-    const safeId = String(p.id).replace(/['"<>&]/g, '');
+    const safeId   = String(p.id).replace(/['"<>&]/g, '');
+    const isIdb    = p.imagem_path && p.imagem_path.startsWith('idb://');
+    const idbKey   = isIdb ? p.imagem_path.slice(6) : '';
+    const imgSrc   = isIdb ? '' : (p.imagem_path || '');
+    const idbAttr  = isIdb ? ` data-idb="${escHtml(idbKey)}"` : '';
     const adminDelete = isAdmin ? `<button class="admin-delete-btn" onclick="deletePrompt('${safeId}')" title="Deletar">🗑</button>` : '';
     parts.push(
       `<div class="prompt-card${isAdmin ? ' admin-mode' : ''}" id="card-${safeId}">` +
         `<div class="prompt-card-image">` +
-          `<img src="${p.imagem_path || ''}" alt="${escHtml(p.nome_arquivo || '')}" loading="lazy" />` +
+          `<img src="${imgSrc}"${idbAttr} alt="${escHtml(p.nome_arquivo || '')}" loading="lazy" />` +
           `<div class="prompt-card-tag">${getIcon(p.categoria_slug)} ${escHtml(getCatLabel(p.categoria_slug))}</div>` +
           `<div class="prompt-card-overlay">` +
             `<button class="btn-card-view" onclick="openModal('${safeId}')">👁 Ver completo</button>` +
@@ -1124,6 +1190,12 @@ function renderGrid(prompts) {
     );
   }
   grid.innerHTML = parts.join('');
+
+  // Resolve imagens IDB de forma async (sem bloquear o render)
+  grid.querySelectorAll('img[data-idb]').forEach(async img => {
+    const url = await resolveImgSrc('idb://' + img.dataset.idb);
+    if (url) img.src = url;
+  });
 
   // Intersection observer for fade-in
   if ('IntersectionObserver' in window) {
@@ -1169,11 +1241,11 @@ async function copyFromModal() {
 }
 
 // ══ MODAL ══
-function openModal(id) {
+async function openModal(id) {
   const p = getPromptById(id);
   if (!p) return;
   activeModal = id;
-  document.getElementById('modalImg').src = p.imagem_path;
+  document.getElementById('modalImg').src = await resolveImgSrc(p.imagem_path);
   document.getElementById('modalImg').alt = p.nome_arquivo;
   document.getElementById('modalTag').textContent = getIcon(p.categoria_slug) + ' ' + getCatLabel(p.categoria_slug);
   document.getElementById('modalFilename').textContent = p.nome_arquivo;
@@ -1256,7 +1328,17 @@ function deletePrompt(id) {
   if (!confirm('Deletar este prompt?')) return;
   // Try local prompts first
   const li = localPrompts.findIndex(p => p.id === id);
-  if (li >= 0) { localPrompts.splice(li, 1); localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts)); }
+  if (li >= 0) {
+    const removed = localPrompts[li];
+    // Limpa imagem do IndexedDB se for idb://
+    if (removed.imagem_path && removed.imagem_path.startsWith('idb://')) {
+      const key = removed.imagem_path.slice(6);
+      idbDelete(key).catch(() => {});
+      if (_objUrlCache[key]) { URL.revokeObjectURL(_objUrlCache[key]); delete _objUrlCache[key]; }
+    }
+    localPrompts.splice(li, 1);
+    localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+  }
   else {
     // Mark as deleted in localStorage
     const deleted = JSON.parse(localStorage.getItem('biblioteca_deleted') || '[]');
@@ -1271,7 +1353,10 @@ function deletePrompt(id) {
 }
 
 // ══ ADMIN NEW PROMPT ══
-let newImgDataUrl = null;
+// Imagem fica em IndexedDB (blob original, sem compressão, sem limite de 5MB)
+let newImgFile = null;   // File object selecionado pelo admin
+let newImgObjUrl = null; // objectURL temporário para o preview
+
 function openNewPromptModal() {
   const modal = document.getElementById('adminNewModal');
   modal.style.display = 'flex';
@@ -1281,26 +1366,27 @@ function closeNewPromptModal() {
   const modal = document.getElementById('adminNewModal');
   modal.classList.remove('open');
   setTimeout(() => { modal.style.display = 'none'; }, 220);
-  newImgDataUrl = null;
+  if (newImgObjUrl) { URL.revokeObjectURL(newImgObjUrl); newImgObjUrl = null; }
+  newImgFile = null;
   document.getElementById('dropPreview').style.display = 'none';
   document.getElementById('newImgFile').value = '';
   document.getElementById('newName').value = '';
   document.getElementById('newPrompt').value = '';
 }
 
-function setImgPreview(dataUrl) {
-  newImgDataUrl = dataUrl;
+function setImgPreview(file) {
+  newImgFile = file;
+  if (newImgObjUrl) URL.revokeObjectURL(newImgObjUrl);
+  newImgObjUrl = URL.createObjectURL(file);
   const prev = document.getElementById('dropPreview');
-  prev.src = dataUrl;
+  prev.src = newImgObjUrl;
   prev.style.display = 'block';
 }
 
 function handleImgPreview(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => setImgPreview(ev.target.result);
-  reader.readAsDataURL(file);
+  setImgPreview(file);
 }
 
 // Drag over drop area
@@ -1316,29 +1402,44 @@ if (dropArea) {
       const dt = new DataTransfer();
       dt.items.add(file);
       document.getElementById('newImgFile').files = dt.files;
-      const reader = new FileReader();
-      reader.onload = ev => setImgPreview(ev.target.result);
-      reader.readAsDataURL(file);
+      setImgPreview(file);
     }
   });
 }
 
-function saveNewPrompt() {
-  const cat = document.getElementById('newCat').value;
-  const name = document.getElementById('newName').value.trim() || 'Novo Prompt';
+async function saveNewPrompt() {
+  const cat    = document.getElementById('newCat').value;
+  const name   = document.getElementById('newName').value.trim() || 'Novo Prompt';
   const prompt = document.getElementById('newPrompt').value.trim();
   if (!prompt) { alert('O campo Prompt é obrigatório.'); return; }
 
   const catInfo = CAT_MAP[cat] || {};
-  const maxId = getMerged().reduce((acc, p) => Math.max(acc, parseInt(p.id) || 0), 0);
+  const maxId   = getMerged().reduce((acc, p) => Math.max(acc, parseInt(p.id) || 0), 0);
+  const entryId = String(maxId + 1);
+
+  // Salva imagem no IndexedDB (blob original — qualidade máxima, sem limite de tamanho)
+  let imgPath = '';
+  if (newImgFile) {
+    const imgKey = `img-${Date.now()}`;
+    try {
+      await idbPut(imgKey, newImgFile);
+      // Cache o objectURL gerado na prévia para renderização imediata
+      _objUrlCache[imgKey] = newImgObjUrl || URL.createObjectURL(newImgFile);
+      imgPath = 'idb://' + imgKey;
+    } catch (err) {
+      console.error('[saveNewPrompt] Erro ao salvar imagem no IndexedDB:', err);
+      alert('Erro ao salvar imagem. Tente novamente.');
+      return;
+    }
+  }
 
   const newEntry = {
-    id: String(maxId + 1),
+    id: entryId,
     categoria: catInfo.label || cat,
     categoria_original: cat,
     categoria_slug: cat,
     categoria_icone: catInfo.icone || '',
-    imagem_path: newImgDataUrl || '',
+    imagem_path: imgPath,
     nome_arquivo: name,
     prompt: prompt,
     data_adicao: new Date().toISOString().split('T')[0],
@@ -1346,13 +1447,9 @@ function saveNewPrompt() {
   };
 
   localPrompts.push(newEntry);
-  try {
-    localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
-  } catch (e) {
-    localPrompts.pop();
-    alert('⚠️ Sem espaço no localStorage para salvar esta imagem.\n\nSolução: clique em 📤 Exportar JSON, copie o arquivo gerado para o servidor e limpe o localStorage com:\nlocalStorage.removeItem(\'biblioteca_local\')');
-    return;
-  }
+  // localStorage guarda só o JSON (sem base64 de imagem) — não vai estourar
+  localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+
   closeNewPromptModal();
   updateCounts(getMerged());
   document.getElementById('totalBadge').textContent = getMerged().length;
@@ -1360,9 +1457,20 @@ function saveNewPrompt() {
 }
 
 // ══ EXPORT JSON ══
-function exportJson() {
-  const merged = getMerged();
-  const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' });
+// Resolve imagens idb:// → base64 para que o JSON exportado seja auto-contido
+async function exportJson() {
+  const merged   = getMerged();
+  const exported = await Promise.all(merged.map(async p => {
+    if (!p.imagem_path || !p.imagem_path.startsWith('idb://')) return p;
+    try {
+      const key  = p.imagem_path.slice(6);
+      const blob = await idbGet(key);
+      if (!blob) return p;
+      const dataUrl = await blobToDataUrl(blob);
+      return { ...p, imagem_path: dataUrl };
+    } catch { return p; }
+  }));
+  const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'prompts-atualizado.json';
