@@ -1088,11 +1088,11 @@ function compressImageToBase64(file, maxDim = 900, quality = 0.82) {
   });
 }
 
-// Mapeia prompt do servidor → formato local (imagem_path como data URL)
+// Mapeia prompt do servidor → formato local (imagem via endpoint lazy)
 function mapServerPrompt(p) {
   return {
     ...p,
-    imagem_path: p.imagem_base64 ? `data:${p.imagem_mime || 'image/jpeg'};base64,${p.imagem_base64}` : '',
+    imagem_path: `/api/biblioteca/custom/${p.id}/image`,
     _synced: true,
   };
 }
@@ -1214,11 +1214,11 @@ async function init() {
   }
 
   // Busca prompts customizados do servidor (sincronizados entre dispositivos)
-  await fetchCustomPrompts();
+  try { await fetchCustomPrompts(); } catch (e) { console.warn('[init] fetchCustomPrompts falhou:', e); }
 
   // Migra entradas antigas: base64→IDB e localStorage→servidor (roda uma vez, se houver)
-  await migrateBase64ToIDB();
-  await migrateLocalToServer();
+  try { await migrateBase64ToIDB(); }    catch (e) { console.warn('[init] migrateBase64ToIDB falhou:', e); }
+  try { await migrateLocalToServer(); }  catch (e) { console.warn('[init] migrateLocalToServer falhou:', e); }
 
   // Merge local prompts
   const merged = getMerged();

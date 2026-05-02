@@ -1758,13 +1758,28 @@ function requireBibliotecaAdmin(req, res, next) {
   next();
 }
 
+// Lista sem imagem_base64 para evitar payload gigante (> 4.5MB limite Vercel)
 app.get('/api/biblioteca/custom', requireSupabase, async (req, res) => {
   const { data, error } = await supabase
     .from('biblioteca_custom')
-    .select('*')
+    .select('id, created_at, categoria_slug, categoria, categoria_icone, nome_arquivo, prompt')
     .order('created_at', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
+});
+
+// Imagem individual — carregada lazily por cada card
+app.get('/api/biblioteca/custom/:id/image', requireSupabase, async (req, res) => {
+  const { data, error } = await supabase
+    .from('biblioteca_custom')
+    .select('imagem_base64, imagem_mime')
+    .eq('id', req.params.id)
+    .single();
+  if (error || !data?.imagem_base64) return res.status(404).send('Not found');
+  const buf = Buffer.from(data.imagem_base64, 'base64');
+  res.setHeader('Content-Type', data.imagem_mime || 'image/jpeg');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(buf);
 });
 
 app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, async (req, res) => {
