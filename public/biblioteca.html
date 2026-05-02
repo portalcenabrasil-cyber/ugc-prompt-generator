@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Biblioteca de Prompts — UGC·AI</title>
   <meta name="description" content="Biblioteca de prompts UGC prontos — copie e use em qualquer IA de imagem." />
 
@@ -37,7 +37,11 @@
       --font-mono: 'DM Mono', 'SF Mono', monospace;
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
 
     body {
       background: var(--bg);
@@ -47,6 +51,8 @@
       line-height: 1.6;
       min-height: 100vh;
       overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
     }
 
     /* ── SCROLLBAR ── */
@@ -258,6 +264,9 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 8px;
+      width: 100%;
+      max-width: 100vw;
+      overflow: hidden;
     }
 
     .filter-tabs {
@@ -815,12 +824,21 @@
       .filter-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
         scrollbar-width: none;
+        -ms-overflow-style: none;
         padding-bottom: 2px;
+        width: 100%;
+        max-width: 100%;
       }
       .filter-tabs::-webkit-scrollbar { display: none; }
-      .filter-tab { padding: 9px 14px; min-height: 40px; }
+      .filter-tab {
+        padding: 9px 14px;
+        min-height: 40px;
+        flex-shrink: 0;
+      }
     }
 
     /* Modal: smooth scroll on iOS */
@@ -1265,18 +1283,38 @@ function closeNewPromptModal() {
   setTimeout(() => { modal.style.display = 'none'; }, 220);
   newImgDataUrl = null;
   document.getElementById('dropPreview').style.display = 'none';
+  document.getElementById('newImgFile').value = '';
+  document.getElementById('newName').value = '';
+  document.getElementById('newPrompt').value = '';
+}
+
+// Comprime imagem para base64 pequeno (evita estourar localStorage com JPEGs de 2-3MB)
+function compressImg(dataUrl, cb) {
+  const img = new Image();
+  img.onload = function() {
+    const MAX = 520; // px no lado maior — suficiente para card 9:16
+    const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.round(img.width  * ratio);
+    canvas.height = Math.round(img.height * ratio);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    cb(canvas.toDataURL('image/jpeg', 0.78));
+  };
+  img.src = dataUrl;
+}
+
+function setImgPreview(dataUrl) {
+  newImgDataUrl = dataUrl;
+  const prev = document.getElementById('dropPreview');
+  prev.src = dataUrl;
+  prev.style.display = 'block';
 }
 
 function handleImgPreview(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
-    newImgDataUrl = ev.target.result;
-    const prev = document.getElementById('dropPreview');
-    prev.src = newImgDataUrl;
-    prev.style.display = 'block';
-  };
+  reader.onload = ev => compressImg(ev.target.result, setImgPreview);
   reader.readAsDataURL(file);
 }
 
@@ -1294,12 +1332,7 @@ if (dropArea) {
       dt.items.add(file);
       document.getElementById('newImgFile').files = dt.files;
       const reader = new FileReader();
-      reader.onload = ev => {
-        newImgDataUrl = ev.target.result;
-        const prev = document.getElementById('dropPreview');
-        prev.src = newImgDataUrl;
-        prev.style.display = 'block';
-      };
+      reader.onload = ev => compressImg(ev.target.result, setImgPreview);
       reader.readAsDataURL(file);
     }
   });
@@ -1320,7 +1353,7 @@ function saveNewPrompt() {
     categoria_original: cat,
     categoria_slug: cat,
     categoria_icone: catInfo.icone || '',
-    imagem_path: newImgDataUrl || '/biblioteca-images/placeholder.png',
+    imagem_path: newImgDataUrl || '',
     nome_arquivo: name,
     prompt: prompt,
     data_adicao: new Date().toISOString().split('T')[0],
@@ -1328,7 +1361,20 @@ function saveNewPrompt() {
   };
 
   localPrompts.push(newEntry);
-  localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+  try {
+    localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+  } catch (e) {
+    // localStorage cheio — salva sem imagem para não perder o prompt
+    newEntry.imagem_path = '';
+    localPrompts[localPrompts.length - 1] = newEntry;
+    try {
+      localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+    } catch (e2) {
+      localPrompts.pop();
+      alert('Sem espaço no localStorage. Exporte o JSON (📤 Exportar JSON) para liberar espaço e tente novamente.');
+      return;
+    }
+  }
   closeNewPromptModal();
   updateCounts(getMerged());
   document.getElementById('totalBadge').textContent = getMerged().length;
