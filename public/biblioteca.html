@@ -1083,6 +1083,29 @@ const CAT_MAP = {
   'influencer-ugc':     { icone: '👤', label: 'Influencer UGC' },
 };
 
+// ══ MIGRAÇÃO: base64 antigo → IndexedDB ══
+// Entradas antigas do localStorage tinham imagem_path como data:... (base64 comprimido).
+// Converte automaticamente para idb:// na primeira vez que carregar.
+async function migrateBase64ToIDB() {
+  let changed = false;
+  for (const p of localPrompts) {
+    if (!p.imagem_path || !p.imagem_path.startsWith('data:')) continue;
+    try {
+      const res  = await fetch(p.imagem_path);
+      const blob = await res.blob();
+      const key  = `img-migrated-${p.id}`;
+      await idbPut(key, blob);
+      _objUrlCache[key] = URL.createObjectURL(blob);
+      p.imagem_path = 'idb://' + key;
+      changed = true;
+      console.log('[migrate] prompt', p.id, '→ IDB ok');
+    } catch (e) {
+      console.warn('[migrate] falhou prompt', p.id, e);
+    }
+  }
+  if (changed) localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+}
+
 // ══ LOAD DATA ══
 async function init() {
   try {
@@ -1095,6 +1118,9 @@ async function init() {
     console.error('[init] Erro ao carregar prompts.json:', e);
     allPrompts = [];
   }
+
+  // Migra entradas antigas com base64 → IDB (roda silenciosamente)
+  await migrateBase64ToIDB();
 
   // Merge local prompts
   const merged = getMerged();
