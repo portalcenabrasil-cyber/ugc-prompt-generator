@@ -1114,12 +1114,26 @@ async function fetchCustomPrompts() {
 }
 
 // Migra prompts do localStorage antigo → servidor (roda uma vez, limpa localStorage após sucesso)
+// Proteção anti-loop: se já existe prompt com mesmo nome_arquivo no servidor, não re-envia
 async function migrateLocalToServer() {
   const legacy = JSON.parse(localStorage.getItem('biblioteca_local') || '[]');
   if (!legacy.length) return;
-  console.log('[migrate→server] migrando', legacy.length, 'prompts locais...');
+
+  // Nomes já existentes no servidor — evita duplicar
+  const existingNames = new Set(localPrompts.map(p => p.nome_arquivo));
+
+  // Filtra apenas os que ainda não foram migrados
+  const pending = legacy.filter(p => !existingNames.has(p.nome_arquivo));
+  if (!pending.length) {
+    // Tudo já está no servidor — limpa localStorage sem re-enviar
+    localStorage.removeItem('biblioteca_local');
+    console.log('[migrate→server] já sincronizado — localStorage limpo sem re-envio');
+    return;
+  }
+
+  console.log('[migrate→server] migrando', pending.length, 'prompts pendentes...');
   let ok = 0;
-  for (const p of legacy) {
+  for (const p of pending) {
     try {
       let imagem_base64 = null, imagem_mime = null;
       if (p.imagem_path && p.imagem_path.startsWith('idb://')) {
@@ -1151,12 +1165,12 @@ async function migrateLocalToServer() {
       else console.warn('[migrate→server] falhou p.id', p.id, await r.text());
     } catch (e) { console.warn('[migrate→server] erro no prompt', p.id, e); }
   }
-  if (ok === legacy.length) {
+  if (ok === pending.length) {
     localStorage.removeItem('biblioteca_local');
     console.log('[migrate→server] migração completa — localStorage limpo');
-    await fetchCustomPrompts(); // recarrega com IDs do servidor
+    await fetchCustomPrompts();
   } else {
-    console.warn('[migrate→server] migração parcial:', ok, '/', legacy.length);
+    console.warn('[migrate→server] migração parcial:', ok, '/', pending.length);
   }
 }
 
