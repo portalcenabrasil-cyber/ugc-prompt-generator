@@ -370,6 +370,9 @@
       object-fit: cover;
       display: block;
       transition: transform 0.4s ease;
+      image-rendering: auto;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .prompt-card:hover .prompt-card-image img { transform: scale(1.04); }
 
@@ -1381,6 +1384,14 @@ function setImgPreview(file) {
   const prev = document.getElementById('dropPreview');
   prev.src = newImgObjUrl;
   prev.style.display = 'block';
+  // Mostra info do arquivo para o admin confirmar qualidade
+  const img = new Image();
+  img.onload = () => {
+    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+    const dropText = document.querySelector('#dropArea .drop-text');
+    if (dropText) dropText.textContent = `✅ ${file.name} — ${img.naturalWidth}×${img.naturalHeight}px · ${sizeMB}MB`;
+  };
+  img.src = newImgObjUrl;
 }
 
 function handleImgPreview(e) {
@@ -1423,8 +1434,9 @@ async function saveNewPrompt() {
     const imgKey = `img-${Date.now()}`;
     try {
       await idbPut(imgKey, newImgFile);
-      // Cria um objectURL NOVO para o cache — separado do preview (que será revogado pelo closeNewPromptModal)
-      _objUrlCache[imgKey] = URL.createObjectURL(newImgFile);
+      // Lê de volta do IDB para garantir integridade do blob — evita problemas com File invalidado após limpar o input
+      const storedBlob = await idbGet(imgKey);
+      _objUrlCache[imgKey] = URL.createObjectURL(storedBlob);
       imgPath = 'idb://' + imgKey;
     } catch (err) {
       console.error('[saveNewPrompt] Erro ao salvar imagem no IndexedDB:', err);
