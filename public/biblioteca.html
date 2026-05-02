@@ -1088,11 +1088,13 @@ function compressImageToBase64(file, maxDim = 900, quality = 0.82) {
   });
 }
 
-// Mapeia prompt do servidor → formato local (imagem via endpoint lazy)
+// Mapeia prompt do servidor → formato local
 function mapServerPrompt(p) {
   return {
     ...p,
-    imagem_path: `/api/biblioteca/custom/${p.id}/image`,
+    imagem_path: p.imagem_base64
+      ? `data:${p.imagem_mime || 'image/jpeg'};base64,${p.imagem_base64}`
+      : `/api/biblioteca/custom/${p.id}/image`,
     _synced: true,
   };
 }
