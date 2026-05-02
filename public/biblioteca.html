@@ -1202,6 +1202,7 @@ async function migrateBase64ToIDB() {
 
 // ══ LOAD DATA ══
 async function init() {
+  // 1. Carrega prompts estáticos → renderiza imediatamente (sem esperar Supabase)
   try {
     const res = await fetch('/biblioteca/prompts.json');
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1213,21 +1214,9 @@ async function init() {
     allPrompts = [];
   }
 
-  // Busca prompts customizados do servidor (sincronizados entre dispositivos)
-  try { await fetchCustomPrompts(); } catch (e) { console.warn('[init] fetchCustomPrompts falhou:', e); }
-
-  // Migra entradas antigas: base64→IDB e localStorage→servidor (roda uma vez, se houver)
-  try { await migrateBase64ToIDB(); }    catch (e) { console.warn('[init] migrateBase64ToIDB falhou:', e); }
-  try { await migrateLocalToServer(); }  catch (e) { console.warn('[init] migrateLocalToServer falhou:', e); }
-
-  // Merge local prompts
-  const merged = getMerged();
-
-  // Update counts
-  document.getElementById('totalBadge').textContent = merged.length;
-  updateCounts(merged);
-
-  // Render grid
+  // Render imediato com prompts estáticos — não espera Supabase
+  document.getElementById('totalBadge').textContent = allPrompts.length;
+  updateCounts(allPrompts);
   applyFilters();
 
   // Check admin session
@@ -1235,6 +1224,20 @@ async function init() {
   if (session && (Date.now() - parseInt(session)) < 3600000) {
     activateAdmin();
   }
+
+  // 2. Busca prompts customizados em background — grid atualiza quando chegar
+  try { await fetchCustomPrompts(); } catch (e) { console.warn('[init] fetchCustomPrompts falhou:', e); }
+
+  if (localPrompts.length > 0) {
+    const merged = getMerged();
+    document.getElementById('totalBadge').textContent = merged.length;
+    updateCounts(merged);
+    applyFilters();
+  }
+
+  // 3. Migrações em background — nunca bloqueiam o render
+  try { await migrateBase64ToIDB(); }    catch (e) { console.warn('[init] migrateBase64ToIDB falhou:', e); }
+  try { await migrateLocalToServer(); }  catch (e) { console.warn('[init] migrateLocalToServer falhou:', e); }
 }
 
 function getMerged() { return [...allPrompts, ...localPrompts]; }
