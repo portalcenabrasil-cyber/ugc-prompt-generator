@@ -1064,9 +1064,103 @@ function blobToDataUrl(blob) {
   });
 }
 
+// ══ API: PROMPTS CUSTOMIZADOS (sincronizado entre dispositivos) ══
+const ADMIN_API_KEY = 'ugc2026'; // mesma senha do modo admin
+
+// Comprime imagem File → {base64, mime} via canvas (max 900px, quality 0.82)
+function compressImageToBase64(file, maxDim = 900, quality = 0.82) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (Math.max(w, h) > maxDim) {
+        if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else        { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      res({ base64: dataUrl.split(',')[1], mime: 'image/jpeg' });
+    };
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Mapeia prompt do servidor → formato local (imagem_path como data URL)
+function mapServerPrompt(p) {
+  return {
+    ...p,
+    imagem_path: p.imagem_base64 ? `data:${p.imagem_mime || 'image/jpeg'};base64,${p.imagem_base64}` : '',
+    _synced: true,
+  };
+}
+
+// Busca prompts customizados do servidor
+async function fetchCustomPrompts() {
+  try {
+    const r = await fetch('/api/biblioteca/custom');
+    if (!r.ok) { console.warn('[fetchCustomPrompts] HTTP', r.status); return; }
+    const data = await r.json();
+    if (!Array.isArray(data)) return;
+    localPrompts = data.map(mapServerPrompt);
+    console.log('[fetchCustomPrompts] carregados:', localPrompts.length);
+  } catch (e) {
+    console.warn('[fetchCustomPrompts] erro:', e);
+  }
+}
+
+// Migra prompts do localStorage antigo → servidor (roda uma vez, limpa localStorage após sucesso)
+async function migrateLocalToServer() {
+  const legacy = JSON.parse(localStorage.getItem('biblioteca_local') || '[]');
+  if (!legacy.length) return;
+  console.log('[migrate→server] migrando', legacy.length, 'prompts locais...');
+  let ok = 0;
+  for (const p of legacy) {
+    try {
+      let imagem_base64 = null, imagem_mime = null;
+      if (p.imagem_path && p.imagem_path.startsWith('idb://')) {
+        const blob = await idbGet(p.imagem_path.slice(6));
+        if (blob) {
+          const dataUrl = await blobToDataUrl(blob);
+          imagem_mime   = blob.type || 'image/jpeg';
+          imagem_base64 = dataUrl.split(',')[1];
+        }
+      } else if (p.imagem_path && p.imagem_path.startsWith('data:')) {
+        const parts   = p.imagem_path.split(',');
+        imagem_mime   = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+        imagem_base64 = parts[1] || null;
+      }
+      const catInfo = CAT_MAP[p.categoria_slug] || {};
+      const r = await fetch('/api/biblioteca/custom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_API_KEY },
+        body: JSON.stringify({
+          categoria_slug:  p.categoria_slug || 'ugc-produtos',
+          categoria:       p.categoria      || catInfo.label || p.categoria_slug,
+          categoria_icone: catInfo.icone    || p.categoria_icone || '',
+          nome_arquivo:    p.nome_arquivo   || 'Prompt Migrado',
+          prompt:          p.prompt,
+          imagem_base64, imagem_mime,
+        }),
+      });
+      if (r.ok) ok++;
+      else console.warn('[migrate→server] falhou p.id', p.id, await r.text());
+    } catch (e) { console.warn('[migrate→server] erro no prompt', p.id, e); }
+  }
+  if (ok === legacy.length) {
+    localStorage.removeItem('biblioteca_local');
+    console.log('[migrate→server] migração completa — localStorage limpo');
+    await fetchCustomPrompts(); // recarrega com IDs do servidor
+  } else {
+    console.warn('[migrate→server] migração parcial:', ok, '/', legacy.length);
+  }
+}
+
 // ══ STATE ══
 let allPrompts = [];
-let localPrompts = JSON.parse(localStorage.getItem('biblioteca_local') || '[]');
+let localPrompts = []; // populado do servidor em init()
 let activeFilter = 'all';
 let activeModal = null;
 let isAdmin = false;
@@ -1119,8 +1213,12 @@ async function init() {
     allPrompts = [];
   }
 
-  // Migra entradas antigas com base64 → IDB (roda silenciosamente)
+  // Busca prompts customizados do servidor (sincronizados entre dispositivos)
+  await fetchCustomPrompts();
+
+  // Migra entradas antigas: base64→IDB e localStorage→servidor (roda uma vez, se houver)
   await migrateBase64ToIDB();
+  await migrateLocalToServer();
 
   // Merge local prompts
   const merged = getMerged();
@@ -1353,23 +1451,33 @@ function deactivateAdmin() {
   applyFilters();
 }
 
-function deletePrompt(id) {
+async function deletePrompt(id) {
   if (!confirm('Deletar este prompt?')) return;
-  // Try local prompts first
   const li = localPrompts.findIndex(p => p.id === id);
   if (li >= 0) {
     const removed = localPrompts[li];
-    // Limpa imagem do IndexedDB se for idb://
-    if (removed.imagem_path && removed.imagem_path.startsWith('idb://')) {
-      const key = removed.imagem_path.slice(6);
-      idbDelete(key).catch(() => {});
-      if (_objUrlCache[key]) { URL.revokeObjectURL(_objUrlCache[key]); delete _objUrlCache[key]; }
+    if (removed._synced) {
+      // Prompt sincronizado: deleta no servidor
+      try {
+        const r = await fetch(`/api/biblioteca/custom/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': ADMIN_API_KEY },
+        });
+        if (!r.ok) { alert('Erro ao deletar: ' + r.status); return; }
+      } catch (e) { alert('Erro de conexão ao deletar.'); return; }
+    } else {
+      // Legacy prompt local (durante janela de migração): limpa IDB e localStorage
+      if (removed.imagem_path && removed.imagem_path.startsWith('idb://')) {
+        const key = removed.imagem_path.slice(6);
+        idbDelete(key).catch(() => {});
+        if (_objUrlCache[key]) { URL.revokeObjectURL(_objUrlCache[key]); delete _objUrlCache[key]; }
+      }
+      const remaining = JSON.parse(localStorage.getItem('biblioteca_local') || '[]').filter(p => p.id !== id);
+      localStorage.setItem('biblioteca_local', JSON.stringify(remaining));
     }
     localPrompts.splice(li, 1);
-    localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
-  }
-  else {
-    // Mark as deleted in localStorage
+  } else {
+    // Prompt estático (prompts.json): marca como deletado no localStorage
     const deleted = JSON.parse(localStorage.getItem('biblioteca_deleted') || '[]');
     deleted.push(id);
     localStorage.setItem('biblioteca_deleted', JSON.stringify(deleted));
@@ -1451,42 +1559,46 @@ async function saveNewPrompt() {
   if (!prompt) { alert('O campo Prompt é obrigatório.'); return; }
 
   const catInfo = CAT_MAP[cat] || {};
-  const maxId   = getMerged().reduce((acc, p) => Math.max(acc, parseInt(p.id) || 0), 0);
-  const entryId = String(maxId + 1);
 
-  // Salva imagem no IndexedDB (blob original — qualidade máxima, sem limite de tamanho)
-  let imgPath = '';
+  // Comprime imagem para base64 (sincronizável entre dispositivos)
+  let imagem_base64 = null, imagem_mime = null;
   if (newImgFile) {
-    const imgKey = `img-${Date.now()}`;
     try {
-      await idbPut(imgKey, newImgFile);
-      // Lê de volta do IDB para garantir integridade do blob — evita problemas com File invalidado após limpar o input
-      const storedBlob = await idbGet(imgKey);
-      _objUrlCache[imgKey] = URL.createObjectURL(storedBlob);
-      imgPath = 'idb://' + imgKey;
+      const compressed = await compressImageToBase64(newImgFile);
+      imagem_base64 = compressed.base64;
+      imagem_mime   = compressed.mime;
     } catch (err) {
-      console.error('[saveNewPrompt] Erro ao salvar imagem no IndexedDB:', err);
-      alert('Erro ao salvar imagem. Tente novamente.');
+      console.error('[saveNewPrompt] Erro ao comprimir imagem:', err);
+      alert('Erro ao processar imagem. Tente novamente.');
       return;
     }
   }
 
-  const newEntry = {
-    id: entryId,
-    categoria: catInfo.label || cat,
-    categoria_original: cat,
-    categoria_slug: cat,
-    categoria_icone: catInfo.icone || '',
-    imagem_path: imgPath,
-    nome_arquivo: name,
-    prompt: prompt,
-    data_adicao: new Date().toISOString().split('T')[0],
-    _local: true,
-  };
-
-  localPrompts.push(newEntry);
-  // localStorage guarda só o JSON (sem base64 de imagem) — não vai estourar
-  localStorage.setItem('biblioteca_local', JSON.stringify(localPrompts));
+  try {
+    const r = await fetch('/api/biblioteca/custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_API_KEY },
+      body: JSON.stringify({
+        categoria_slug:  cat,
+        categoria:       catInfo.label || cat,
+        categoria_icone: catInfo.icone || '',
+        nome_arquivo:    name,
+        prompt,
+        imagem_base64,
+        imagem_mime,
+      }),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      alert('Erro ao salvar: ' + (err.error || r.status));
+      return;
+    }
+    const saved = await r.json();
+    localPrompts.push(mapServerPrompt(saved));
+  } catch (e) {
+    alert('Erro de conexão ao salvar prompt.');
+    return;
+  }
 
   closeNewPromptModal();
   updateCounts(getMerged());

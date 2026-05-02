@@ -1748,6 +1748,55 @@ app.delete('/api/gallery/:id', requireSupabase, requireAuth, async (req, res) =>
   res.json({ ok: true });
 });
 
+// ── BIBLIOTECA CUSTOM (leitura pública, escrita/deleção protegida por senha admin) ──
+const BIBLIOTECA_ADMIN_KEY = process.env.BIBLIOTECA_ADMIN_KEY || 'ugc2026';
+
+function requireBibliotecaAdmin(req, res, next) {
+  if (req.headers['x-admin-key'] !== BIBLIOTECA_ADMIN_KEY) {
+    return res.status(401).json({ error: 'Admin key inválida' });
+  }
+  next();
+}
+
+app.get('/api/biblioteca/custom', requireSupabase, async (req, res) => {
+  const { data, error } = await supabase
+    .from('biblioteca_custom')
+    .select('*')
+    .order('created_at', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, async (req, res) => {
+  const item = req.body;
+  if (!item?.prompt) return res.status(400).json({ error: 'Campo prompt obrigatório' });
+
+  const newItem = {
+    id:              Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+    created_at:      new Date().toISOString(),
+    categoria_slug:  item.categoria_slug  || 'ugc-produtos',
+    categoria:       item.categoria       || '',
+    categoria_icone: item.categoria_icone || '',
+    nome_arquivo:    item.nome_arquivo    || 'Novo Prompt',
+    prompt:          item.prompt,
+    imagem_base64:   item.imagem_base64   || null,
+    imagem_mime:     item.imagem_mime     || null,
+  };
+
+  const { data, error } = await supabase.from('biblioteca_custom').insert(newItem).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.delete('/api/biblioteca/custom/:id', requireSupabase, requireBibliotecaAdmin, async (req, res) => {
+  const { error } = await supabase
+    .from('biblioteca_custom')
+    .delete()
+    .eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // ── STATS (Protected — agrega dados da galeria por data) ──
 
 app.get('/api/stats', requireSupabase, requireAuth, async (req, res) => {
