@@ -19,7 +19,8 @@
           "personagens-masc/**",
           "personagens-donas-casa/**",
           "frases-nichos/**",
-          "PROMPT-base-v2.md"
+          "PROMPT-base-v2.md",
+          "biblioteca/**"
         ]
       }
     }

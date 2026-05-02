@@ -1868,6 +1868,15 @@ app.get('/api/fal/balance', requireSupabase, requireAuth, async (req, res) => {
   });
 });
 
+// ── BIBLIOTECA DE PROMPTS ──
+app.get('/biblioteca', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'biblioteca.html'));
+});
+
+app.get('/biblioteca/prompts.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'biblioteca', 'prompts.json'));
+});
+
 // ── TERMOS DE USO (oculto, acessível só por link direto) ──
 app.get('/termos', (req, res) => {
   res.send(`<!DOCTYPE html>

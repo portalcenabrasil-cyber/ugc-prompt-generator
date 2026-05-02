@@ -1330,6 +1330,18 @@
       flex-shrink: 0; display: none; white-space: nowrap;
     }
     .btn-logout:hover { border-color: rgba(255,59,48,0.35); color: #FF6B6B; }
+    .btn-biblioteca {
+      display: flex; align-items: center; gap: 6px;
+      padding: clamp(4px,0.35rem,6px) clamp(10px,0.85rem,14px);
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.22);
+      background: transparent; color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: clamp(9px,0.7rem,11px); font-weight: 500;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.15s; flex-shrink: 0; white-space: nowrap;
+    }
+    .btn-biblioteca:hover { border-color: rgba(255,107,0,0.5); color: var(--orange); background: rgba(255,107,0,0.06); }
+    #exchangeRateBadge { display: none !important; }
     .user-email-badge { display: none !important; }
 
     /* ── AVATAR BUTTON ── */
@@ -1359,7 +1371,7 @@
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
       font-size: clamp(11px, 0.75rem, 13px);
       font-weight: 500;
-      color: var(--text-dim);
+      color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2024,6 +2036,8 @@
 
   <div class="session-cost" id="sessionCostBadge" style="display:none;">sessão: R$ 0,00</div>
   <div id="exchangeRateBadge" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.28);padding:3px 8px;border:1px solid rgba(255,255,255,0.07);border-radius:6px;cursor:default;display:none;"></div>
+
+  <a class="btn-biblioteca" href="/biblioteca">Biblioteca de Prompts</a>
 
   <div class="header-right">
     <span class="user-email-badge" id="userEmailBadge"></span>
