@@ -1,6 +1,6 @@
 # UGC Prompt Generator — Índice Central
 
-**Última atualização:** 2026-05-01
+**Última atualização:** 2026-05-02
 **Versão estável atual:** v3.0-base-v2-biblioteca-150-20260501
 **URL produção:** https://ugc-prompt-generator-six.vercel.app
 
@@ -32,6 +32,11 @@ Plataforma Node.js + Express que gera prompts UGC para TikTok Shop Brasil. Front
 - **Vault:** Obsidian (este diretório) — prompts `.md` lidos via `fs.readFileSync` a cada request
 
 Regras gerais em [[CLAUDE]] | Regras de skills em [[CONTEXT]]
+
+## Páginas Extras
+| Rota | Arquivo | Descrição |
+|---|---|---|
+| `/biblioteca` | `public/biblioteca.html` | Galeria visual de 69 prompts UGC — filtros por categoria, busca, modal, admin |
 
 ## Fluxo de Deploy (REGRA SAGRADA)
 1. Edita arquivo localmente ou no Obsidian

@@ -991,7 +991,7 @@
     </div>
 
     <div class="admin-note">
-      💾 Imagem salva em qualidade original no IndexedDB do browser. Clique em <strong>Exportar JSON</strong> para persistir no servidor.
+      ☁️ Imagem enviada em resolução original para o Supabase Storage — visível em todos os dispositivos automaticamente.
     </div>
 
     <div class="admin-new-actions">
@@ -1043,10 +1043,12 @@ async function idbDelete(key) {
     tx.onerror    = e => rej(e.target.error);
   });
 }
-// Retorna um objectURL para um path idb://key, ou o próprio path se não for idb://
+// Retorna src de imagem. URLs públicas (https://) retornam diretamente — sem IDB.
 async function resolveImgSrc(path) {
   if (!path) return '';
-  // IDB direto
+  // URL pública do Supabase Storage — retorna direto, sem passar pelo IDB
+  if (path.startsWith('https://')) return path;
+  // IDB direto (legado local)
   if (path.startsWith('idb://')) {
     const key = path.slice(6);
     if (_objUrlCache[key]) return _objUrlCache[key];
@@ -1055,7 +1057,7 @@ async function resolveImgSrc(path) {
     _objUrlCache[key] = URL.createObjectURL(blob);
     return _objUrlCache[key];
   }
-  // API image — usa cache IDB se disponível, senão a URL direta
+  // API image legado — usa cache IDB se disponível, senão a URL direta
   if (path.startsWith('/api/biblioteca/custom/')) {
     const id = path.split('/')[4]; // /api/biblioteca/custom/:id/image
     const cacheKey = 'api-img-' + id;
@@ -1079,34 +1081,13 @@ function blobToDataUrl(blob) {
 // ══ API: PROMPTS CUSTOMIZADOS (sincronizado entre dispositivos) ══
 const ADMIN_API_KEY = 'ugc2026'; // mesma senha do modo admin
 
-// Comprime imagem File → {base64, mime} via canvas (max 900px, quality 0.82)
-function compressImageToBase64(file, maxDim = 900, quality = 0.82) {
-  return new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => {
-      let w = img.naturalWidth, h = img.naturalHeight;
-      if (Math.max(w, h) > maxDim) {
-        if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
-        else        { w = Math.round(w * maxDim / h); h = maxDim; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', quality);
-      res({ base64: dataUrl.split(',')[1], mime: 'image/jpeg' });
-    };
-    img.onerror = rej;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
 // Mapeia prompt do servidor → formato local
 function mapServerPrompt(p) {
   return {
     ...p,
-    imagem_path: p.imagem_base64
-      ? `data:${p.imagem_mime || 'image/jpeg'};base64,${p.imagem_base64}`
-      : `/api/biblioteca/custom/${p.id}/image`,
+    imagem_path: p.imagem_url
+      ? p.imagem_url                            // URL pública (Supabase Storage) — funciona em todos os dispositivos
+      : `/api/biblioteca/custom/${p.id}/image`, // legado base64 servido pelo endpoint
     _synced: true,
   };
 }
@@ -1616,33 +1597,20 @@ async function saveNewPrompt() {
 
   const catInfo = CAT_MAP[cat] || {};
 
-  // Comprime imagem para base64 (sincronizável entre dispositivos)
-  let imagem_base64 = null, imagem_mime = null;
-  if (newImgFile) {
-    try {
-      const compressed = await compressImageToBase64(newImgFile);
-      imagem_base64 = compressed.base64;
-      imagem_mime   = compressed.mime;
-    } catch (err) {
-      console.error('[saveNewPrompt] Erro ao comprimir imagem:', err);
-      alert('Erro ao processar imagem. Tente novamente.');
-      return;
-    }
-  }
+  // Envia via FormData — imagem em resolução original, sem compressão
+  const formData = new FormData();
+  formData.append('categoria_slug',  cat);
+  formData.append('categoria',       catInfo.label || cat);
+  formData.append('categoria_icone', catInfo.icone || '');
+  formData.append('nome_arquivo',    name);
+  formData.append('prompt',          prompt);
+  if (newImgFile) formData.append('imagem', newImgFile);
 
   try {
     const r = await fetch('/api/biblioteca/custom', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_API_KEY },
-      body: JSON.stringify({
-        categoria_slug:  cat,
-        categoria:       catInfo.label || cat,
-        categoria_icone: catInfo.icone || '',
-        nome_arquivo:    name,
-        prompt,
-        imagem_base64,
-        imagem_mime,
-      }),
+      headers: { 'X-Admin-Key': ADMIN_API_KEY }, // sem Content-Type — browser define multipart/form-data com boundary
+      body: formData,
     });
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));

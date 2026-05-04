@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const Jimp = require('jimp');
+const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
 // ── Logging em arquivo para debug de batch ──
@@ -230,6 +231,9 @@ app.use(cors());
 app.use((req, res, next) => { res.setHeader('bypass-tunnel-reminder', 'true'); next(); });
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── Multer (memória — buffer enviado direto ao Supabase Storage) ──
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } });
 
 const PROMPT_FILE = path.join(__dirname, 'PROMPT.md');
 const SYSTEM_PROMPT_BASE = fs.existsSync(PROMPT_FILE)
@@ -1758,33 +1762,68 @@ function requireBibliotecaAdmin(req, res, next) {
   next();
 }
 
-// Lista — só metadados (imagens carregadas lazily pelo cliente via IDB cache)
+// Lista — metadados + imagem_url (sem imagem_base64 — JSON leve)
 app.get('/api/biblioteca/custom', requireSupabase, async (req, res) => {
   const { data, error } = await supabase
     .from('biblioteca_custom')
-    .select('id, created_at, categoria_slug, categoria, categoria_icone, nome_arquivo, prompt')
+    .select('id, created_at, categoria_slug, categoria, categoria_icone, nome_arquivo, prompt, imagem_url')
     .order('created_at', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
 
-// Imagem em qualidade original — cache imutável no browser + IDB no cliente
+// Imagem — redirect para Supabase Storage (novos) ou serve base64 legado
 app.get('/api/biblioteca/custom/:id/image', requireSupabase, async (req, res) => {
   const { data, error } = await supabase
     .from('biblioteca_custom')
-    .select('imagem_base64, imagem_mime')
+    .select('imagem_base64, imagem_mime, imagem_url')
     .eq('id', req.params.id)
     .single();
-  if (error || !data?.imagem_base64) return res.status(404).send('Not found');
+  if (error || (!data?.imagem_base64 && !data?.imagem_url)) return res.status(404).send('Not found');
+
+  // Registros novos: redirect para URL pública do Supabase Storage
+  if (data.imagem_url) {
+    return res.redirect(302, data.imagem_url);
+  }
+
+  // Registros legados: serve base64 como buffer
   const buf = Buffer.from(data.imagem_base64, 'base64');
   res.setHeader('Content-Type', data.imagem_mime || 'image/jpeg');
-  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('Cache-Control', 'public, max-age=31536000');
   res.send(buf);
 });
 
-app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, async (req, res) => {
+app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, upload.single('imagem'), async (req, res) => {
   const item = req.body;
   if (!item?.prompt) return res.status(400).json({ error: 'Campo prompt obrigatório' });
+
+  let imagem_url   = null;
+  let imagem_base64 = item.imagem_base64 || null; // caminho legado (migração localStorage)
+  let imagem_mime  = item.imagem_mime   || null;
+
+  // Novo caminho: FormData com arquivo em alta resolução
+  if (req.file) {
+    try {
+      const mime     = req.file.mimetype;
+      const ext      = mime.split('/')[1] || 'jpg';
+      const filePath = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('biblioteca-imgs')
+        .upload(filePath, req.file.buffer, { contentType: mime, upsert: false });
+
+      if (uploadError) {
+        console.error('[biblioteca POST] Storage upload error:', uploadError.message);
+      } else {
+        const { data: urlData } = supabase.storage.from('biblioteca-imgs').getPublicUrl(filePath);
+        imagem_url    = urlData.publicUrl;
+        imagem_base64 = null; // não duplicar base64 quando temos URL
+        imagem_mime   = null;
+      }
+    } catch (e) {
+      console.error('[biblioteca POST] erro no upload da imagem:', e.message);
+    }
+  }
 
   const newItem = {
     id:              Date.now() + '-' + Math.random().toString(36).substr(2, 9),
@@ -1794,8 +1833,9 @@ app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, asyn
     categoria_icone: item.categoria_icone || '',
     nome_arquivo:    item.nome_arquivo    || 'Novo Prompt',
     prompt:          item.prompt,
-    imagem_base64:   item.imagem_base64   || null,
-    imagem_mime:     item.imagem_mime     || null,
+    imagem_base64,
+    imagem_mime,
+    imagem_url,
   };
 
   const { data, error } = await supabase.from('biblioteca_custom').insert(newItem).select().single();
@@ -1810,6 +1850,47 @@ app.delete('/api/biblioteca/custom/:id', requireSupabase, requireBibliotecaAdmin
     .eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
+});
+
+// Migração: base64 antigos → Supabase Storage (roda uma vez pelo admin)
+app.post('/api/biblioteca/admin/migrate-images', requireSupabase, requireBibliotecaAdmin, async (req, res) => {
+  const { data: records, error } = await supabase
+    .from('biblioteca_custom')
+    .select('id, imagem_base64, imagem_mime')
+    .not('imagem_base64', 'is', null);
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!records || records.length === 0) return res.json({ migrated: 0, message: 'Nenhum registro com imagem_base64 encontrado' });
+
+  let migrated = 0;
+  const errors = [];
+
+  for (const record of records) {
+    try {
+      const buf  = Buffer.from(record.imagem_base64, 'base64');
+      const mime = record.imagem_mime || 'image/jpeg';
+      const ext  = mime.split('/')[1] || 'jpg';
+      const filePath = `migrated-${record.id}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('biblioteca-imgs')
+        .upload(filePath, buf, { contentType: mime, upsert: true });
+
+      if (uploadError) { errors.push({ id: record.id, error: uploadError.message }); continue; }
+
+      const { data: urlData } = supabase.storage.from('biblioteca-imgs').getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('biblioteca_custom')
+        .update({ imagem_url: urlData.publicUrl, imagem_base64: null, imagem_mime: null })
+        .eq('id', record.id);
+
+      if (updateError) { errors.push({ id: record.id, error: updateError.message }); }
+      else { migrated++; }
+    } catch (e) { errors.push({ id: record.id, error: e.message }); }
+  }
+
+  res.json({ migrated, total: records.length, errors });
 });
 
 // ── STATS (Protected — agrega dados da galeria por data) ──
