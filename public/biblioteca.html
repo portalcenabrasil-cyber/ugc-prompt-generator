@@ -1249,7 +1249,14 @@ async function init() {
   try { await migrateLocalToServer(); }  catch (e) { console.warn('[init] migrateLocalToServer falhou:', e); }
 }
 
-function getMerged() { return [...allPrompts, ...localPrompts]; }
+function getMerged() {
+  const seen = new Set();
+  return [...allPrompts, ...localPrompts].filter(p => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+}
 
 function updateCounts(prompts) {
   const counts = { all: prompts.length };

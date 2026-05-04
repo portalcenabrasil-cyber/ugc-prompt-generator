@@ -1769,7 +1769,10 @@ app.get('/api/biblioteca/custom', requireSupabase, async (req, res) => {
     .select('id, created_at, categoria_slug, categoria, categoria_icone, nome_arquivo, prompt, imagem_url')
     .order('created_at', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data || []);
+  // Deduplicação por id (segurança contra registros duplicados no banco)
+  const seen = new Set();
+  const deduped = (data || []).filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true; });
+  res.json(deduped);
 });
 
 // Imagem — redirect para Supabase Storage (novos) ou serve base64 legado
@@ -1796,6 +1799,17 @@ app.get('/api/biblioteca/custom/:id/image', requireSupabase, async (req, res) =>
 app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, upload.single('imagem'), async (req, res) => {
   const item = req.body;
   if (!item?.prompt) return res.status(400).json({ error: 'Campo prompt obrigatório' });
+
+  // Checa duplicata por nome_arquivo + categoria_slug
+  if (item.nome_arquivo) {
+    const { data: dup } = await supabase
+      .from('biblioteca_custom')
+      .select('id')
+      .eq('nome_arquivo', item.nome_arquivo)
+      .eq('categoria_slug', item.categoria_slug || 'ugc-produtos')
+      .maybeSingle();
+    if (dup) return res.status(409).json({ error: 'Prompt duplicado' });
+  }
 
   let imagem_url   = null;
   let imagem_base64 = item.imagem_base64 || null; // caminho legado (migração localStorage)
@@ -1844,11 +1858,34 @@ app.post('/api/biblioteca/custom', requireSupabase, requireBibliotecaAdmin, uplo
 });
 
 app.delete('/api/biblioteca/custom/:id', requireSupabase, requireBibliotecaAdmin, async (req, res) => {
+  // Busca imagem_url antes de deletar para limpar o Storage
+  const { data: record } = await supabase
+    .from('biblioteca_custom')
+    .select('imagem_url')
+    .eq('id', req.params.id)
+    .single();
+
   const { error } = await supabase
     .from('biblioteca_custom')
     .delete()
     .eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });
+
+  // Deleta imagem do Supabase Storage (se existir)
+  if (record?.imagem_url) {
+    try {
+      const url = new URL(record.imagem_url);
+      const marker = '/object/public/biblioteca-imgs/';
+      const idx = url.pathname.indexOf(marker);
+      if (idx >= 0) {
+        const filePath = url.pathname.slice(idx + marker.length);
+        await supabase.storage.from('biblioteca-imgs').remove([filePath]);
+      }
+    } catch (e) {
+      console.error('[biblioteca DELETE] erro ao deletar imagem do Storage:', e.message);
+    }
+  }
+
   res.json({ ok: true });
 });
 
