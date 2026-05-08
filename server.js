@@ -99,7 +99,8 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
   const isNanoVeo2      = style === 'nano-veo-2';
   const isRoupaFeminina = style === 'roupa-feminina-a' || style === 'roupa-feminina-b' || style === 'roupa-feminina-v2';
   const isBaseV2        = style === 'base-v2';
-  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2 && !isRoupaFeminina && !isBaseV2)) return null;
+  const isTryon         = style === 'tryon-haul';
+  if (!supabase || (!result?.prompt_video && !result?.character_sheet && !isNanoVeo2 && !isRoupaFeminina && !isBaseV2 && !isTryon)) return null;
 
   // For serie/nano/nano-veo-2: assemble prompt_video from all cena fields
   let prompt_video = result.prompt_video || null;
@@ -184,6 +185,19 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
     legenda = isNano ? '🎬 Edredom Nano + Vídeos' : '🛏️ Edredons Premium';
     nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
     emocao  = isNano ? 'nano'                      : 'serie';
+  } else if (isTryon) {
+    const parts = [];
+    if (result.char_sheet_prompt)  parts.push(result.char_sheet_prompt);
+    if (result.start_frame_prompt) parts.push(result.start_frame_prompt);
+    if (result.environment)        parts.push(`🏠 Ambiente: ${result.environment}`);
+    if (result.char_description)   parts.push(`👤 Personagem: ${result.char_description}`);
+    if (result.outfit_detected)    parts.push(`👗 Outfit: ${result.outfit_detected}`);
+    parts.push(`🎭 Face Swap — Troca de Rosto\n\n📌 COMO USAR:\n→ Photo 1 = Start Frame gerado (roupa, ambiente, corpo, pose — tudo preservado)\n→ Photo 2 = character sheet ou foto da influencer (apenas o rosto é transferido)\n→ Resultado: mesma roupa · mesmo ambiente · mesmo cabelo · mesmo corpo — só o rosto muda\n\n──────────────────────────────────────────\n\nReplace the face of the girl from Photo 2 onto the body and background of the girl in Photo 1. Keep the exact body position, outfit, hair, lighting, angle, and environment from Photo 1 completely unchanged. Only the face is replaced. The final result must look completely natural and seamless, with no visible editing marks.\n\nPreserve all facial details from Photo 2 — skin texture, pores, natural shadows, expression, and proportions. Match the lighting direction, color temperature, and shadow softness to the scene in Photo 1 so the face blends perfectly with the body.\n\nThe image must look like it was taken with an iPhone 16 front camera. Maintain realistic smartphone sharpness, natural skin tones, subtle dynamic range, and slight front-camera depth characteristics. Do not over-smooth the skin. Keep natural imperfections for authenticity.\n\nStyle: TikTok UGC influencer content.\nFraming: vertical 9:16.\nCamera: fixed, eye-level selfie angle, slightly below eye line.\nLighting: natural daylight, soft shadows, realistic exposure.\nOverall result must look like a normal influencer selfie video frame — completely realistic, unedited, and organic.`);
+    prompt_video = parts.join('\n\n---\n\n');
+    legenda = '🎬 Try-On Haul';
+    nicho   = 'Try-On Haul';
+    emocao  = 'tryon-haul';
+    tipo    = null; // tryon não usa tipo de vídeo
   }
 
   // ── Crop automático + resize/compress — remove card e gera thumbnail leve ──
@@ -1072,6 +1086,112 @@ Retorne apenas o JSON, sem texto adicional.`;
   throw lastError || new Error('Servidor sobrecarregado. Tente novamente em alguns segundos.');
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// callClaudeTryon — analisa imagem e extrai dados da personagem + outfit
+// IA roda APENAS UMA VEZ. Troca de cor é puramente client-side.
+// modo='biblioteca': char vem de personagem_id; imagem = outfit apenas
+// modo='custom': análise completa da imagem (char + outfit + ambiente)
+// ═══════════════════════════════════════════════════════════════════
+async function callClaudeTryon(image_base64, image_type, personagem_id = null, modo = 'custom') {
+  const systemPrompt = fs.readFileSync(path.join(__dirname, 'PROMPT-tryon.md'), 'utf8');
+
+  // Biblioteca mode: carrega character block do arquivo
+  let character_block = null;
+  if (modo === 'biblioteca' && personagem_id) {
+    const charFile = findCharFile(personagem_id);
+    if (charFile) {
+      const charContent = fs.readFileSync(charFile, 'utf8');
+      character_block = parseCharBlock(charContent); // "Bloco curto" — só corpo, sem outfit
+    }
+  }
+
+  const userText = character_block
+    ? `CHARACTER DATA (personagem pré-selecionada pelo usuário — use para preencher char_description, char_hair, char_skin, char_face, char_body, char_full_preserve. NÃO extraia personagem da imagem):\n\n${character_block}\n\nAnalise APENAS o outfit/roupa na imagem. Retorne o JSON completo com todos os campos.`
+    : 'Analise esta imagem e retorne o JSON conforme o sistema instrui. Apenas o JSON, sem nenhum texto extra.';
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': (process.env.ANTHROPIC_API_KEY || '').trim(),
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 3000,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: image_type || 'image/jpeg', data: image_base64 } },
+          { type: 'text',  text: userText }
+        ]
+      }]
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || 'Erro na API Claude (tryon-haul)');
+
+  const inputTokens  = data.usage?.input_tokens  || 0;
+  const outputTokens = data.usage?.output_tokens || 0;
+
+  let raw = (data.content?.[0]?.text || '').trim();
+  // Remove possíveis markdown wrappers caso o modelo adicione
+  raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  // Extrair JSON do texto (por segurança)
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('[tryon-haul] Resposta inesperada da API — JSON não encontrado');
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch (err) {
+    console.error('[tryon-haul] Falha ao parsear JSON:', err.message, '| raw:', raw.slice(0, 300));
+    throw new Error('Falha ao interpretar dados da personagem. Tente novamente.');
+  }
+
+  const required = ['char_description','char_hair','char_skin','char_face','char_full_preserve','environment','char_sheet_prompt','start_frame_prompt'];
+  const missing = required.filter(k => !parsed[k]);
+  if (missing.length) {
+    console.error('[tryon-haul] Campos ausentes:', missing);
+    throw new Error(`Dados incompletos retornados pela IA. Faltando: ${missing.join(', ')}`);
+  }
+
+  sessionTokens.input  += inputTokens;
+  sessionTokens.output += outputTokens;
+
+  const { inputCost, outputCost, totalCost } = calcCost(inputTokens, outputTokens);
+  const sessionCost = calcCost(sessionTokens.input, sessionTokens.output);
+
+  return {
+    _tryon:             true,
+    char_description:   parsed.char_description,
+    char_hair:          parsed.char_hair,
+    char_skin:          parsed.char_skin,
+    char_face:          parsed.char_face,
+    char_body:          parsed.char_body || '',
+    char_full_preserve: parsed.char_full_preserve,
+    outfit_detected:    parsed.outfit_detected || '',
+    image_type:         parsed.image_type || 'character_sheet',
+    environment:        parsed.environment,
+    char_sheet_prompt:  parsed.char_sheet_prompt,
+    start_frame_prompt: parsed.start_frame_prompt,
+    _usage: {
+      input_tokens:  inputTokens,
+      output_tokens: outputTokens,
+      input_cost:    inputCost,
+      output_cost:   outputCost,
+      total_cost:    totalCost,
+      session: {
+        input_tokens:  sessionTokens.input,
+        output_tokens: sessionTokens.output,
+        total_cost:    sessionCost.totalCost
+      }
+    }
+  };
+}
+
 // ── AUTH ROUTES ──
 
 app.post('/api/auth/register', requireSupabase, async (req, res) => {
@@ -1236,6 +1356,84 @@ app.patch('/api/users/profile', requireSupabase, requireAuth, async (req, res) =
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.json({ user: { id: data.id, email: data.email, is_admin: data.is_admin, name: data.name, prompts_count: data.prompts_count || 0, tokens_used: data.tokens_used || 0 } });
+});
+
+// ── EMAIL CHANGE ──
+
+app.patch('/api/users/email', requireSupabase, requireAuth, async (req, res) => {
+  const { new_email, password } = req.body;
+  if (!new_email || !password) return res.status(400).json({ error: 'Novo email e senha obrigatórios' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) return res.status(400).json({ error: 'Email inválido' });
+
+  // Verifica senha atual
+  const { data: user } = await supabase
+    .from('users').select('id, password_hash').eq('id', req.user.id).maybeSingle();
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+  const valid = await bcrypt.compare(password, user.password_hash);
+  if (!valid) return res.status(401).json({ error: 'Senha incorreta' });
+
+  // Verifica se novo email já está em uso
+  const { data: taken } = await supabase
+    .from('users').select('id').eq('email', new_email.toLowerCase()).maybeSingle();
+  if (taken) return res.status(409).json({ error: 'Este email já está em uso' });
+
+  // Gera token de confirmação
+  const token   = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hora
+
+  await supabase.from('users').update({
+    email_change_token:   token,
+    email_change_new:     new_email.toLowerCase(),
+    email_change_expires: expires,
+  }).eq('id', user.id);
+
+  const baseUrl   = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+  const confirmUrl = `${baseUrl}/api/users/confirm-email-change?token=${token}`;
+
+  const mailer = getMailer();
+  if (mailer) {
+    await mailer.sendMail({
+      from: `"UGC·AI" <${process.env.EMAIL_USER}>`,
+      to: new_email.toLowerCase(),
+      subject: 'Confirme seu novo email — UGC·AI',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2 style="color:#FF6B00">UGC·AI — Confirmar troca de email</h2>
+          <p>Clique no botão abaixo para confirmar seu novo email. O link expira em <strong>1 hora</strong>.</p>
+          <a href="${confirmUrl}" style="display:inline-block;margin:20px 0;padding:14px 28px;background:#FF6B00;color:white;text-decoration:none;border-radius:10px;font-weight:bold">Confirmar novo email</a>
+          <p style="color:#888;font-size:12px">Se você não solicitou isso, ignore este email.</p>
+        </div>`
+    });
+    return res.json({ message: 'Link de confirmação enviado para o novo email.' });
+  }
+
+  // Dev sem email — retorna link direto
+  res.json({ message: 'Email não configurado. Use o link abaixo.', confirm_link: confirmUrl });
+});
+
+app.get('/api/users/confirm-email-change', requireSupabase, async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).send('Token ausente.');
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, email_change_token, email_change_new, email_change_expires')
+    .eq('email_change_token', token)
+    .maybeSingle();
+
+  if (!user) return res.status(400).send('Token inválido ou expirado.');
+  if (new Date(user.email_change_expires) < new Date()) return res.status(400).send('Token expirado.');
+
+  const { error } = await supabase.from('users').update({
+    email:                user.email_change_new,
+    email_change_token:   null,
+    email_change_new:     null,
+    email_change_expires: null,
+  }).eq('id', user.id);
+
+  if (error) return res.status(500).send('Erro ao atualizar email.');
+  res.send('<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2 style="color:#FF6B00">Email atualizado com sucesso!</h2><p>Faça login novamente com o novo email.</p></body></html>');
 });
 
 // ── FORGOT / RESET PASSWORD ──
@@ -1472,6 +1670,10 @@ app.post('/api/generate', requireAuth, async (req, res) => {
     let result;
     if (style === 'base-v2') {
       result = await callClaudeBaseV2(image_base64, image_type, price, extrasV2);
+    } else if (style === 'tryon-haul') {
+      const tryonPersonagemId = req.body.personagem_id || null;
+      const tryonModo         = req.body.modo || 'custom';
+      result = await callClaudeTryon(image_base64, image_type, tryonPersonagemId, tryonModo);
     } else {
       result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao, image_base64_2, image_type_2, extras);
     }
@@ -1737,6 +1939,22 @@ app.post('/api/gallery', requireSupabase, requireAuth, async (req, res) => {
   };
 
   const { data, error } = await supabase.from('gallery').insert(newItem).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+app.patch('/api/gallery/:id', requireSupabase, requireAuth, async (req, res) => {
+  const { prompt_video } = req.body;
+  if (!prompt_video) return res.status(400).json({ error: 'prompt_video is required' });
+
+  const { data, error } = await supabase
+    .from('gallery')
+    .update({ prompt_video })
+    .eq('id', req.params.id)
+    .eq('user_id', req.user.id)
+    .select()
+    .single();
+
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });

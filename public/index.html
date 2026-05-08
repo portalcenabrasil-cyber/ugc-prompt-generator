@@ -1729,6 +1729,104 @@
       50%       { box-shadow: 0 0 0 14px rgba(255,107,0,0); }
     }
 
+    /* ── TRY-ON HAUL ── */
+    .tryon-color-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .tryon-color-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.65);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      line-height: 1.2;
+    }
+    .tryon-color-btn:hover {
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+    }
+    .tryon-color-btn.active {
+      border-color: rgba(255,107,0,0.55);
+      background: rgba(255,107,0,0.10);
+      color: var(--orange);
+      box-shadow: 0 0 0 2px rgba(255,107,0,0.08);
+    }
+    .tryon-color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+    }
+    .tryon-color-label {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tryon-section-header {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin: 18px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,107,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tryon-section-header .tryon-section-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0;
+      text-transform: none;
+      font-weight: 400;
+      margin-left: auto;
+    }
+    .tryon-quick-actions {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .tryon-quick-btn {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.55);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px;
+      padding: 5px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tryon-quick-btn:hover {
+      border-color: rgba(255,107,0,0.35);
+      color: var(--orange);
+    }
+    @media (max-width: 480px) {
+      .tryon-color-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -2122,6 +2220,7 @@
               <button class="seg-btn" style="grid-column:span 2" data-value="nano" onclick="selectSeg(this,'styleGroup');onStyleChange('nano')">🎬 Edredom Nano + Vídeos</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano-veo-2" onclick="selectSeg(this,'styleGroup');onStyleChange('nano-veo-2')">🧪 Nano + Vídeos 2</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="roupa-feminina-v2" onclick="selectSeg(this,'styleGroup');onStyleChange('roupa-feminina-v2')">👗 Roupa Feminina</button>
+              <button class="seg-btn" style="grid-column:span 2" data-value="tryon-haul" onclick="selectSeg(this,'styleGroup');onStyleChange('tryon-haul')">🎬 Try-On Haul</button>
               <button class="seg-btn seg-btn--soon" style="grid-column:span 2" data-value="cinematografico" disabled>🎬 Cinematográfico <span class="soon-badge">em breve</span></button>
             </div>
 
@@ -2190,6 +2289,49 @@
             </div>
 
           </div><!-- /roupaV2Wizard -->
+
+          <!-- Try-On Haul Wizard -->
+          <div id="tryonWizard" style="display:none">
+
+            <!-- Seletor de modo: Biblioteca vs UGC da 137 -->
+            <div class="field">
+              <label class="field-label">Tipo de Cabelo</label>
+              <div class="seg-group" style="grid-template-columns:repeat(3,1fr)" id="tryonHairFilterGroup">
+                <button class="seg-btn active" data-value="todas"    onclick="tryonFilterHair('todas')">Todas</button>
+                <button class="seg-btn"        data-value="loira"    onclick="tryonFilterHair('loira')">Loira</button>
+                <button class="seg-btn"        data-value="morena"   onclick="tryonFilterHair('morena')">Morena</button>
+                <button class="seg-btn"        data-value="negra"    onclick="tryonFilterHair('negra')">Negra</button>
+                <button class="seg-btn"        data-value="asiatica" onclick="tryonFilterHair('asiatica')">Asiática</button>
+              </div>
+              <button id="btnTryonUGC137" onclick="tryonToggleUGC137()" style="margin-top:8px;width:100%;padding:8px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;transition:all 0.2s;">📱 UGC da 137 — usar minha modelo</button>
+            </div>
+
+            <!-- Grid de personagens -->
+            <div class="field" id="tryonCharGridField">
+              <label class="field-label">Personagem <span id="tryonCharSelLabel" style="color:var(--orange);margin-left:4px;font-size:11px;"></span></label>
+              <div id="tryonCharGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:240px;overflow-y:auto;padding-right:2px;"></div>
+              <div id="tryonCharGridLoading" style="font-size:11px;color:var(--text-muted);padding:8px 0;">Carregando personagens...</div>
+            </div>
+
+            <!-- Cores do outfit -->
+            <div class="field">
+              <label class="field-label">
+                Cores do Outfit
+                <span id="tryonColorCount" style="color:var(--orange);margin-left:4px;font-size:11px;"></span>
+              </label>
+              <div class="tryon-quick-actions">
+                <button class="tryon-quick-btn" onclick="tryonSelectAllColors()">✓ Todas</button>
+                <button class="tryon-quick-btn" onclick="tryonClearColors()">✕ Limpar</button>
+                <button class="tryon-quick-btn" onclick="tryonSelectBasicColors()">⭐ Básicas (5)</button>
+              </div>
+              <div id="tryonColorGrid" class="tryon-color-grid"></div>
+            </div>
+
+            <div id="tryonHint" style="font-size:10.5px;color:var(--text-muted);background:rgba(255,107,0,0.04);border:1px solid rgba(255,107,0,0.12);border-radius:8px;padding:9px 11px;margin-top:4px;line-height:1.55;">
+              💡 <strong>Biblioteca:</strong> suba a foto da roupa/produto abaixo. A personagem selecionada acima será o modelo.<br>
+              As cores selecionadas viram JSONs prontos. Os 9 takes Kling e 3 CTAs vêm sempre.
+            </div>
+          </div>
 
           <!-- Produto -->
           <div class="field" id="uploadField">
@@ -2344,6 +2486,26 @@
             <div id="cardV2KlingVideo"  style="display:none"></div>
             <div id="cardV2Script"      style="display:none"></div>
             <div id="cardV2Legenda"     style="display:none"></div>
+            <!-- Try-On Haul cards -->
+            <div id="cardTryonCharSheet"     style="display:none"></div>
+            <div id="cardTryonStartFrame"    style="display:none"></div>
+            <div id="cardTryonFaceSwap"      style="display:none"></div>
+            <div id="cardTryonEnv"           style="display:none"></div>
+            <div id="cardTryonColorSection"  style="display:none">
+              <div class="tryon-section-header">
+                📸 JSONs Nano Banana 2 — Troca de Cor
+                <span class="tryon-section-count" id="tryonColorSectionCount"></span>
+              </div>
+              <div id="tryonColorCardsWrap"></div>
+            </div>
+            <div id="cardTryonKlingSection"  style="display:none">
+              <div class="tryon-section-header">🎬 Motion Prompts — Kling AI 2.5 <span class="tryon-section-count">9 takes universais</span></div>
+              <div id="tryonKlingCardsWrap"></div>
+            </div>
+            <div id="cardTryonCTASection"    style="display:none">
+              <div class="tryon-section-header">🛒 CTAs — Kling AI 2.5 <span class="tryon-section-count">3 finalizadores</span></div>
+              <div id="tryonCTACardsWrap"></div>
+            </div>
             <!-- Base v2 cards -->
             <div id="cardBv2CharSheet"  style="display:none"></div>
             <div id="cardBv2StartFrame" style="display:none"></div>
@@ -2423,7 +2585,7 @@
       <div class="pstat-delta flat" id="statTokensDelta">—</div>
     </div>
     <div class="pstat-card">
-      <div class="pstat-label">Total Gasto</div>
+      <div class="pstat-label" id="statSaldoLabel">Total Gasto</div>
       <div class="pstat-value loading" id="statSaldo">—</div>
       <div class="pstat-sub" id="statSaldoSub">em reais</div>
       <div class="pstat-delta flat" id="statSaldoDelta">—</div>
@@ -2496,6 +2658,21 @@
       <button class="btn-modal-save" onclick="saveProfile()">Salvar</button>
       <button class="btn-modal-cancel" onclick="closeEditProfile()">Cancelar</button>
     </div>
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0 12px">
+    <div class="profile-modal-title" style="font-size:14px;margin-bottom:10px;">Trocar Email</div>
+    <div class="profile-modal-field">
+      <label>Novo email</label>
+      <input type="email" id="editEmailNew" placeholder="novo@email.com" />
+    </div>
+    <div class="profile-modal-field">
+      <label>Sua senha atual</label>
+      <input type="password" id="editEmailPass" placeholder="senha atual" />
+    </div>
+    <div class="profile-modal-error" id="editEmailError"></div>
+    <div class="profile-modal-success" id="editEmailSuccess"></div>
+    <div class="profile-modal-actions">
+      <button class="btn-modal-save" onclick="saveEmail()">Trocar Email</button>
+    </div>
   </div>
 </div>
 
@@ -2534,6 +2711,10 @@
   // ── AUTH ──
   let _authUser = null;
   let _authMode = 'login';
+
+  function isAdmin() {
+    return _authUser && (_authUser.is_admin === true || _authUser.plan === 'admin');
+  }
 
   function getToken()        { return localStorage.getItem('ugc_token'); }
   function setToken(t)       { localStorage.setItem('ugc_token', t); }
@@ -2729,7 +2910,9 @@
       badge.textContent = user.email;
       badge.style.display = 'inline-block';
       document.getElementById('btnLogout').style.display = 'inline-flex';
-      document.getElementById('exchangeRateBadge').style.display = 'inline-block';
+      if (user.is_admin || user.plan === 'admin') {
+        document.getElementById('exchangeRateBadge').style.display = 'inline-block';
+      }
       // Nav username — exibe apenas o apelido cadastrado, nunca o email
       const navUsername = document.getElementById('navUsername');
       if (user.name) {
@@ -2872,6 +3055,10 @@
     // Admin-only card
     document.getElementById('statFalCard').style.display = user.is_admin ? '' : 'none';
 
+    // Altera label do card de saldo conforme papel
+    const saldoLabel = document.getElementById('statSaldoLabel');
+    if (saldoLabel) saldoLabel.textContent = user.is_admin ? 'Total Gasto' : 'Créditos Restantes';
+
     // Stat cards em loading
     ['statPrompts','statTokens','statSaldo'].forEach(id => {
       const el = document.getElementById(id);
@@ -2910,6 +3097,10 @@
     document.getElementById('editNameInput').value = _authUser?.name || '';
     document.getElementById('editProfileError').classList.remove('visible');
     document.getElementById('editProfileSuccess').classList.remove('visible');
+    document.getElementById('editEmailNew').value = '';
+    document.getElementById('editEmailPass').value = '';
+    document.getElementById('editEmailError').classList.remove('visible');
+    document.getElementById('editEmailSuccess').classList.remove('visible');
     document.getElementById('editProfileModal').classList.add('visible');
   }
 
@@ -2948,6 +3139,31 @@
       setTimeout(() => closeEditProfile(), 1200);
     } catch (err) {
       errorEl.textContent = 'Erro: ' + err.message; errorEl.classList.add('visible');
+    }
+  }
+
+  async function saveEmail() {
+    const new_email = document.getElementById('editEmailNew').value.trim();
+    const password  = document.getElementById('editEmailPass').value;
+    const errEl = document.getElementById('editEmailError');
+    const okEl  = document.getElementById('editEmailSuccess');
+    errEl.classList.remove('visible'); okEl.classList.remove('visible');
+    if (!new_email || !password) { errEl.textContent = 'Preencha o novo email e a senha.'; errEl.classList.add('visible'); return; }
+    try {
+      const res  = await authFetch('/api/users/email', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'Erro'; errEl.classList.add('visible'); return; }
+      okEl.textContent = data.message || 'Verifique seu novo email para confirmar.'; okEl.classList.add('visible');
+      if (data.confirm_link) {
+        okEl.innerHTML += `<br><a href="${data.confirm_link}" target="_blank" style="color:var(--orange)">Clique aqui para confirmar (dev)</a>`;
+      }
+      document.getElementById('editEmailNew').value = '';
+      document.getElementById('editEmailPass').value = '';
+    } catch (err) {
+      errEl.textContent = 'Erro: ' + err.message; errEl.classList.add('visible');
     }
   }
 
@@ -3399,6 +3615,11 @@
     if (wizard) wizard.style.display = style === 'roupa-feminina-v2' ? 'block' : 'none';
     if (style === 'roupa-feminina-v2') loadCharGrid();
 
+    // tryon-haul wizard
+    const tryonWizard = document.getElementById('tryonWizard');
+    if (tryonWizard) tryonWizard.style.display = style === 'tryon-haul' ? 'block' : 'none';
+    if (style === 'tryon-haul') { initTryonColorGrid(); initTryonCharGrid(); }
+
     if (!hasDuration) return;
 
     const cfg = DURATION_CONFIGS[style] || DURATION_CONFIGS.serie;
@@ -3573,6 +3794,11 @@
       if (!_selectedCenId) { showError('Selecione um cenário antes de gerar.'); btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return; }
       if (_roupaV2Modo === 'ugc-da-137' && !imageBase64_Ref) { showError('Envie a imagem da modelo de referência.'); btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return; }
     }
+    // tryon-haul pre-validation
+    if (_style === 'tryon-haul' && _tryonModo !== 'ugc-da-137' && !_tryonSelectedCharId) {
+      showError('Selecione um personagem antes de gerar, ou ative "UGC da 137" para usar sua própria modelo.');
+      btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return;
+    }
 
     try {
       const res = await authFetch('/api/generate', {
@@ -3589,9 +3815,13 @@
           duracao:      ['serie','nano','nano-veo-2'].includes(_style) ? (getSelected('durationGroup') || null) : null,
           image_base64_2: _style === 'roupa-feminina-v2' ? (imageBase64_Ref || undefined) : (imageBase64_2 || undefined),
           image_type_2:   _style === 'roupa-feminina-v2' ? (imageType_Ref   || undefined) : (imageType_2   || undefined),
-          personagem_id: _style === 'roupa-feminina-v2' ? _selectedCharId  : undefined,
+          personagem_id: _style === 'roupa-feminina-v2' ? _selectedCharId
+                       : _style === 'tryon-haul' && _tryonModo !== 'ugc-da-137' ? _tryonSelectedCharId
+                       : undefined,
           cenario_id:    _style === 'roupa-feminina-v2' ? _selectedCenId   : undefined,
-          modo:          _style === 'roupa-feminina-v2' ? _roupaV2Modo      : undefined,
+          modo:          _style === 'roupa-feminina-v2' ? _roupaV2Modo
+                       : _style === 'tryon-haul' ? _tryonModo
+                       : undefined,
           ..._style === 'base-v2' ? _getBaseV2History() : {},
         })
       });
@@ -3616,6 +3846,18 @@
       const galleryItem = data._gallery;
       if (galleryItem) resolvePendingCard(tempId, galleryItem);
       else rejectPendingCard(tempId);
+      // Tryon: PATCH gallery with full content (selected colors + all kling takes + CTAs)
+      if (data._tryon && data._gallery?.id) {
+        const fullContent = buildTryonFullGalleryContent(data);
+        authFetch(`/api/gallery/${data._gallery.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt_video: fullContent })
+        }).then(r => r.json()).then(updated => {
+          const gi = _galleryItems.find(it => it.id === updated.id);
+          if (gi) gi.prompt_video = updated.prompt_video;
+        }).catch(e => console.warn('[tryon] gallery PATCH failed:', e.message));
+      }
     } catch (err) {
       clearInterval(_simInterval);
       rejectPendingCard(tempId);
@@ -3775,11 +4017,13 @@
         if (d.legenda)      cardsEl.innerHTML += makeBatchCard('✍️ Legenda',          d.legenda);
         if (d._usage) {
           const u = d._usage;
-          cardsEl.innerHTML += `
-            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);padding:4px 2px;line-height:1.8;">
-              ${fmtTok(u.input_tokens)} entrada + ${fmtTok(u.output_tokens)} saída
-              → <span style="color:var(--orange)">${fmtR$(u.total_cost)} <span style="opacity:0.6">(${fmt$(u.total_cost)})</span></span>
-            </div>`;
+          if (isAdmin()) {
+            cardsEl.innerHTML += `
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);padding:4px 2px;line-height:1.8;">
+                ${fmtTok(u.input_tokens)} entrada + ${fmtTok(u.output_tokens)} saída
+                → <span style="color:var(--orange)">${fmtR$(u.total_cost)} <span style="opacity:0.6">(${fmt$(u.total_cost)})</span></span>
+              </div>`;
+          }
           updateSessionBadge(u.session);
         }
       }
@@ -3909,10 +4153,33 @@
     ROUPA_V2_CARD_CONFIG.forEach(cfg   => { const el = document.getElementById(cfg.id); if(el){el.innerHTML = ''; el.style.display = 'none';} });
     BASE_V2_CARD_CONFIG.forEach(cfg    => { const el = document.getElementById(cfg.id); if (el) { el.innerHTML = ''; el.style.display = 'none'; } });
     document.getElementById('serieResumo').style.display = 'none';
+    ['cardTryonCharSheet','cardTryonStartFrame','cardTryonFaceSwap','cardTryonEnv',
+     'cardTryonColorSection','cardTryonKlingSection','cardTryonCTASection']
+      .forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; if (id !== 'cardTryonColorSection' && id !== 'cardTryonKlingSection' && id !== 'cardTryonCTASection') el.innerHTML = ''; } });
+    const _twrap1 = document.getElementById('tryonColorCardsWrap'); if (_twrap1) _twrap1.innerHTML = '';
+    const _twrap2 = document.getElementById('tryonKlingCardsWrap'); if (_twrap2) _twrap2.innerHTML = '';
+    const _twrap3 = document.getElementById('tryonCTACardsWrap');   if (_twrap3) _twrap3.innerHTML = '';
+    _tryonCharData = null;
   }
 
   function renderResults(data) {
     // Detect mode from data fields (before Object.assign so derived fields land in _stored)
+    const isTryon = !!(data._tryon);
+    if (isTryon) {
+      Object.assign(_stored, data);
+      _hideAllCardSets();
+      const meta = document.getElementById('metaBadges');
+      const copyAllBtn = document.getElementById('btnCopyAll');
+      meta.innerHTML = '';
+      if (copyAllBtn) copyAllBtn.style.display = 'none';
+      meta.appendChild(copyAllBtn);
+      renderTryonResults(data);
+      if (data._usage) renderCostBox(data._usage);
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('results').classList.add('visible');
+      setTimeout(() => scrollToSection('panelRight'), 120);
+      return;
+    }
     const isBaseV2  = !!(data.prompt_video_1);
     const isNano2   = !!(data.cena_1_imagem);
     const isRoupaA  = data.modo === 'A' && !!(data.cena_1_video_kling);
@@ -3951,6 +4218,7 @@
     const meta = document.getElementById('metaBadges');
     const copyAllBtn = document.getElementById('btnCopyAll');
     meta.innerHTML = '';
+    if (copyAllBtn) copyAllBtn.style.display = '';
     if (!isSerie && !isNano2 && !isRoupaA && !isRoupaB && !isRoupaV2 && !isBaseV2) {
       const tipoBtn = document.querySelector('#tipoGroup .seg-btn.active');
       if (tipoBtn)     meta.innerHTML += `<span class="badge">${tipoBtn.textContent.trim()}</span>`;
@@ -4136,6 +4404,7 @@
   function fmtTok(n) { return n.toLocaleString('pt-BR') + '\u00a0tok'; }
 
   function renderCostBox(usage) {
+    if (!isAdmin()) return;
     const el = document.getElementById('costBox');
     if (!el) return;
     el.innerHTML = `
@@ -4157,6 +4426,7 @@
   }
 
   function updateSessionBadge(session) {
+    if (!isAdmin()) return;
     if (!session) return;
     const badge = document.getElementById('sessionCostBadge');
     if (!badge) return;
@@ -4596,7 +4866,7 @@
       ? `<div class="gallery-card-thumb skeleton-shimmer"><img src="${item.image}" loading="lazy" alt="" style="${thumbOpacity}" onload="this.parentElement.classList.remove('skeleton-shimmer')" onerror="this.parentElement.classList.remove('skeleton-shimmer')"><span class="gallery-card-num">${numStr}</span>${usedBadge}</div>`
       : `<div class="gallery-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;${thumbOpacity}"><span class="gallery-card-num">${numStr}</span>${usedBadge}📦</div>`;
     const leg  = (item.legenda || '').replace(/</g,'&lt;');
-    const cost = item.cost ? `<span class="gallery-card-cost">${fmtCostCard(item.cost.total_cost)}</span>` : '';
+    const cost = (isAdmin() && item.cost) ? `<span class="gallery-card-cost">${fmtCostCard(item.cost.total_cost)}</span>` : '';
     return `
       <div class="gallery-card" onclick="openGalleryItem('${item.id}')">
         ${thumb}
@@ -4716,7 +4986,7 @@
     if (item.price)  chips += `<span class="gallery-detail-chip">R$ ${item.price}</span>`;
 
     let costHtml = '';
-    if (item.cost) {
+    if (isAdmin() && item.cost) {
       const c = item.cost;
       costHtml = `
         <div class="gallery-detail-section">
@@ -4746,8 +5016,41 @@
       (item.prompt_video || '').includes('Consistent character:');
     const isBaseV2GalleryItem   = item.emocao === 'base-v2';
     const isRoupaFemGalleryItem = item.emocao === 'roupa-feminina-a' || item.emocao === 'roupa-feminina-b' || item.emocao === 'roupa-feminina-v2';
+    const isTryonGalleryItem    = item.emocao === 'tryon-haul';
 
-    if (isBaseV2GalleryItem) {
+    if (isTryonGalleryItem) {
+      const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
+      const sectionLabels = ['📋 Character Sheet (Nano Banana — 5 views)', '🖼️ Start Frame (Nano Banana — outfit original)', '🏠 Ambiente', '👤 Personagem', '👗 Outfit Detectado', '🎭 Face Swap'];
+      let sectionsHtml = '';
+      sections.forEach((sec, idx) => {
+        let label, body;
+        if (idx < sectionLabels.length) {
+          label = sectionLabels[idx];
+          body  = sec;
+        } else {
+          // Dynamic sections (colors, kling, CTAs): first line is the label
+          const nlIdx = sec.indexOf('\n');
+          if (nlIdx > 0) {
+            label = sec.slice(0, nlIdx).replace(/:$/, '');
+            body  = sec.slice(nlIdx + 1);
+          } else {
+            label = sec.slice(0, 60);
+            body  = sec;
+          }
+        }
+        const safeLbl  = label.replace(/</g,'&lt;');
+        const safeBody = body.replace(/</g,'&lt;');
+        const safeSec  = JSON.stringify(sec).replace(/"/g,'&quot;');
+        sectionsHtml += `
+          <div class="gallery-detail-section">
+            <span class="gallery-detail-label">${safeLbl}</span>
+            <div class="gallery-detail-text">${safeBody}</div>
+            <button class="btn-copy" style="align-self:flex-start;margin-top:4px" onclick="copyRaw(${safeSec},this)"><span>⎘</span> COPIAR</button>
+          </div>`;
+      });
+      content.innerHTML = `${chipsHtml}${sectionsHtml}${footerHtml}`;
+
+    } else if (isBaseV2GalleryItem) {
       const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
       const sectionLabels = ['📋 Character Sheet', '🖼️ Start Frame (Nano)', '🎬 Prompt Vídeo 1 (8s)', '🎬 Prompt Vídeo 2 — Continuação (8s)', '📌 Legendas'];
       let sectionsHtml = '';
@@ -5022,9 +5325,13 @@
     const todayStr   = isoToday();
     const todayItems = (_galleryItems || []).filter(it => (it.created_at || '').startsWith(todayStr));
     const todayCount = todayItems.length;
-    const todaySpent = todayItems.reduce((s, it) => s + (it.cost?.total_cost || 0), 0) * BRL_RATE;
     const sumEl = document.getElementById('profileTodaySummary');
-    sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''} · <strong>R$\u00a0${todaySpent.toFixed(2).replace('.',',')}</strong> gastos`;
+    if (isAdmin()) {
+      const todaySpent = todayItems.reduce((s, it) => s + (it.cost?.total_cost || 0), 0) * BRL_RATE;
+      sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''} · <strong>R$\u00a0${todaySpent.toFixed(2).replace('.',',')}</strong> gastos`;
+    } else {
+      sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''}`;
+    }
 
     // ── Totais all-time ──
     try {
@@ -5041,10 +5348,23 @@
       pEl.classList.remove('loading');
       tEl.textContent = fmtK(data.total_tokens || 0);
       tEl.classList.remove('loading');
-      const totalR = (data.total_cost_usd || 0) * BRL_RATE;
-      sEl.textContent = 'R$\u00a0' + totalR.toFixed(2).replace('.', ',');
+
+      if (isAdmin()) {
+        const totalR = (data.total_cost_usd || 0) * BRL_RATE;
+        sEl.textContent = 'R$\u00a0' + totalR.toFixed(2).replace('.', ',');
+        sSubEl.textContent = `≈ $${(data.total_cost_usd || 0).toFixed(4)} USD`;
+      } else {
+        // Créditos restantes para cliente
+        const limit = _authUser?.generations_limit || 0;
+        const used  = _authUser?.generations_used  || 0;
+        const remaining = Math.max(0, limit - used);
+        sEl.textContent = remaining.toLocaleString('pt-BR');
+        sSubEl.textContent = `de ${limit} créditos do plano`;
+        // Cor por percentual restante
+        const pct = limit > 0 ? remaining / limit : 1;
+        sEl.style.color = pct > 0.2 ? 'var(--green, #4caf50)' : pct > 0.1 ? 'var(--orange, #FF6B00)' : 'var(--red, #f44336)';
+      }
       sEl.classList.remove('loading');
-      sSubEl.textContent = `≈ $${(data.total_cost_usd || 0).toFixed(4)} USD`;
     } catch (e) { console.warn('Erro ao carregar stats:', e); }
 
     // ── Comparação semanal (últimos 14 dias) ──
@@ -5071,7 +5391,11 @@
         };
 
         applyDelta('statPromptsDelta', sum(last7, 'prompts'),  sum(prev7, 'prompts'));
-        applyDelta('statSaldoDelta',   sum(last7, 'cost_usd'), sum(prev7, 'cost_usd'));
+        if (isAdmin()) applyDelta('statSaldoDelta', sum(last7, 'cost_usd'), sum(prev7, 'cost_usd'));
+        else {
+          const sDelta = document.getElementById('statSaldoDelta');
+          if (sDelta) { sDelta.textContent = ''; sDelta.className = 'pstat-delta flat'; }
+        }
         const tokLast = last7.reduce((s,d) => s + (d.input_tokens||0) + (d.output_tokens||0), 0);
         const tokPrev = prev7.reduce((s,d) => s + (d.input_tokens||0) + (d.output_tokens||0), 0);
         applyDelta('statTokensDelta', tokLast, tokPrev);
@@ -5119,7 +5443,7 @@
         : `<div class="recent-thumb">📦</div>`;
       const title = (item.legenda || item.nicho || 'Sem título').replace(/</g,'&lt;').slice(0, 55);
       const ago   = fmtRelativeTime(item.created_at);
-      const cost  = item.cost ? `R$\u00a0${((item.cost.total_cost || 0) * BRL_RATE).toFixed(3).replace('.',',')}` : '';
+      const cost  = (isAdmin() && item.cost) ? `R$\u00a0${((item.cost.total_cost || 0) * BRL_RATE).toFixed(3).replace('.',',')}` : '';
       const isUsed = used.includes(item.id);
       return `<div class="recent-item" onclick="toggleProfilePage();setAppTab('gallery');setTimeout(()=>openGalleryItem('${item.id}'),180)">
         ${thumb}
@@ -5143,10 +5467,18 @@
 
     const insights = [];
 
-    // 1. Custo médio por prompt
-    const totalUSD = items.reduce((s, it) => s + (it.cost?.total_cost || 0), 0);
-    const avgBRL   = items.length > 0 ? (totalUSD / items.length) * BRL_RATE : 0;
-    insights.push({ icon: '💰', text: `Custo médio por prompt: <strong>R$\u00a0${avgBRL.toFixed(4).replace('.',',')}</strong> (${items.length} gerado${items.length!==1?'s':''} no total)` });
+    // 1. Custo médio por prompt (admin) / Créditos disponíveis (cliente)
+    if (isAdmin()) {
+      const totalUSD = items.reduce((s, it) => s + (it.cost?.total_cost || 0), 0);
+      const avgBRL   = items.length > 0 ? (totalUSD / items.length) * BRL_RATE : 0;
+      insights.push({ icon: '💰', text: `Custo médio por prompt: <strong>R$\u00a0${avgBRL.toFixed(4).replace('.',',')}</strong> (${items.length} gerado${items.length!==1?'s':''} no total)` });
+    } else {
+      const limit = _authUser?.generations_limit || 0;
+      const used  = _authUser?.generations_used  || 0;
+      const remaining = Math.max(0, limit - used);
+      const pctUsed = limit > 0 ? Math.round((used / limit) * 100) : 0;
+      insights.push({ icon: '🎯', text: `Você ainda tem <strong>${remaining.toLocaleString('pt-BR')}</strong> crédito${remaining!==1?'s':''} disponíve${remaining!==1?'is':'l'} (${pctUsed}% do plano usado)` });
+    }
 
     // 2. Horário de pico
     const hourMap = {};
@@ -5341,6 +5673,415 @@
     const tip = document.getElementById('chartTip');
     tip.style.display = 'none';
     document.querySelectorAll('.chart-bar').forEach(b => b.removeEventListener('mousemove', moveChartTip));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TRY-ON HAUL SYSTEM
+  // ═══════════════════════════════════════════════════════════════════
+
+  const TRYON_COLORS = [
+    // Escuros/Neutros
+    { slug:'preto',        label:'Preto',        hex:'#1C1C1C', core:'matte BLACK',                      desc:'deep solid matte black, not gray, not faded, not glossy', basic:true },
+    { slug:'chumbo',       label:'Chumbo',       hex:'#444444', core:'DARK CHARCOAL GRAY',               desc:'dark charcoal gray, almost black with slight gray tone, not pure black' },
+    { slug:'cinza',        label:'Cinza',        hex:'#909090', core:'MEDIUM GRAY',                      desc:'medium neutral gray, not dark charcoal, not light silver, clean mid-tone gray' },
+    { slug:'cinza-claro',  label:'Cinza Claro',  hex:'#D0D0D0', core:'LIGHT SILVER GRAY',                desc:'soft light silver gray, not white, not medium gray, subtle metallic tone' },
+    { slug:'azul-aco',     label:'Azul Aço',     hex:'#607D8B', core:'STEEL BLUE GRAY',                  desc:'muted steel blue-gray, industrial and cool, not bright blue, not pure gray' },
+    // Brancos/Bege/Nude
+    { slug:'branco',       label:'Branco',       hex:'#F2F2F2', core:'PURE WHITE',                       desc:'clean bright white, not cream, not off-white, sharp and clean', basic:true },
+    { slug:'creme',        label:'Creme',        hex:'#FFF4DC', core:'CREAM / warm off-white',           desc:'warm creamy off-white like fresh cream, not pure white, not yellow' },
+    { slug:'bege',         label:'Bege',         hex:'#D4B48C', core:'WARM BEIGE / sandy beige',         desc:'natural warm sandy beige with subtle creamy undertone, not pure white, not yellow, not gray', basic:true },
+    { slug:'nude',         label:'Nude',         hex:'#C8A070', core:'NUDE / skin-tone beige',           desc:'warm skin-tone nude beige, not too pink, not too orange, neutral and elegant' },
+    // Marrons/Terrosos
+    { slug:'caramelo',     label:'Caramelo',     hex:'#C47E2A', core:'CARAMEL BROWN',                    desc:'warm golden caramel brown, not orange, not dark chocolate, rich golden warmth' },
+    { slug:'marrom',       label:'Marrom',       hex:'#7A5038', core:'CHOCOLATE BROWN',                  desc:'rich warm chocolate brown, not orange, not too light, not too dark, classic brown', basic:true },
+    { slug:'marrom-esc',   label:'Marrom Esc.',  hex:'#3B1F10', core:'DARK ESPRESSO BROWN',              desc:'deep dark espresso brown, almost black with warm brown undertone, not pure black' },
+    { slug:'terracota',    label:'Terracota',    hex:'#C85C40', core:'WARM TERRACOTTA',                  desc:'warm earthy reddish-orange-brown, not bright orange, not pure red, rustic and earthy' },
+    { slug:'mocha',        label:'Mocha',        hex:'#A07850', core:'MOCHA / TAUPE',                    desc:'warm grayish-brown neutral coffee tone, not too pink, not too cold, like café au lait' },
+    { slug:'cobre',        label:'Cobre',        hex:'#B87333', core:'COPPER / warm metallic bronze',    desc:'rich warm copper bronze tone, earthy metallic warmth, not orange, not gold' },
+    { slug:'mostarda',     label:'Mostarda',     hex:'#D4A017', core:'MUSTARD YELLOW',                   desc:'warm deep mustard yellow, not bright neon, not orange, earthy golden tone' },
+    // Vermelhos/Corais
+    { slug:'vermelho',     label:'Vermelho',     hex:'#E53935', core:'VIBRANT RED',                      desc:'vibrant true red, not orange-red, not dark burgundy, bold clean red' },
+    { slug:'vinho',        label:'Vinho',        hex:'#880E4F', core:'DEEP BURGUNDY WINE',               desc:'deep rich wine burgundy, not bright red, not purple, sophisticated dark red' },
+    { slug:'coral',        label:'Coral',        hex:'#FF6F61', core:'WARM CORAL',                       desc:'warm coral between pink and orange, cheerful and vibrant, not neon' },
+    { slug:'laranja',      label:'Laranja',      hex:'#FF8C00', core:'BRIGHT ORANGE',                    desc:'vibrant clean orange, not red-orange, not yellow-orange, pure energetic orange' },
+    { slug:'pessego',      label:'Pêssego',      hex:'#FFCBA4', core:'SOFT PEACH',                       desc:'soft warm peach tone, delicate fruity warmth, not orange, not pink' },
+    // Rosas
+    { slug:'rosa-pink',    label:'Rosa Pink',    hex:'#E91E8B', core:'HOT PINK / fuchsia',               desc:'vibrant hot pink fuchsia, bold and bright, not pastel, not red, high energy' },
+    { slug:'rosa',         label:'Rosa',         hex:'#F48FB1', core:'DUSTY ROSE PINK / blush pink',     desc:'warm muted feminine pink, not neon, not hot pink, not pastel baby pink', basic:true },
+    { slug:'rosa-claro',   label:'Rosa Claro',   hex:'#F8D7E8', core:'SOFT BABY PINK',                   desc:'delicate soft baby pink, very light, not hot pink, not salmon, airy and fresh' },
+    // Roxos/Lilás
+    { slug:'lilas',        label:'Lilás',        hex:'#B39DDB', core:'SOFT LAVENDER LILAC',              desc:'delicate muted lilac purple, not bright purple, not pink, not gray, like spring flowers' },
+    { slug:'lavanda',      label:'Lavanda',      hex:'#E8D5F5', core:'LIGHT LAVENDER',                   desc:'very light airy lavender, almost white with a soft purple hue' },
+    { slug:'roxo',         label:'Roxo',         hex:'#7B1FA2', core:'DEEP PURPLE',                      desc:'rich deep purple, not lavender, not navy, bold and saturated purple' },
+    // Azuis
+    { slug:'azul-bebe',    label:'Azul Bebê',    hex:'#87CEEB', core:'SOFT SKY BLUE / baby blue',        desc:'light airy sky blue, not navy, not turquoise, not gray-blue, like a clear sky' },
+    { slug:'azul',         label:'Azul',         hex:'#1976D2', core:'MEDIUM BRIGHT BLUE',               desc:'clean medium blue, not dark navy, not light sky blue, true vivid blue' },
+    { slug:'azul-marinho', label:'Azul Marinho', hex:'#1A237E', core:'DEEP NAVY BLUE',                   desc:'deep rich navy blue, dark and sophisticated, not black, not medium blue' },
+    { slug:'petroleo',     label:'Petróleo',     hex:'#2E6B7A', core:'TEAL / petrol blue-green',         desc:'deep teal blue-green, sophisticated dark aqua, not bright turquoise, not pure blue' },
+    { slug:'turquesa',     label:'Turquesa',     hex:'#00BCD4', core:'TURQUOISE / aqua',                 desc:'bright vibrant turquoise aqua, not too green, not too blue, tropical energy' },
+    // Verdes
+    { slug:'menta',        label:'Verde Menta',  hex:'#98D8C8', core:'MINT GREEN',                       desc:'fresh soft mint green, light and airy, not too saturated, not teal, refreshing' },
+    { slug:'sage',         label:'Sage',         hex:'#8A9E7C', core:'SAGE GREEN',                       desc:'muted dusty grayish-green, natural and earthy, not bright, not olive, not mint' },
+    { slug:'oliva',        label:'Verde Oliva',  hex:'#808000', core:'OLIVE GREEN',                       desc:'earthy military olive green, muted and warm, not bright green, not yellow-green' },
+    { slug:'verde-esc',    label:'Verde Escuro', hex:'#1B5E20', core:'DEEP FOREST GREEN',                 desc:'rich deep forest green, not black-green, not bright, earthy and sophisticated dark green' },
+  ];
+
+  // 9 takes Kling — copiados literalmente do PDF, NUNCA alterar
+  const KLING_TAKES = [
+    { num:1, uso:'Abertura de vídeo / transição suave',
+      prompt:`She slowly raises her right hand up to her hair near her ear and gently runs her fingers through her wavy locks, sliding them down toward her shoulder. As her hand falls back to her side, she gives a soft confident closed-mouth smile and tilts her head slightly. Subtle natural breathing throughout. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:2, uso:'Take com leve aproximação — igual ao do conjunto preto original',
+      prompt:`She takes one slow small step forward toward the camera, body coming slightly closer in frame. As she steps, she gives a subtle confident smirk that grows into a soft smile. Her hair sways gently with the movement. She stops naturally and lets her arms relax at her sides. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:3, uso:'Mostrando o caimento do conjunto / meio do vídeo',
+      prompt:`She gently places both hands flat on her toned stomach between the crop top and skirt, fingers softly spread, drawing attention to the outfit. She looks down briefly at her outfit, then lifts her gaze back up to the camera with a sweet closed-mouth smile. Slight natural body sway. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:4, uso:'Mostrar o caimento da saia / movimento do tecido',
+      prompt:`She slowly rotates her body about 45 degrees to her right showing the side profile of the outfit, the flared skater skirt swings naturally with the movement showing its flow. She pauses in profile briefly, then turns back to face the camera with a soft smile. Hair flows naturally with the rotation. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:5, uso:'Pose confidence / mostrar caimento do quadril',
+      prompt:`She slowly brings both hands up and places them confidently on her hips, framing the high waistband of the skirt. She gives a small playful side-to-side hip sway making the flared skirt swing softly. Soft confident smile, eyes locked on camera. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:6, uso:'Take com mais movimento / clip rico para múltiplos cortes',
+      prompt:`She raises her right hand to gently touch her hair near her shoulder, then slowly slides her hand down across her body and rests it lightly on her stomach. As her hand settles, she breaks into a wide genuine smile with teeth showing, eyes warm and connected with the camera. Subtle weight shift to one leg. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:7, uso:'Detalhe casual / transição entre cores',
+      prompt:`She brings her right hand up and casually adjusts the strap of her sports bra near her shoulder with two fingers, then lets her hand fall back to her side. Subtle confident closed-mouth smile, calm energy. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:8, uso:'Abertura candid / clip de personalidade',
+      prompt:`She glances briefly off-camera to her right as if reacting to something, then turns her gaze back to the camera with a knowing soft smile. Hair shifts naturally with the head movement. Arms stay relaxed at her sides. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:9, uso:'Clip de finalização / momento autêntico',
+      prompt:`She breaks into a sudden natural laugh, tilting her head back slightly, eyes crinkling, hair bouncing with the movement. The laugh softens back into a warm closed-mouth smile. Authentic candid energy. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+  ];
+
+  // 3 CTAs Kling — copiados literalmente do PDF, NUNCA alterar
+  const CTA_TAKES = [
+    { num:'CTA 1', uso:'Finalização pessoal e feminina — alto engajamento',
+      prompt:`She raises both hands and points both index fingers downward toward the bottom of the frame twice in a light natural motion, a knowing soft smile on her face. After the second point, she lets her right hand rise and gently touches her hair near her shoulder, while her left arm relaxes at her side. Subtle head tilt, warm eyes on camera. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:'CTA 2', uso:'CTA com referência ao produto — chama atenção para o conjunto',
+      prompt:`She gently bends both elbows close to her sides and points both index fingers downward toward the bottom of the frame twice in a small natural motion, arms staying low and relaxed near her waist, a soft smile growing on her face. After the second point, she lets her right hand rest lightly flat on her stomach while her left arm relaxes at her side. Warm eyes on camera, slight natural body sway. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    { num:'CTA 3', uso:'CTA com pose confiante — encerramento elegante e limpo',
+      prompt:`She gently bends both elbows close to her sides and points both index fingers downward toward the bottom of the frame twice in a small natural motion, arms staying low near her waist, a confident closed-mouth smile on her face. After the second point, she smoothly places her right hand on her hip while her left arm falls naturally to her side, settling into a relaxed pose. Eyes stay warm and connected with the camera. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+  ];
+
+  // ── Try-On Haul state ──
+  let _tryonSelectedColors = new Set();
+  let _tryonCharData       = null;
+  let _tryonModo           = 'biblioteca';
+  let _tryonSelectedCharId = null;
+  let _tryonAllChars       = [];
+  let _tryonCharsLoaded    = false;
+  let _tryonCurrentFilter  = 'todas';
+
+  async function initTryonCharGrid() {
+    try {
+      if (_tryonCharsLoaded && _tryonAllChars.length > 0) { renderTryonCharGrid(); return; }
+      const loadingEl = document.getElementById('tryonCharGridLoading');
+      const gridEl    = document.getElementById('tryonCharGrid');
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (gridEl)    gridEl.innerHTML = '';
+      try {
+        const res = await authFetch('/api/personagens');
+        if (res.ok) { _tryonAllChars = await res.json(); _tryonCharsLoaded = true; }
+      } catch(e) { console.error('[tryonCharGrid] fetch error:', e); }
+      if (loadingEl) loadingEl.style.display = 'none';
+      renderTryonCharGrid();
+    } catch (err) { console.error('[tryonCharGrid] erro:', err); }
+  }
+
+  function renderTryonCharGrid() {
+    const grid = document.getElementById('tryonCharGrid');
+    if (!grid) return;
+    const filtered = _tryonCurrentFilter === 'todas'
+      ? _tryonAllChars
+      : _tryonAllChars.filter(c => c.categoria === _tryonCurrentFilter);
+    grid.innerHTML = filtered.map(c => {
+      const sel = _tryonSelectedCharId === c.id ? ' selected' : '';
+      const safeNome = c.nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      return `<div class="char-card${sel}" data-id="${c.id}" data-nome="${safeNome}" onclick="tryonSelectChar(this.dataset.id,this.dataset.nome)">
+        <div class="char-card-id">${c.id}</div>
+        <div class="char-card-nome">${c.nome}</div>
+        <div class="char-card-idade">${c.idade}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function tryonFilterHair(cat) {
+    _tryonCurrentFilter = cat;
+    document.querySelectorAll('#tryonHairFilterGroup .seg-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === cat);
+    });
+    renderTryonCharGrid();
+  }
+
+  function tryonSelectChar(id, nome) {
+    _tryonSelectedCharId = id;
+    const label = document.getElementById('tryonCharSelLabel');
+    if (label) label.textContent = `— ${id} ${nome}`;
+    renderTryonCharGrid();
+  }
+
+  function tryonToggleUGC137() {
+    _tryonModo = _tryonModo === 'ugc-da-137' ? 'biblioteca' : 'ugc-da-137';
+    const btn           = document.getElementById('btnTryonUGC137');
+    const charGridField = document.getElementById('tryonCharGridField');
+    const hairFilter    = document.getElementById('tryonHairFilterGroup');
+    const hint          = document.getElementById('tryonHint');
+    if (_tryonModo === 'ugc-da-137') {
+      if (btn) { btn.style.background = 'rgba(255,107,0,0.15)'; btn.style.borderColor = 'rgba(255,107,0,0.4)'; btn.style.color = '#FF8533'; }
+      if (charGridField) charGridField.style.display = 'none';
+      if (hairFilter) hairFilter.parentElement.style.display = 'none';
+      if (hint) hint.innerHTML = '💡 <strong>UGC da 137:</strong> suba a foto da modelo usando a roupa abaixo. A IA vai analisar a personagem, o outfit e o ambiente automaticamente.';
+    } else {
+      if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
+      if (charGridField) charGridField.style.display = 'block';
+      if (hairFilter) hairFilter.parentElement.style.display = 'block';
+      if (hint) hint.innerHTML = '💡 <strong>Biblioteca:</strong> suba a foto da roupa/produto abaixo. A personagem selecionada acima será o modelo.<br>As cores selecionadas viram JSONs prontos. Os 9 takes Kling e 3 CTAs vêm sempre.';
+    }
+  }
+
+  function initTryonColorGrid() {
+    const grid = document.getElementById('tryonColorGrid');
+    if (!grid || grid.dataset.built) return;
+    grid.dataset.built = '1';
+    grid.innerHTML = TRYON_COLORS.map(c => `
+      <button class="tryon-color-btn" id="tc-${c.slug}" data-slug="${c.slug}" onclick="toggleTryonColor('${c.slug}')">
+        <span class="tryon-color-dot" style="background:${c.hex};"></span>
+        <span class="tryon-color-label">${c.label}</span>
+      </button>`).join('');
+    updateTryonColorCount();
+  }
+
+  function toggleTryonColor(slug) {
+    if (_tryonSelectedColors.has(slug)) _tryonSelectedColors.delete(slug);
+    else _tryonSelectedColors.add(slug);
+    const btn = document.getElementById('tc-' + slug);
+    if (btn) btn.classList.toggle('active', _tryonSelectedColors.has(slug));
+    updateTryonColorCount();
+    if (_tryonCharData) renderTryonColorCards();
+  }
+
+  function tryonSelectAllColors() {
+    TRYON_COLORS.forEach(c => _tryonSelectedColors.add(c.slug));
+    document.querySelectorAll('.tryon-color-btn').forEach(b => b.classList.add('active'));
+    updateTryonColorCount();
+    if (_tryonCharData) renderTryonColorCards();
+  }
+
+  function tryonClearColors() {
+    _tryonSelectedColors.clear();
+    document.querySelectorAll('.tryon-color-btn').forEach(b => b.classList.remove('active'));
+    updateTryonColorCount();
+    if (_tryonCharData) renderTryonColorCards();
+  }
+
+  function tryonSelectBasicColors() {
+    _tryonSelectedColors.clear();
+    document.querySelectorAll('.tryon-color-btn').forEach(b => b.classList.remove('active'));
+    TRYON_COLORS.filter(c => c.basic).forEach(c => {
+      _tryonSelectedColors.add(c.slug);
+      const btn = document.getElementById('tc-' + c.slug);
+      if (btn) btn.classList.add('active');
+    });
+    updateTryonColorCount();
+    if (_tryonCharData) renderTryonColorCards();
+  }
+
+  function updateTryonColorCount() {
+    const el = document.getElementById('tryonColorCount');
+    if (!el) return;
+    const n = _tryonSelectedColors.size;
+    el.textContent = n > 0 ? `— ${n} cor${n > 1 ? 'es' : ''}` : '';
+    const sCount = document.getElementById('tryonColorSectionCount');
+    if (sCount) sCount.textContent = n > 0 ? `${n} cor${n > 1 ? 'es' : ''} selecionada${n > 1 ? 's' : ''}` : 'nenhuma cor selecionada';
+  }
+
+  function buildNanoBananaJSON(charData, colorSlug) {
+    const color = TRYON_COLORS.find(c => c.slug === colorSlug);
+    if (!color || !charData) return '{}';
+    const json = {
+      task: "COLOR EDIT ONLY — change only the outfit color. Preserve everything else with 100% identical fidelity.",
+      edit_target: charData.outfit_detected || 'the outfit worn in the image',
+      new_color: `${color.core} — ${color.desc}`,
+      fabric_finish: "smooth matte stretch activewear fabric, same material as original",
+      must_preserve: {
+        face: charData.char_full_preserve || `exact same face — ${charData.char_face} — no changes to any facial feature`,
+        hair: charData.char_hair,
+        skin: `identical skin tone — ${charData.char_skin}`,
+        body: "identical body proportions, identical pose, identical hand position, identical angle",
+        outfit_design: `identical cut and shape — ${charData.outfit_detected || 'same outfit as original'} — ONLY the color changes`,
+        background: charData.environment,
+        lighting: "identical soft natural daylight, identical shadows, identical color temperature",
+        framing: "exact same crop and aspect ratio 9:16",
+        image_quality: "same photorealistic iPhone UGC style, real skin texture, no filter"
+      },
+      do_not: [
+        "do not change the face",
+        "do not change the hair",
+        "do not change the pose",
+        "do not change the background",
+        "do not change the lighting",
+        "do not redesign the outfit cut",
+        "do not add or remove accessories",
+        "do not zoom in or out",
+        "do not change the body angle",
+        `do not make the ${color.label.toLowerCase()} look different from: ${color.desc}`
+      ]
+    };
+    return JSON.stringify(json, null, 2);
+  }
+
+  function renderTryonColorCards() {
+    const wrap = document.getElementById('tryonColorCardsWrap');
+    if (!wrap || !_tryonCharData) return;
+    if (_tryonSelectedColors.size === 0) {
+      wrap.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);padding:12px 0;text-align:center;">← Selecione cores no painel esquerdo</div>`;
+      updateTryonColorCount();
+      return;
+    }
+    let i = 0;
+    const html = [];
+    TRYON_COLORS.forEach(color => {
+      if (!_tryonSelectedColors.has(color.slug)) return;
+      const jsonStr = buildNanoBananaJSON(_tryonCharData, color.slug);
+      const safeJson = JSON.stringify(jsonStr).replace(/"/g, '&quot;');
+      const dotStyle = `width:10px;height:10px;border-radius:50%;background:${color.hex};border:1px solid rgba(255,255,255,0.2);display:inline-block;margin-right:6px;flex-shrink:0;`;
+      html.push(`
+        <div class="result-card" style="margin-bottom:8px;animation-delay:${i*40}ms">
+          <div class="result-card-header">
+            <div class="result-card-title">
+              <span class="title-dot"></span>
+              <span style="${dotStyle}"></span>
+              Nano Banana JSON — ${color.label}
+            </div>
+            <button class="btn-copy" onclick="copyRaw(${safeJson},this)"><span>⎘</span> COPIAR</button>
+          </div>
+          <div class="result-card-body" style="font-family:'DM Mono',monospace;font-size:10.5px;line-height:1.6;max-height:240px;overflow-y:auto;">${jsonStr.replace(/</g,'&lt;')}</div>
+        </div>`);
+      i++;
+    });
+    wrap.innerHTML = html.join('');
+    updateTryonColorCount();
+  }
+
+  function renderTryonKlingCards() {
+    const wrap = document.getElementById('tryonKlingCardsWrap');
+    if (!wrap) return;
+    wrap.innerHTML = KLING_TAKES.map((t, i) => {
+      const safe = JSON.stringify(t.prompt).replace(/"/g, '&quot;');
+      return `
+        <div class="result-card" style="margin-bottom:8px;animation-delay:${i*45}ms">
+          <div class="result-card-header">
+            <div class="result-card-title"><span class="title-dot"></span>🎬 Take #${t.num}</div>
+            <button class="btn-copy" onclick="copyRaw(${safe},this)"><span>⎘</span> COPIAR</button>
+          </div>
+          <div class="result-card-body" style="font-size:11.5px;line-height:1.75;">
+            <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:6px;opacity:0.8;">Uso ideal: ${t.uso}</div>
+            ${t.prompt.replace(/</g,'&lt;')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderTryonCTACards() {
+    const wrap = document.getElementById('tryonCTACardsWrap');
+    if (!wrap) return;
+    wrap.innerHTML = CTA_TAKES.map((t, i) => {
+      const safe = JSON.stringify(t.prompt).replace(/"/g, '&quot;');
+      return `
+        <div class="result-card" style="margin-bottom:8px;animation-delay:${i*50}ms">
+          <div class="result-card-header">
+            <div class="result-card-title"><span class="title-dot"></span>🛒 ${t.num}</div>
+            <button class="btn-copy" onclick="copyRaw(${safe},this)"><span>⎘</span> COPIAR</button>
+          </div>
+          <div class="result-card-body" style="font-size:11.5px;line-height:1.75;">
+            <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:6px;opacity:0.8;">Uso ideal: ${t.uso}</div>
+            ${t.prompt.replace(/</g,'&lt;')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  const TRYON_FACESWAP_PROMPT = `📌 COMO USAR:
+→ Photo 1 = Start Frame gerado (roupa, ambiente, corpo, pose — tudo preservado)
+→ Photo 2 = character sheet ou foto da influencer (apenas o rosto é transferido)
+→ Resultado: mesma roupa · mesmo ambiente · mesmo cabelo · mesmo corpo — só o rosto muda
+
+──────────────────────────────────────────
+
+Replace the face of the girl from Photo 2 onto the body and background of the girl in Photo 1. Keep the exact body position, outfit, hair, lighting, angle, and environment from Photo 1 completely unchanged. Only the face is replaced. The final result must look completely natural and seamless, with no visible editing marks.
+
+Preserve all facial details from Photo 2 — skin texture, pores, natural shadows, expression, and proportions. Match the lighting direction, color temperature, and shadow softness to the scene in Photo 1 so the face blends perfectly with the body.
+
+The image must look like it was taken with an iPhone 16 front camera. Maintain realistic smartphone sharpness, natural skin tones, subtle dynamic range, and slight front-camera depth characteristics. Do not over-smooth the skin. Keep natural imperfections for authenticity.
+
+Style: TikTok UGC influencer content.
+Framing: vertical 9:16.
+Camera: fixed, eye-level selfie angle, slightly below eye line.
+Lighting: natural daylight, soft shadows, realistic exposure.
+Overall result must look like a normal influencer selfie video frame — completely realistic, unedited, and organic.`;
+
+  // Clean version for gallery (no COMO USAR annotation)
+  const TRYON_FACESWAP_CLEAN = TRYON_FACESWAP_PROMPT.split('──────────────────────────────────────────\n\n')[1] || TRYON_FACESWAP_PROMPT;
+
+  function buildTryonFullGalleryContent(data) {
+    const parts = [];
+    // Fixed sections 0-5 (matched to sectionLabels in gallery modal)
+    if (data.char_sheet_prompt)  parts.push(data.char_sheet_prompt);
+    if (data.start_frame_prompt) parts.push(data.start_frame_prompt);
+    parts.push(`🏠 Ambiente: ${data.environment}`);
+    parts.push(`👤 Personagem: ${data.char_description}`);
+    parts.push(`👗 Outfit: ${data.outfit_detected || ''}`);
+    parts.push(TRYON_FACESWAP_CLEAN);
+    // Dynamic sections 6+: selected colors
+    TRYON_COLORS.forEach(color => {
+      if (!_tryonSelectedColors.has(color.slug)) return;
+      const jsonStr = buildNanoBananaJSON(data, color.slug);
+      parts.push(`📸 Nano Banana JSON — ${color.label}:\n${jsonStr}`);
+    });
+    // 9 Kling takes
+    KLING_TAKES.forEach(t => {
+      parts.push(`🎬 Take #${t.num} — ${t.uso}:\n${t.prompt}`);
+    });
+    // 3 CTAs
+    CTA_TAKES.forEach(t => {
+      parts.push(`🛒 ${t.num} — ${t.uso}:\n${t.prompt}`);
+    });
+    return parts.join('\n\n---\n\n');
+  }
+
+  function renderTryonResults(data) {
+    _tryonCharData = data;
+
+    const csEl = document.getElementById('cardTryonCharSheet');
+    if (csEl && data.char_sheet_prompt) {
+      csEl.style.display = 'block';
+      _stored['_tryon_char_sheet'] = data.char_sheet_prompt;
+      csEl.innerHTML = makeCard('Character Sheet (Nano Banana — 5 views)', '📋', data.char_sheet_prompt, '_tryon_char_sheet', 0);
+    }
+    const sfEl = document.getElementById('cardTryonStartFrame');
+    if (sfEl && data.start_frame_prompt) {
+      sfEl.style.display = 'block';
+      _stored['_tryon_start_frame'] = data.start_frame_prompt;
+      sfEl.innerHTML = makeCard('Start Frame (Nano Banana — outfit original)', '🖼️', data.start_frame_prompt, '_tryon_start_frame', 1);
+    }
+    const fsEl = document.getElementById('cardTryonFaceSwap');
+    if (fsEl) {
+      fsEl.style.display = 'block';
+      _stored['_tryon_faceswap'] = TRYON_FACESWAP_PROMPT;
+      fsEl.innerHTML = makeCard('Face Swap — Troca de Rosto', '🎭', TRYON_FACESWAP_PROMPT, '_tryon_faceswap', 0);
+    }
+
+    const envEl = document.getElementById('cardTryonEnv');
+    if (envEl && data.environment) {
+      envEl.style.display = 'block';
+      const safeEnv = data.environment.replace(/</g,'&lt;');
+      envEl.innerHTML = `
+        <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:10.5px;line-height:1.7;color:rgba(255,255,255,0.55);margin-bottom:6px;">
+          <span style="color:var(--orange);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px;">🏠 Ambiente gerado (São Paulo)</span>
+          ${safeEnv}
+        </div>`;
+    }
+    const colorSec = document.getElementById('cardTryonColorSection');
+    if (colorSec) { colorSec.style.display = 'block'; renderTryonColorCards(); }
+    const klingSec = document.getElementById('cardTryonKlingSection');
+    if (klingSec) { klingSec.style.display = 'block'; renderTryonKlingCards(); }
+    const ctaSec = document.getElementById('cardTryonCTASection');
+    if (ctaSec) { ctaSec.style.display = 'block'; renderTryonCTACards(); }
   }
 
   // Init batch slots
