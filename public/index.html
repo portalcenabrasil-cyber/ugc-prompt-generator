@@ -2941,10 +2941,6 @@
   }
 
   function showApp(user) {
-    if (user.is_admin) {
-      window.location.href = '/admin';
-      return;
-    }
     try {
       const overlay = document.getElementById('authOverlay');
       overlay.classList.add('hidden');
@@ -3138,6 +3134,10 @@
   }
 
   function toggleProfilePage() {
+    if (_authUser && (_authUser.is_admin || _authUser.plan === 'admin')) {
+      window.location.href = '/admin';
+      return;
+    }
     const page = document.getElementById('profilePage');
     const hero = document.querySelector('.hero');
     const main = document.querySelector('.main-frame');
