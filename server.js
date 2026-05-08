@@ -1226,7 +1226,11 @@ app.post('/api/auth/register', requireSupabase, async (req, res) => {
     { id: user.id, email: user.email, is_admin: user.is_admin },
     JWT_SECRET, { expiresIn: '30d' }
   );
-  res.json({ token, user: { id: user.id, email: user.email, is_admin: user.is_admin, name: user.name, prompts_count: user.prompts_count || 0, tokens_used: user.tokens_used || 0 } });
+  res.json({ token, user: {
+    id: user.id, email: user.email, is_admin: user.is_admin, name: user.name,
+    prompts_count: user.prompts_count || 0, tokens_used: user.tokens_used || 0,
+    plan: 'free', plan_active: false, generations_used: 0, generations_limit: 0,
+  } });
 });
 
 app.post('/api/auth/login', requireSupabase, async (req, res) => {
@@ -1235,7 +1239,7 @@ app.post('/api/auth/login', requireSupabase, async (req, res) => {
 
   const { data: user } = await supabase
     .from('users')
-    .select('id, email, password_hash, is_admin, name, prompts_count, tokens_used')
+    .select('id, email, password_hash, is_admin, name, prompts_count, tokens_used, plan, plan_active, generations_used, generations_limit')
     .eq('email', email.toLowerCase())
     .maybeSingle();
 
@@ -1248,7 +1252,14 @@ app.post('/api/auth/login', requireSupabase, async (req, res) => {
     { id: user.id, email: user.email, is_admin: user.is_admin },
     JWT_SECRET, { expiresIn: '30d' }
   );
-  res.json({ token, user: { id: user.id, email: user.email, is_admin: user.is_admin, name: user.name, prompts_count: user.prompts_count || 0, tokens_used: user.tokens_used || 0 } });
+  res.json({ token, user: {
+    id: user.id, email: user.email, is_admin: user.is_admin, name: user.name,
+    prompts_count: user.prompts_count || 0, tokens_used: user.tokens_used || 0,
+    plan: user.plan || 'free',
+    plan_active: user.plan_active || false,
+    generations_used: user.generations_used || 0,
+    generations_limit: user.generations_limit || 0,
+  } });
 });
 
 app.get('/api/auth/me', requireSupabase, requireAuth, async (req, res) => {
