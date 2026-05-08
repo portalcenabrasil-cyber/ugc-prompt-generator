@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon --watch server.js --watch lib --watch PROMPT*.md --ext js,md server.js",
     "migrate": "node scripts/migrate.js",
-    "migrate:down": "node scripts/migrate.js down"
+    "migrate:down": "node scripts/migrate.js down",
+    "build:admin": "cd admin && npm run build",
+    "dev:admin": "cd admin && npm run dev"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",

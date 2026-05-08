@@ -2568,6 +2568,11 @@ app.get('/api/health', async (req, res) => {
 // ── ADMIN ENDPOINTS ──
 app.use('/api/admin', require('./routes/admin')(supabase));
 
+// ── ADMIN SPA ──
+// Serve public/admin/index.html para qualquer rota /admin/* (SPA routing)
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin/index.html')));
+app.get('/admin/*', (req, res) => res.sendFile(path.join(__dirname, 'public/admin/index.html')));
+
 // ── TRACKER ──
 // POST /tracker — recebe PageView e eventos customizados do frontend.
 // Fire-and-forget: responde 204 imediatamente, grava em background.
