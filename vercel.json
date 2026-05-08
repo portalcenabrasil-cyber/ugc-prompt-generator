@@ -20,6 +20,7 @@
           "personagens-donas-casa/**",
           "frases-nichos/**",
           "PROMPT-base-v2.md",
+          "PROMPT-tryon.md",
           "biblioteca/**"
         ]
       }
