@@ -5846,9 +5846,18 @@
     updateTryonColorCount();
   }
 
+  const MAX_TRYON_COLORS = 5;
+
   function toggleTryonColor(slug) {
-    if (_tryonSelectedColors.has(slug)) _tryonSelectedColors.delete(slug);
-    else _tryonSelectedColors.add(slug);
+    if (_tryonSelectedColors.has(slug)) {
+      _tryonSelectedColors.delete(slug);
+    } else {
+      if (_tryonSelectedColors.size >= MAX_TRYON_COLORS) {
+        updateTryonColorCount(); // garante aviso visível
+        return;
+      }
+      _tryonSelectedColors.add(slug);
+    }
     const btn = document.getElementById('tc-' + slug);
     if (btn) btn.classList.toggle('active', _tryonSelectedColors.has(slug));
     updateTryonColorCount();
@@ -5856,8 +5865,14 @@
   }
 
   function tryonSelectAllColors() {
-    TRYON_COLORS.forEach(c => _tryonSelectedColors.add(c.slug));
-    document.querySelectorAll('.tryon-color-btn').forEach(b => b.classList.add('active'));
+    _tryonSelectedColors.clear();
+    let added = 0;
+    TRYON_COLORS.forEach(c => {
+      if (added < MAX_TRYON_COLORS) { _tryonSelectedColors.add(c.slug); added++; }
+    });
+    document.querySelectorAll('.tryon-color-btn').forEach(b => {
+      b.classList.toggle('active', _tryonSelectedColors.has(b.dataset.slug));
+    });
     updateTryonColorCount();
     if (_tryonCharData) renderTryonColorCards();
   }
@@ -5885,9 +5900,17 @@
     const el = document.getElementById('tryonColorCount');
     if (!el) return;
     const n = _tryonSelectedColors.size;
-    el.textContent = n > 0 ? `— ${n} cor${n > 1 ? 'es' : ''}` : '';
+    const atLimit = n >= MAX_TRYON_COLORS;
+    el.textContent = n > 0 ? `— ${n}/${MAX_TRYON_COLORS} cor${n > 1 ? 'es' : ''}` : '';
+    el.style.color = atLimit ? 'var(--red, #f44336)' : 'var(--orange)';
+    // Desabilita visualmente os botões não selecionados quando no limite
+    document.querySelectorAll('.tryon-color-btn').forEach(b => {
+      const isActive = _tryonSelectedColors.has(b.dataset.slug);
+      b.style.opacity = (atLimit && !isActive) ? '0.3' : '';
+      b.style.pointerEvents = (atLimit && !isActive) ? 'none' : '';
+    });
     const sCount = document.getElementById('tryonColorSectionCount');
-    if (sCount) sCount.textContent = n > 0 ? `${n} cor${n > 1 ? 'es' : ''} selecionada${n > 1 ? 's' : ''}` : 'nenhuma cor selecionada';
+    if (sCount) sCount.textContent = n > 0 ? `${n}/${MAX_TRYON_COLORS} cor${n > 1 ? 'es' : ''} selecionada${n > 1 ? 's' : ''}` : 'nenhuma cor selecionada';
   }
 
   function buildNanoBananaJSON(charData, colorSlug) {
