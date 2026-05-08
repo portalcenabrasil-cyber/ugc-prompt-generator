@@ -2218,9 +2218,9 @@
               <button class="seg-btn" data-value="base-v2" onclick="selectSeg(this,'styleGroup');onStyleChange('base-v2')">⚡ Base v2</button>
               <button class="seg-btn" data-value="serie" onclick="selectSeg(this,'styleGroup');onStyleChange('serie')">🛏️ Edredons Premium</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="nano" onclick="selectSeg(this,'styleGroup');onStyleChange('nano')">🎬 Edredom Nano + Vídeos</button>
-              <button class="seg-btn" style="grid-column:span 2" data-value="nano-veo-2" onclick="selectSeg(this,'styleGroup');onStyleChange('nano-veo-2')">🧪 Nano + Vídeos 2</button>
+              <button class="seg-btn" style="grid-column:span 2" data-value="nano-veo-2" onclick="selectSeg(this,'styleGroup');onStyleChange('nano-veo-2')">🎬 Edredom Nano + Vídeos 2</button>
               <button class="seg-btn" style="grid-column:span 2" data-value="roupa-feminina-v2" onclick="selectSeg(this,'styleGroup');onStyleChange('roupa-feminina-v2')">👗 Roupa Feminina</button>
-              <button class="seg-btn" style="grid-column:span 2" data-value="tryon-haul" onclick="selectSeg(this,'styleGroup');onStyleChange('tryon-haul')">🎬 Try-On Haul</button>
+              <button class="seg-btn" style="grid-column:span 2" data-value="tryon-haul" onclick="selectSeg(this,'styleGroup');onStyleChange('tryon-haul')">👗 Roupa Feminina 2</button>
               <button class="seg-btn seg-btn--soon" style="grid-column:span 2" data-value="cinematografico" disabled>🎬 Cinematográfico <span class="soon-badge">em breve</span></button>
             </div>
 
@@ -3044,7 +3044,7 @@
 
     // Saudação dinâmica
     const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+    const greeting = hour >= 6 && hour < 13 ? 'Bom dia' : hour >= 13 && hour < 18 ? 'Boa tarde' : 'Boa noite';
     const displayName = (user.name || user.email || '').split(' ')[0];
     document.getElementById('profileGreeting').textContent = `${greeting}, ${displayName} 👋`;
 
@@ -3276,7 +3276,8 @@
   let currentMode = 'single'; // 'single' | 'batch'
 
   // Batch state: array of { dataUrl, base64, type, name, price }
-  const BATCH_MAX = 20;
+  const BATCH_MAX_BY_STYLE = { base: 20, 'base-v2': 10, serie: 5, nano: 5, 'nano-veo-2': 5, 'roupa-feminina-v2': 5, 'tryon-haul': 5 };
+  function getBatchMax() { return BATCH_MAX_BY_STYLE[getSelected('styleGroup') || 'base'] || 20; }
   let batchItems = new Array(5).fill(null);
   let _batchPrevCount = 5;
 
@@ -3416,6 +3417,7 @@
     }
 
     // Botão + (some ao atingir o limite)
+    const BATCH_MAX = getBatchMax();
     if (total < BATCH_MAX) {
       const addBtn = document.createElement('div');
       addBtn.className = 'batch-slot batch-slot-add';
@@ -3440,7 +3442,7 @@
   }
 
   function addBatchSlot() {
-    if (batchItems.length >= BATCH_MAX) return;
+    if (batchItems.length >= getBatchMax()) return;
     _batchPrevCount = batchItems.length;
     batchItems.push(null);
     renderBatchSlots();
@@ -3509,7 +3511,8 @@
     // Slots vazios existentes
     let emptySlots = batchItems.reduce((acc, v, i) => { if (!v) acc.push(i); return acc; }, []);
 
-    // Expandir batchItems se precisar (até BATCH_MAX)
+    // Expandir batchItems se precisar (até limite do estilo)
+    const BATCH_MAX = getBatchMax();
     let toLoad = imgs;
     if (toLoad.length > emptySlots.length) {
       const canAdd = BATCH_MAX - batchItems.length;
@@ -3521,7 +3524,7 @@
     const skipped = toLoad.length - emptySlots.length;
     if (skipped > 0) {
       toLoad = toLoad.slice(0, emptySlots.length);
-      showBatchToast(`Máximo 20 produtos por lote. ${skipped} arquivo(s) ignorado(s).`);
+      showBatchToast(`Máximo ${BATCH_MAX} produtos por lote neste estilo. ${skipped} arquivo(s) ignorado(s).`);
     }
 
     let loaded = 0;
@@ -3602,6 +3605,13 @@
   };
 
   function onStyleChange(style) {
+    // Truncar slots de lote ao limite do novo estilo
+    const newMax = BATCH_MAX_BY_STYLE[style] || 20;
+    if (batchItems.length > newMax) {
+      batchItems = batchItems.slice(0, newMax);
+      if (currentMode === 'batch') renderBatchSlots();
+    }
+
     const field    = document.getElementById('durationField');
     const group    = document.getElementById('durationGroup');
     const refField = document.getElementById('referenceModelField');
