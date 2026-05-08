@@ -2565,6 +2565,9 @@ app.get('/api/health', async (req, res) => {
   res.status(allOk ? 200 : 503).json({ checks, ts: Date.now() });
 });
 
+// ── ADMIN ENDPOINTS ──
+app.use('/api/admin', require('./routes/admin')(supabase));
+
 // ── TRACKER ──
 // POST /tracker — recebe PageView e eventos customizados do frontend.
 // Fire-and-forget: responde 204 imediatamente, grava em background.
