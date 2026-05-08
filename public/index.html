@@ -2941,6 +2941,10 @@
   }
 
   function showApp(user) {
+    if (user.is_admin) {
+      window.location.href = '/admin';
+      return;
+    }
     try {
       const overlay = document.getElementById('authOverlay');
       overlay.classList.add('hidden');
