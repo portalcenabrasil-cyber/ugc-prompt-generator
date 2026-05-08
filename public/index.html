@@ -2610,9 +2610,9 @@
           <button class="ctrl-btn"        data-days="0"  onclick="setActivityPeriod(this)">Tudo</button>
         </div>
         <div class="ctrl-group" id="metricGroup">
-          <button class="ctrl-btn active" data-metric="cost"    onclick="setActivityMetric(this)">R$ gasto</button>
-          <button class="ctrl-btn"        data-metric="prompts" onclick="setActivityMetric(this)">Prompts</button>
-          <button class="ctrl-btn"        data-metric="avg"     onclick="setActivityMetric(this)">Custo médio/prompt</button>
+          <button class="ctrl-btn admin-only-metric" data-metric="cost"    onclick="setActivityMetric(this)">R$ gasto</button>
+          <button class="ctrl-btn active"             data-metric="prompts" onclick="setActivityMetric(this)">Prompts</button>
+          <button class="ctrl-btn admin-only-metric" data-metric="avg"     onclick="setActivityMetric(this)">Custo médio/prompt</button>
         </div>
       </div>
     </div>
@@ -3058,6 +3058,17 @@
     // Altera label do card de saldo conforme papel
     const saldoLabel = document.getElementById('statSaldoLabel');
     if (saldoLabel) saldoLabel.textContent = user.is_admin ? 'Total Gasto' : 'Créditos Restantes';
+
+    // Esconde botões de métrica de custo para não-admin; força métrica "prompts"
+    document.querySelectorAll('.admin-only-metric').forEach(b => {
+      b.style.display = user.is_admin ? '' : 'none';
+    });
+    if (!user.is_admin) {
+      _activityMetric = 'prompts';
+      document.querySelectorAll('#metricGroup .ctrl-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.metric === 'prompts');
+      });
+    }
 
     // Stat cards em loading
     ['statPrompts','statTokens','statSaldo'].forEach(id => {
@@ -5340,7 +5351,8 @@
       const todaySpent = todayItems.reduce((s, it) => s + (it.cost?.total_cost || 0), 0) * BRL_RATE;
       sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''} · <strong>R$\u00a0${todaySpent.toFixed(2).replace('.',',')}</strong> gastos`;
     } else {
-      sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''}`;
+      const creditWord = todayCount !== 1 ? 'créditos' : 'crédito';
+      sumEl.innerHTML = `Hoje: <strong>${todayCount}</strong> prompt${todayCount !== 1 ? 's' : ''} gerado${todayCount !== 1 ? 's' : ''} · <strong>${todayCount}</strong> ${creditWord} usado${todayCount !== 1 ? 's' : ''}`;
     }
 
     // ── Totais all-time ──
@@ -5558,11 +5570,22 @@
       renderActivityChart(_activityData, _activityMetric);
 
       // Summary bar
-      const totalR = (data.total_cost_usd || 0) * BRL_RATE;
-      summary.innerHTML = `
-        <span class="activity-sum-item">Prompts: <strong>${(data.total_prompts || 0).toLocaleString('pt-BR')}</strong></span>
-        <span class="activity-sum-item">Gasto: <strong>R$\u00a0${totalR.toFixed(2).replace('.', ',')}</strong></span>
-        <span class="activity-sum-item" style="color:var(--text-muted);font-size:9.5px;">≈ $${(data.total_cost_usd||0).toFixed(4)} USD · câmbio R$${BRL_RATE.toFixed(2)}</span>`;
+      if (isAdmin()) {
+        const totalR = (data.total_cost_usd || 0) * BRL_RATE;
+        summary.innerHTML = `
+          <span class="activity-sum-item">Prompts: <strong>${(data.total_prompts || 0).toLocaleString('pt-BR')}</strong></span>
+          <span class="activity-sum-item">Gasto: <strong>R$\u00a0${totalR.toFixed(2).replace('.', ',')}</strong></span>
+          <span class="activity-sum-item" style="color:var(--text-muted);font-size:9.5px;">≈ $${(data.total_cost_usd||0).toFixed(4)} USD · câmbio R$${BRL_RATE.toFixed(2)}</span>`;
+      } else {
+        const totalPrompts = data.total_prompts || 0;
+        const used  = _authUser?.generations_used  || 0;
+        const limit = _authUser?.generations_limit || 0;
+        const remaining = Math.max(0, limit - used);
+        summary.innerHTML = `
+          <span class="activity-sum-item">Prompts gerados: <strong>${totalPrompts.toLocaleString('pt-BR')}</strong></span>
+          <span class="activity-sum-item">Créditos usados: <strong>${used.toLocaleString('pt-BR')}</strong></span>
+          <span class="activity-sum-item" style="color:var(--orange)">Restantes: <strong>${remaining.toLocaleString('pt-BR')}</strong> de ${limit}</span>`;
+      }
     } catch (e) {
       wrap.innerHTML = '<div class="activity-empty">Erro de conexão.</div>';
     }
