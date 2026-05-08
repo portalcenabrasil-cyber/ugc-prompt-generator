@@ -105,7 +105,10 @@
       "Bash(python -c ':*)",
       "Bash(taskkill:*)",
       "Bash(echo \"PID=$!\")",
-      "Bash(kill 1137)"
+      "Bash(kill 1137)",
+      "Bash(npm run:*)",
+      "Bash(node_modules/.bin/tsc -b)",
+      "Bash(node_modules/.bin/vite build:*)"
     ]
   }
 }

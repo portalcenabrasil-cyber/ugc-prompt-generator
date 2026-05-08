@@ -1,14 +1,926 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin — UGC Prompt Generator</title>
-    <meta name="robots" content="noindex, nofollow" />
-    <script type="module" crossorigin src="/admin/assets/index-Jibm1fWY.js"></script>
-    <link rel="stylesheet" crossorigin href="/admin/assets/index-D_wKPzxe.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — UGC Prompt Generator</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    /* ── Reset & Tokens ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --side-w: 64px;
+      --m-bg:   #0f1117;
+      --m-surf: #1a1d27;
+      --m-card: #20242f;
+      --m-brd:  #2a2e3d;
+      --m-text: #e2e8f0;
+      --m-mute: #8892a4;
+      --m-acc:  #6366f1;
+      --m-acc2: #818cf8;
+      --m-grn:  #22c55e;
+      --m-red:  #ef4444;
+      --m-ylw:  #f59e0b;
+      --m-blu:  #3b82f6;
+      --m-rad:  10px;
+      --m-shad: 0 2px 16px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+    [data-theme="light"] {
+      --m-bg:   #f1f5f9;
+      --m-surf: #ffffff;
+      --m-card: #f8fafc;
+      --m-brd:  #e2e8f0;
+      --m-text: #1e293b;
+      --m-mute: #64748b;
+      color-scheme: light;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--m-bg);
+      color: var(--m-text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ── */
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .side {
+      width: var(--side-w);
+      min-height: 100vh;
+      background: var(--m-surf);
+      border-right: 1px solid var(--m-brd);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      flex-shrink: 0;
+    }
+    .side-logo {
+      width: 36px; height: 36px;
+      background: var(--m-acc);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; color: #fff;
+      margin-bottom: 24px;
+    }
+    .side-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; width: 100%; padding: 0 8px; }
+    .side-item {
+      width: 100%; height: 44px;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--m-mute);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
+      text-decoration: none;
+      position: relative;
+    }
+    .side-item:hover { background: var(--m-brd); color: var(--m-text); }
+    .side-item.active { background: rgba(99,102,241,.15); color: var(--m-acc2); }
+    .side-item svg { width: 20px; height: 20px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+    .side-bottom { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0 8px; }
+
+    /* ── Main ── */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 56px; background: var(--m-surf); border-bottom: 1px solid var(--m-brd);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; position: sticky; top: 0; z-index: 10;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: 16px; font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--m-acc); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .email-chip { font-size: 12px; color: var(--m-mute); }
+
+    /* ── Page ── */
+    .page { display: none; padding: 24px; flex-direction: column; gap: 20px; }
+    .page.active { display: flex; }
+
+    /* ── Section titles ── */
+    .section-title { font-size: 13px; font-weight: 600; color: var(--m-mute); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+
+    /* ── KPI Grid ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .kpi {
+      background: var(--m-card); border: 1px solid var(--m-brd); border-radius: var(--m-rad);
+      padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .kpi-label { font-size: 12px; color: var(--m-mute); font-weight: 500; }
+    .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
+    .kpi-sub { font-size: 11px; color: var(--m-mute); }
+    .kpi-icon { font-size: 20px; margin-bottom: 4px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--m-card); border: 1px solid var(--m-brd);
+      border-radius: var(--m-rad); padding: 20px;
+    }
+    .card-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+
+    /* ── Grid 2col ── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    @media (max-width: 1100px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 700px) { .grid3 { grid-template-columns: 1fr; } }
+
+    /* ── Bar chart ── */
+    .bar-list { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; flex-direction: column; gap: 4px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 12px; }
+    .bar-label span:last-child { color: var(--m-mute); }
+    .bar-track { height: 6px; background: var(--m-brd); border-radius: 9px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 9px; background: var(--m-acc); transition: width .4s; }
+
+    /* ── SVG Line Chart ── */
+    .chart-wrap { overflow: hidden; }
+    .chart-wrap svg { width: 100%; display: block; }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--m-mute); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--m-brd); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+    [data-theme="light"] td { border-bottom-color: var(--m-brd); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(99,102,241,.05); }
+
+    /* ── Pills ── */
+    .pill {
+      display: inline-flex; align-items: center; padding: 2px 8px;
+      border-radius: 99px; font-size: 11px; font-weight: 600;
+    }
+    .pill-grn { background: rgba(34,197,94,.15); color: #4ade80; }
+    .pill-ylw { background: rgba(245,158,11,.15); color: #fbbf24; }
+    .pill-red { background: rgba(239,68,68,.15); color: #f87171; }
+    .pill-blu { background: rgba(59,130,246,.15); color: #60a5fa; }
+    .pill-mute{ background: rgba(100,116,139,.15); color: var(--m-mute); }
+
+    /* ── Presence dots ── */
+    .presence-list { display: flex; flex-direction: column; gap: 10px; }
+    .presence-row { display: flex; align-items: center; gap: 10px; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--m-grn); flex-shrink: 0; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+    .presence-email { font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .presence-page { font-size: 11px; color: var(--m-mute); text-align: right; flex-shrink: 0; }
+
+    /* ── Funnel ── */
+    .funnel { display: flex; flex-direction: column; gap: 6px; }
+    .funnel-step {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--m-surf); border-radius: 6px; padding: 8px 12px;
+    }
+    .funnel-bar-wrap { flex: 1; height: 8px; background: var(--m-brd); border-radius: 9px; overflow: hidden; }
+    .funnel-bar { height: 100%; border-radius: 9px; background: var(--m-acc); }
+    .funnel-label { font-size: 12px; width: 110px; color: var(--m-mute); }
+    .funnel-val { font-size: 13px; font-weight: 600; width: 50px; text-align: right; }
+
+    /* ── Filters ── */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .filter-input, .filter-select {
+      background: var(--m-surf); border: 1px solid var(--m-brd); color: var(--m-text);
+      border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none;
+    }
+    .filter-input:focus, .filter-select:focus { border-color: var(--m-acc); }
+    .filter-input { min-width: 220px; }
+
+    /* ── Banner / Alert ── */
+    .banner {
+      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3);
+      border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #fbbf24;
+    }
+
+    /* ── Loading skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--m-brd) 25%, var(--m-brd) 50%, var(--m-brd) 75%);
+      border-radius: 4px; animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer { 0%{opacity:.5} 50%{opacity:1} 100%{opacity:.5} }
+    .sk-kpi { height: 80px; }
+    .sk-row { height: 18px; margin-bottom: 8px; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--m-brd); border-radius: 9px; }
+
+    /* ── Misc ── */
+    .empty { text-align: center; color: var(--m-mute); padding: 32px; font-size: 13px; }
+    .mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; }
+    .text-grn { color: var(--m-grn); }
+    .text-red { color: var(--m-red); }
+    .text-mute { color: var(--m-mute); }
+    .fw6 { font-weight: 600; }
+    .gap-top { margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="side-logo">U</div>
+    <nav class="side-nav">
+      <button class="side-item active" data-page="dashboard" title="Dashboard" onclick="navigate('dashboard',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
+      <button class="side-item" data-page="sales" title="Vendas" onclick="navigate('sales',this)">
+        <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </button>
+      <button class="side-item" data-page="users" title="Usuários" onclick="navigate('users',this)">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+      <button class="side-item" data-page="costs" title="Custos API" onclick="navigate('costs',this)">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+      </button>
+    </nav>
+    <div class="side-bottom">
+      <button class="side-item" title="Alternar tema" onclick="toggleTheme()">
+        <svg id="icon-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button class="side-item" title="Sair" onclick="logout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <div class="topbar-right">
+        <span class="email-chip" id="user-email"></span>
+        <div class="avatar" id="user-avatar">A</div>
+      </div>
+    </div>
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- KPIs -->
+      <div>
+        <div class="section-title">Visão geral</div>
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi skeleton sk-kpi"></div>
+          <div class="kpi skeleton sk-kpi"></div>
+          <div class="kpi skeleton sk-kpi"></div>
+          <div class="kpi skeleton sk-kpi"></div>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div id="banner-wrap"></div>
+
+      <!-- Chart + Presence -->
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Receita 30 dias</div>
+          <div class="chart-wrap" id="revenue-chart"><div class="skeleton" style="height:120px"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" id="presence-title">Online agora — <span id="online-count">…</span></div>
+          <div class="presence-list" id="presence-list">
+            <div class="skeleton sk-row" style="width:80%"></div>
+            <div class="skeleton sk-row" style="width:60%"></div>
+            <div class="skeleton sk-row" style="width:70%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Funnel + Bars -->
+      <div class="grid3">
+        <div class="card">
+          <div class="card-title">Funil de conversão</div>
+          <div class="funnel" id="funnel-wrap">
+            <div class="skeleton sk-row"></div>
+            <div class="skeleton sk-row"></div>
+            <div class="skeleton sk-row"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Custo por estilo</div>
+          <div class="bar-list" id="style-bars">
+            <div class="skeleton sk-row"></div>
+            <div class="skeleton sk-row"></div>
+            <div class="skeleton sk-row"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Custo por modelo</div>
+          <div class="bar-list" id="model-bars">
+            <div class="skeleton sk-row"></div>
+            <div class="skeleton sk-row"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Last sales -->
+      <div class="card">
+        <div class="card-title">Últimas vendas</div>
+        <div class="tbl-wrap">
+          <table id="dash-sales-table">
+            <thead><tr>
+              <th>Nome</th><th>Email</th><th>Plano</th><th>Valor</th><th>Data</th>
+            </tr></thead>
+            <tbody id="dash-sales-body">
+              <tr><td colspan="5"><div class="skeleton sk-row"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SALES ══ -->
+    <div class="page" id="page-sales">
+      <div>
+        <div class="section-title">Vendas confirmadas</div>
+        <div class="filters">
+          <select class="filter-select" id="sales-days" onchange="loadSales()">
+            <option value="7">Últimos 7 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+          </select>
+          <select class="filter-select" id="sales-plan" onchange="loadSales()">
+            <option value="">Todos os planos</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="agencia">Agência</option>
+          </select>
+        </div>
+      </div>
+      <div class="kpi-grid" id="sales-kpis"></div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Nome</th><th>Email</th><th>Plano</th>
+              <th>Bruto</th><th>Líquido</th><th>Método</th><th>Data</th>
+            </tr></thead>
+            <tbody id="sales-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ USERS ══ -->
+    <div class="page" id="page-users">
+      <div>
+        <div class="section-title">Usuários cadastrados</div>
+        <div class="filters">
+          <input class="filter-input" id="users-search" type="text" placeholder="Buscar por email…" oninput="filterUsers()" />
+          <select class="filter-select" id="users-plan" onchange="filterUsers()">
+            <option value="">Todos os planos</option>
+            <option value="free">Free</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="agencia">Agência</option>
+          </select>
+          <select class="filter-select" id="users-active" onchange="filterUsers()">
+            <option value="">Qualquer status</option>
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Nome</th><th>Email</th><th>Plano</th><th>Status</th>
+              <th>Gerações</th><th>Tokens</th><th>Cadastro</th>
+            </tr></thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+        <div id="users-pagination" style="margin-top:12px;display:flex;gap:8px;align-items:center;"></div>
+      </div>
+    </div>
+
+    <!-- ══ COSTS ══ -->
+    <div class="page" id="page-costs">
+      <div>
+        <div class="section-title">Custos de API Anthropic</div>
+        <div class="filters">
+          <select class="filter-select" id="costs-days" onchange="loadCosts()">
+            <option value="7">Últimos 7 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+          </select>
+        </div>
+      </div>
+      <div class="kpi-grid" id="costs-kpis"></div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Por estilo</div>
+          <div class="bar-list" id="costs-style-bars"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Por modelo</div>
+          <div class="bar-list" id="costs-model-bars"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Estilo</th><th>Modelo</th><th>Tokens (in)</th>
+              <th>Tokens (out)</th><th>USD</th><th>Status</th><th>Data</th>
+            </tr></thead>
+            <tbody id="costs-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .main -->
+</div><!-- .app -->
+
+<script>
+// ══ AUTH ══════════════════════════════════════════════════════════════════════
+const TOKEN_KEY = 'ugc_token';
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+
+function redirectToLogin() {
+  window.location.href = '/?redirect=/admin';
+}
+
+function getUserFromToken(tok) {
+  try {
+    const payload = JSON.parse(atob(tok.split('.')[1]));
+    return payload;
+  } catch { return null; }
+}
+
+function initAuth() {
+  const tok = getToken();
+  if (!tok) return redirectToLogin();
+  const u = getUserFromToken(tok);
+  if (!u) return redirectToLogin();
+
+  const el = document.getElementById('user-email');
+  const av = document.getElementById('user-avatar');
+  if (el) el.textContent = u.email || '';
+  if (av) av.textContent = initials(u.email || u.name || 'A');
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  redirectToLogin();
+}
+
+// ══ HELPERS ══════════════════════════════════════════════════════════════════
+function fmtBRL(n) {
+  if (n == null || isNaN(n)) return '—';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+}
+function fmtUSD(n) {
+  if (n == null || isNaN(n)) return '—';
+  return '$' + (+n).toFixed(4);
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('pt-BR');
+}
+function fmtDateTime(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+function fmtNum(n) {
+  if (n == null) return '—';
+  return new Intl.NumberFormat('pt-BR').format(n);
+}
+function initials(str) {
+  if (!str) return '?';
+  const p = str.split(/[\s@.]+/);
+  return (p[0][0] || '').toUpperCase() + (p[1]?.[0] || '').toUpperCase();
+}
+function planPill(plan, active) {
+  if (!plan || plan === 'free') return `<span class="pill pill-mute">Free</span>`;
+  const map = { starter: 'pill-blu', pro: 'pill-grn', agencia: 'pill-ylw', admin: 'pill-red' };
+  const cls = active === false ? 'pill-mute' : (map[plan] || 'pill-mute');
+  return `<span class="pill ${cls}">${plan.charAt(0).toUpperCase()+plan.slice(1)}</span>`;
+}
+function statusPill(active) {
+  return active
+    ? `<span class="pill pill-grn">Ativo</span>`
+    : `<span class="pill pill-mute">Inativo</span>`;
+}
+
+// ══ FETCH HELPER ═════════════════════════════════════════════════════════════
+async function api(path) {
+  const tok = getToken();
+  if (!tok) { redirectToLogin(); return null; }
+  try {
+    const r = await fetch(path, { headers: { Authorization: 'Bearer ' + tok } });
+    if (r.status === 401 || r.status === 403) { redirectToLogin(); return null; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) {
+    console.error('[api]', path, e.message);
+    return null;
+  }
+}
+
+// ══ NAVIGATION ════════════════════════════════════════════════════════════════
+const PAGE_TITLES = { dashboard: 'Dashboard', sales: 'Vendas', users: 'Usuários', costs: 'Custos API' };
+let _currentPage = 'dashboard';
+
+function navigate(page, btn) {
+  if (_currentPage === page) return;
+  _currentPage = page;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.side-item[data-page]').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('page-' + page)?.classList.add('active');
+  (btn || document.querySelector(`.side-item[data-page="${page}"]`))?.classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
+
+  if (page === 'sales' && !_salesLoaded) loadSales();
+  if (page === 'users' && !_usersLoaded) loadUsers();
+  if (page === 'costs' && !_costsLoaded) loadCosts();
+}
+
+// ══ THEME ════════════════════════════════════════════════════════════════════
+function initTheme() {
+  const saved = localStorage.getItem('admin_theme') || 'dark';
+  applyTheme(saved);
+}
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('admin_theme', t);
+  const icon = document.getElementById('icon-theme');
+  if (!icon) return;
+  if (t === 'light') {
+    icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+  } else {
+    icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+  }
+}
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+// ══ DASHBOARD ════════════════════════════════════════════════════════════════
+async function loadDashboard() {
+  const [kpis, sales, presence, costs, metrics] = await Promise.all([
+    api('/api/admin/kpis'),
+    api('/api/admin/sales?days=30&limit=10'),
+    api('/api/admin/presence'),
+    api('/api/admin/costs?days=30&limit=500'),
+    api('/api/admin/metrics?days=30'),
+  ]);
+
+  renderKPIs(kpis);
+  renderBanner(kpis);
+  renderPresence(presence);
+  renderDashSales(sales?.data || []);
+  renderStyleBars('style-bars', costs?.summary?.by_style || {});
+  renderModelBars('model-bars', costs?.summary?.by_model || {});
+  renderFunnel(kpis, sales);
+  renderChart(metrics?.data || []);
+}
+
+function renderKPIs(d) {
+  const grid = document.getElementById('kpi-grid');
+  if (!grid) return;
+  if (!d) { grid.innerHTML = '<div class="kpi"><div class="kpi-label">Erro ao carregar</div></div>'; return; }
+  const margin = d.revenue.last_30d_brl > 0
+    ? ((d.revenue.last_30d_brl - d.api_costs.last_30d_brl) / d.revenue.last_30d_brl * 100).toFixed(1)
+    : '—';
+  grid.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total de usuários</div>
+      <div class="kpi-value">${fmtNum(d.users.total)}</div>
+      <div class="kpi-sub">${fmtNum(d.users.active_plan)} com plano ativo · ${fmtNum(d.users.free)} free</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label">Receita 30 dias</div>
+      <div class="kpi-value">${fmtBRL(d.revenue.last_30d_brl)}</div>
+      <div class="kpi-sub">MRR estimado: ${fmtBRL(d.revenue.mrr_brl)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">⚙️</div>
+      <div class="kpi-label">Custo API 30 dias</div>
+      <div class="kpi-value">${fmtBRL(d.api_costs.last_30d_brl)}</div>
+      <div class="kpi-sub">${fmtUSD(d.api_costs.last_30d_usd)} · câmbio ${d.rate_usd_brl}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">🟢</div>
+      <div class="kpi-label">Online agora</div>
+      <div class="kpi-value">${d.online_now}</div>
+      <div class="kpi-sub">Margem 30d: ${margin !== '—' ? margin + '%' : '—'}</div>
+    </div>
+  `;
+}
+
+function renderBanner(d) {
+  const wrap = document.getElementById('banner-wrap');
+  if (!wrap || !d) return;
+  const cost = d.api_costs?.last_30d_brl || 0;
+  const rev  = d.revenue?.last_30d_brl || 0;
+  if (cost > 0 && rev > 0 && cost / rev > 0.3) {
+    wrap.innerHTML = `<div class="banner">⚠️ Custo de API representa ${(cost/rev*100).toFixed(1)}% da receita nos últimos 30 dias. Fique de olho na margem.</div>`;
+  } else {
+    wrap.innerHTML = '';
+  }
+}
+
+function renderPresence(d) {
+  const list  = document.getElementById('presence-list');
+  const count = document.getElementById('online-count');
+  if (!list) return;
+  const rows = d?.data || [];
+  if (count) count.textContent = rows.length;
+  if (!rows.length) {
+    list.innerHTML = '<div class="empty">Ninguém online agora</div>';
+    return;
+  }
+  list.innerHTML = rows.slice(0, 8).map(r => `
+    <div class="presence-row">
+      <div class="pulse"></div>
+      <div class="presence-email">${r.email || r.user_id || '—'}</div>
+      <div class="presence-page">${(r.current_page || r.current_action || '').replace(/^\//, '') || '—'}</div>
+    </div>
+  `).join('');
+}
+
+function renderDashSales(rows) {
+  const tbody = document.getElementById('dash-sales-body');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhuma venda recente</td></tr>'; return; }
+  tbody.innerHTML = rows.slice(0, 8).map(r => `
+    <tr>
+      <td class="fw6">${r.name || '—'}</td>
+      <td class="text-mute">${r.email || '—'}</td>
+      <td>${planPill(r.plan, true)}</td>
+      <td class="text-grn fw6">${fmtBRL(r.amount_brl)}</td>
+      <td class="text-mute">${fmtDate(r.paid_at)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderBarList(containerId, obj, fmtFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const entries = Object.entries(obj || {}).sort((a,b) => b[1] - a[1]);
+  if (!entries.length) { el.innerHTML = '<div class="text-mute" style="font-size:13px">Sem dados</div>'; return; }
+  const max = entries[0][1];
+  el.innerHTML = entries.map(([k, v]) => `
+    <div class="bar-row">
+      <div class="bar-label"><span>${k}</span><span>${fmtFn(v)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${max > 0 ? (v/max*100).toFixed(1) : 0}%"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderStyleBars(id, obj) { renderBarList(id, obj, fmtUSD); }
+function renderModelBars(id, obj) { renderBarList(id, obj, fmtUSD); }
+
+function renderFunnel(kpis, sales) {
+  const wrap = document.getElementById('funnel-wrap');
+  if (!wrap) return;
+  const total   = kpis?.users?.total || 0;
+  const active  = kpis?.users?.active_plan || 0;
+  const revenue = sales?.count || 0;
+  const online  = kpis?.online_now || 0;
+  const steps = [
+    { label: 'Cadastrados', val: total },
+    { label: 'Com plano', val: active },
+    { label: 'Vendas 30d', val: revenue },
+    { label: 'Online agora', val: online },
+  ];
+  const max = steps[0].val || 1;
+  wrap.innerHTML = steps.map(s => `
+    <div class="funnel-step">
+      <div class="funnel-label">${s.label}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${(s.val/max*100).toFixed(1)}%"></div></div>
+      <div class="funnel-val">${fmtNum(s.val)}</div>
+    </div>
+  `).join('');
+}
+
+function renderChart(rows) {
+  const wrap = document.getElementById('revenue-chart');
+  if (!wrap) return;
+  const sorted = [...rows].sort((a,b) => a.date < b.date ? -1 : 1);
+  if (!sorted.length) {
+    wrap.innerHTML = '<div class="empty">Sem dados de métricas diárias</div>';
+    return;
+  }
+  const vals = sorted.map(r => parseFloat(r.revenue_brl) || 0);
+  const max  = Math.max(...vals, 1);
+  const W = 400, H = 120, pad = 8;
+  const xs = vals.map((_, i) => pad + (i / Math.max(vals.length-1,1)) * (W - pad*2));
+  const ys = vals.map(v => H - pad - ((v / max) * (H - pad*2)));
+  const pts = xs.map((x,i) => `${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
+  const fill = `${xs[0].toFixed(1)},${H} ` + pts + ` ${xs[xs.length-1].toFixed(1)},${H}`;
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:120px">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6366f1" stop-opacity=".3"/>
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon points="${fill}" fill="url(#cg)"/>
+      <polyline points="${pts}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--m-mute);margin-top:4px">
+      <span>${sorted[0]?.date || ''}</span>
+      <span>${sorted[sorted.length-1]?.date || ''}</span>
+    </div>
+  `;
+}
+
+// ══ SALES PAGE ═══════════════════════════════════════════════════════════════
+let _salesLoaded = false;
+
+async function loadSales() {
+  _salesLoaded = true;
+  const days = document.getElementById('sales-days')?.value || 30;
+  const plan = document.getElementById('sales-plan')?.value || '';
+  const url  = `/api/admin/sales?days=${days}&limit=500${plan ? '&plan='+plan : ''}`;
+  const kpis = document.getElementById('sales-kpis');
+  const body = document.getElementById('sales-body');
+  if (kpis) kpis.innerHTML = '<div class="kpi skeleton sk-kpi"></div><div class="kpi skeleton sk-kpi"></div>';
+  if (body) body.innerHTML = '<tr><td colspan="7"><div class="skeleton sk-row"></div></td></tr>';
+
+  const d = await api(url);
+  if (!d) return;
+
+  const rows = d.data || [];
+  const net  = rows.reduce((s, r) => s + (parseFloat(r.net_brl) || 0), 0);
+
+  if (kpis) kpis.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Vendas no período</div>
+      <div class="kpi-value">${rows.length}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Receita bruta</div>
+      <div class="kpi-value">${fmtBRL(d.total_brl)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Receita líquida</div>
+      <div class="kpi-value">${fmtBRL(net)}</div>
+    </div>
+  `;
+
+  if (!body) return;
+  if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma venda no período</td></tr>'; return; }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td class="fw6">${r.name || '—'}</td>
+      <td class="text-mute">${r.email || '—'}</td>
+      <td>${planPill(r.plan, true)}</td>
+      <td class="text-grn fw6">${fmtBRL(r.amount_brl)}</td>
+      <td class="text-mute">${fmtBRL(r.net_brl)}</td>
+      <td class="text-mute">${r.payment_method || '—'}</td>
+      <td class="text-mute">${fmtDateTime(r.paid_at)}</td>
+    </tr>
+  `).join('');
+}
+
+// ══ USERS PAGE ════════════════════════════════════════════════════════════════
+let _usersLoaded = false;
+let _usersData   = [];
+let _usersPage   = 1;
+const USERS_PER_PAGE = 50;
+
+async function loadUsers() {
+  _usersLoaded = true;
+  const body = document.getElementById('users-body');
+  if (body) body.innerHTML = '<tr><td colspan="7"><div class="skeleton sk-row"></div></td></tr>';
+
+  const d = await api('/api/admin/users?limit=200');
+  if (!d) return;
+  _usersData = d.data || [];
+  _usersPage = 1;
+  renderUsers();
+}
+
+function filterUsers() {
+  _usersPage = 1;
+  renderUsers();
+}
+
+function renderUsers() {
+  const search = (document.getElementById('users-search')?.value || '').toLowerCase();
+  const plan   = document.getElementById('users-plan')?.value || '';
+  const active = document.getElementById('users-active')?.value || '';
+
+  let rows = _usersData;
+  if (search) rows = rows.filter(r => (r.email||'').toLowerCase().includes(search) || (r.name||'').toLowerCase().includes(search));
+  if (plan)   rows = rows.filter(r => r.plan === plan);
+  if (active === 'true')  rows = rows.filter(r => r.plan_active);
+  if (active === 'false') rows = rows.filter(r => !r.plan_active);
+
+  const total = rows.length;
+  const start = (_usersPage - 1) * USERS_PER_PAGE;
+  const page  = rows.slice(start, start + USERS_PER_PAGE);
+
+  const body = document.getElementById('users-body');
+  if (!body) return;
+  if (!page.length) { body.innerHTML = '<tr><td colspan="7" class="empty">Nenhum usuário encontrado</td></tr>'; return; }
+  body.innerHTML = page.map(r => `
+    <tr>
+      <td class="fw6">${r.name || '—'}</td>
+      <td class="text-mute mono">${r.email || '—'}</td>
+      <td>${planPill(r.plan, r.plan_active)}</td>
+      <td>${statusPill(r.plan_active)}</td>
+      <td>${fmtNum(r.generations_used)} / ${fmtNum(r.generations_limit)}</td>
+      <td class="text-mute">${fmtNum(r.tokens_used)}</td>
+      <td class="text-mute">${fmtDate(r.created_at)}</td>
+    </tr>
+  `).join('');
+
+  const pag = document.getElementById('users-pagination');
+  if (pag) {
+    const pages = Math.ceil(total / USERS_PER_PAGE);
+    pag.innerHTML = total > USERS_PER_PAGE
+      ? `<span class="text-mute" style="font-size:12px">${total} usuários</span>
+         ${Array.from({length:pages},(_,i)=>i+1).map(p =>
+           `<button onclick="_usersPage=${p};renderUsers()" style="background:${p===_usersPage?'var(--m-acc)':'var(--m-brd)'};color:${p===_usersPage?'#fff':'var(--m-text)'};border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-size:12px">${p}</button>`
+         ).join('')}`
+      : `<span class="text-mute" style="font-size:12px">${total} usuários</span>`;
+  }
+}
+
+// ══ COSTS PAGE ════════════════════════════════════════════════════════════════
+let _costsLoaded = false;
+
+async function loadCosts() {
+  _costsLoaded = true;
+  const days  = document.getElementById('costs-days')?.value || 30;
+  const kpis  = document.getElementById('costs-kpis');
+  const body  = document.getElementById('costs-body');
+  const sBars = document.getElementById('costs-style-bars');
+  const mBars = document.getElementById('costs-model-bars');
+  if (kpis)  kpis.innerHTML  = '<div class="kpi skeleton sk-kpi"></div>';
+  if (body)  body.innerHTML  = '<tr><td colspan="7"><div class="skeleton sk-row"></div></td></tr>';
+  if (sBars) sBars.innerHTML = '<div class="skeleton sk-row"></div>';
+  if (mBars) mBars.innerHTML = '<div class="skeleton sk-row"></div>';
+
+  const d = await api(`/api/admin/costs?days=${days}&limit=500`);
+  if (!d) return;
+
+  if (kpis) kpis.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Custo total (USD)</div>
+      <div class="kpi-value">${fmtUSD(d.summary.total_usd)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo total (BRL)</div>
+      <div class="kpi-value">${fmtBRL(d.summary.total_brl)}</div>
+      <div class="kpi-sub">Câmbio: ${d.rate_usd_brl}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Chamadas registradas</div>
+      <div class="kpi-value">${fmtNum(d.data?.length || 0)}</div>
+    </div>
+  `;
+
+  renderBarList('costs-style-bars', d.summary.by_style || {}, fmtUSD);
+  renderBarList('costs-model-bars', d.summary.by_model || {}, fmtUSD);
+
+  const rows = d.data || [];
+  if (!body) return;
+  if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="empty">Sem dados no período</td></tr>'; return; }
+  body.innerHTML = rows.slice(0, 200).map(r => `
+    <tr>
+      <td>${r.style || '—'}</td>
+      <td class="mono text-mute">${(r.model||'—').replace('claude-','').replace(/-20\d{6}$/,'')}</td>
+      <td class="text-mute">${fmtNum(r.input_tokens)}</td>
+      <td class="text-mute">${fmtNum(r.output_tokens)}</td>
+      <td class="text-grn">${fmtUSD(r.cost_usd)}</td>
+      <td>${r.status === 'ok' ? '<span class="pill pill-grn">ok</span>' : `<span class="pill pill-red">${r.status||'—'}</span>`}</td>
+      <td class="text-mute">${fmtDateTime(r.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════════════════
+initTheme();
+initAuth();
+loadDashboard();
+</script>
+</body>
 </html>
