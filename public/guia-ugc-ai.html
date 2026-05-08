@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia de Uso — UGC·AI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --orange: #FF6B00;
+    --orange-light: #fff3eb;
+    --dark: #111;
+    --mid: #444;
+    --muted: #888;
+    --border: #e5e5e5;
+    --bg: #fafafa;
+    --white: #fff;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--dark);
+    background: var(--white);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  /* ── CAPA ── */
+  .cover {
+    min-height: 100vh;
+    background: #0d0d0d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    page-break-after: always;
+  }
+
+  .cover-logo {
+    width: 80px; height: 80px;
+    background: var(--orange);
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 32px;
+    box-shadow: 0 0 60px rgba(255,107,0,0.4);
+  }
+
+  .cover h1 {
+    font-size: 48px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+
+  .cover h1 span { color: var(--orange); }
+
+  .cover-sub {
+    font-size: 18px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 48px;
+    max-width: 480px;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,107,0,0.15);
+    border: 1px solid rgba(255,107,0,0.3);
+    color: var(--orange);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .cover-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 60px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 24px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  /* ── LAYOUT INTERNO ── */
+  .page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 48px;
+  }
+
+  /* ── SEÇÃO ── */
+  .section { margin-bottom: 56px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--dark);
+    letter-spacing: -0.5px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 28px 0 10px;
+  }
+
+  p { margin-bottom: 12px; color: var(--mid); }
+
+  strong { color: var(--dark); font-weight: 600; }
+
+  /* ── SUMÁRIO ── */
+  .toc {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 56px;
+  }
+
+  .toc-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--mid);
+  }
+
+  .toc-item:last-child { border-bottom: none; }
+
+  .toc-num {
+    width: 24px; height: 24px;
+    background: var(--orange);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── CARDS DE VERSÃO ── */
+  .version-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .version-card.latest {
+    border-color: rgba(255,107,0,0.3);
+    background: var(--orange-light);
+  }
+
+  .version-card.latest::before {
+    content: 'MAIS RECENTE';
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--orange);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+
+  .version-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .version-icon {
+    font-size: 24px;
+    width: 44px; height: 44px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .version-card.latest .version-icon {
+    background: rgba(255,107,0,0.1);
+    border-color: rgba(255,107,0,0.2);
+  }
+
+  .version-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .version-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-left: 4px;
+  }
+
+  .version-desc {
+    font-size: 13.5px;
+    color: var(--mid);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .version-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.06);
+    color: var(--mid);
+  }
+
+  .tag.orange { background: rgba(255,107,0,0.1); color: var(--orange); }
+  .tag.green  { background: rgba(34,197,94,0.1);  color: #16a34a; }
+  .tag.blue   { background: rgba(59,130,246,0.1);  color: #2563eb; }
+
+  /* ── STEPS ── */
+  .steps { counter-reset: steps; }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 28px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    counter-increment: steps;
+    width: 36px; height: 36px;
+    background: var(--orange);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-num::before { content: counter(steps); }
+
+  .step-body h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 4px;
+  }
+
+  .step-body p { margin: 0; font-size: 13.5px; }
+
+  /* ── DICAS ── */
+  .tip {
+    background: var(--orange-light);
+    border-left: 4px solid var(--orange);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 13.5px;
+    color: var(--dark);
+  }
+
+  .tip strong { color: var(--orange); }
+
+  .warning {
+    background: #fff8e1;
+    border-left: 4px solid #f59e0b;
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 13.5px;
+    color: #78350f;
+  }
+
+  /* ── TABELA ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    color: var(--dark);
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--mid);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  td:first-child { font-weight: 600; color: var(--dark); }
+
+  /* ── INLINE CODE ── */
+  code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: #f0f0f0;
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: #c0392b;
+  }
+
+  /* ── DIVISOR DE PÁGINA ── */
+  .page-break { page-break-before: always; }
+
+  /* ── RODAPÉ ── */
+  .footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .footer strong { color: var(--orange); }
+
+  /* ── PRINT ── */
+  @media print {
+    body { font-size: 12px; }
+    .cover { min-height: 100vh; }
+    .page { padding: 40px 48px; }
+    h2 { font-size: 22px; }
+    .version-card { break-inside: avoid; }
+    .step { break-inside: avoid; }
+  }
+
+  /* Botão para imprimir */
+  .print-btn {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255,107,0,0.4);
+    font-family: 'Inter', sans-serif;
+    z-index: 999;
+  }
+
+  @media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">⬇ Salvar como PDF</button>
+
+<!-- ═══════════════════════════════════════════ CAPA -->
+<div class="cover">
+  <div class="cover-badge">Guia Oficial</div>
+  <div class="cover-logo">✦</div>
+  <h1>UGC·<span>AI</span></h1>
+  <p class="cover-sub">Guia completo de uso do gerador de prompts para TikTok Shop Brasil</p>
+  <div class="cover-url">ugc-prompt-generator-six.vercel.app</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ CONTEÚDO -->
+<div class="page">
+
+  <!-- SUMÁRIO -->
+  <div class="toc">
+    <div class="toc-title">Índice</div>
+    <div class="toc-item"><div class="toc-num">1</div> O que é o UGC·AI</div>
+    <div class="toc-item"><div class="toc-num">2</div> Como acessar</div>
+    <div class="toc-item"><div class="toc-num">3</div> Visão geral da tela</div>
+    <div class="toc-item"><div class="toc-num">4</div> Gerando um prompt — passo a passo</div>
+    <div class="toc-item"><div class="toc-num">5</div> Estilos disponíveis (versões)</div>
+    <div class="toc-item"><div class="toc-num">6</div> Modo Lote — gerar vários de uma vez</div>
+    <div class="toc-item"><div class="toc-num">7</div> Galeria — seus prompts salvos</div>
+    <div class="toc-item"><div class="toc-num">8</div> Dicas para melhores resultados</div>
+    <div class="toc-item"><div class="toc-num">9</div> Perguntas frequentes</div>
+  </div>
+
+  <!-- 1. O QUE É -->
+  <div class="section">
+    <div class="section-label">Seção 1</div>
+    <h2>O que é o UGC·AI</h2>
+
+    <p>O <strong>UGC·AI</strong> é uma ferramenta que usa Inteligência Artificial para criar <strong>prompts prontos</strong> de vídeo e imagem no estilo UGC (User Generated Content) — aquele conteúdo que parece gravado por uma pessoa real, não por uma marca.</p>
+
+    <p>Você envia a foto de um produto, informa o preço e o estilo desejado, e a IA gera automaticamente:</p>
+
+    <table>
+      <tr><th>O que é gerado</th><th>Para que serve</th></tr>
+      <tr><td>Prompt de Vídeo UGC</td><td>Cole no Kling AI, Veo 2, Runway ou similar para gerar o vídeo</td></tr>
+      <tr><td>Prompt de Imagem</td><td>Cole no Nano Banana, Midjourney ou similar para gerar o frame inicial</td></tr>
+      <tr><td>Legenda TikTok</td><td>Texto pronto para publicar junto com o vídeo no TikTok Shop</td></tr>
+      <tr><td>Script falado</td><td>O que a pessoa diz em cada segundo do vídeo (0-2s, 2-4s, 4-6s)</td></tr>
+    </table>
+
+    <div class="tip"><strong>Dica:</strong> O UGC não parece propaganda — parece uma pessoa real recomendando algo que descobriu. É o formato que mais converte no TikTok Shop.</div>
+  </div>
+
+  <!-- 2. COMO ACESSAR -->
+  <div class="section">
+    <div class="section-label">Seção 2</div>
+    <h2>Como acessar</h2>
+
+    <p>O UGC·AI está disponível em:</p>
+
+    <div class="tip" style="font-family:'DM Mono',monospace;font-size:13px;">
+      🌐 <strong>ugc-prompt-generator-six.vercel.app</strong>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Abrir o link no navegador</h4>
+          <p>Recomendado: Google Chrome ou Edge. Funciona em celular e computador.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Fazer login com seu email e senha</h4>
+          <p>Use o email e a senha que você recebeu ao adquirir o plano. Se esqueceu a senha, clique em <strong>"Esqueci minha senha"</strong> na tela de login.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Pronto — você já está dentro</h4>
+          <p>Seu saldo de créditos aparece no perfil (ícone do avatar no canto superior direito).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="warning"><strong>Atenção:</strong> Cada geração consome 1 crédito do seu plano. Você pode ver quantos créditos restam no seu perfil.</div>
+  </div>
+
+  <!-- 3. VISÃO GERAL -->
+  <div class="section page-break">
+    <div class="section-label">Seção 3</div>
+    <h2>Visão geral da tela</h2>
+
+    <table>
+      <tr><th>Área</th><th>O que faz</th></tr>
+      <tr><td>Barra superior</td><td>Acesso ao avatar/perfil, botão de sair</td></tr>
+      <tr><td>⚡ Gerar / 📚 Biblioteca / 🖼 Galeria</td><td>Abas principais — navegação entre as funções</td></tr>
+      <tr><td>Individual / Lote</td><td>Alternar entre gerar 1 produto ou vários de uma vez</td></tr>
+      <tr><td>Estilo</td><td>Escolher o tipo de prompt (Base, Edredons, Roupa Feminina…)</td></tr>
+      <tr><td>Upload de imagem</td><td>Foto do produto a ser analisado pela IA</td></tr>
+      <tr><td>Preço</td><td>Preço do produto (ex: 49,90) — influencia o hook de preço</td></tr>
+      <tr><td>Botão Gerar Prompts</td><td>Inicia a geração — consome 1 crédito</td></tr>
+      <tr><td>Resultado</td><td>Cards com prompt de vídeo, imagem e legenda</td></tr>
+    </table>
+  </div>
+
+  <!-- 4. PASSO A PASSO -->
+  <div class="section">
+    <div class="section-label">Seção 4</div>
+    <h2>Gerando um prompt — passo a passo</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Escolha o estilo</h4>
+          <p>No seletor de estilo, clique no tipo que corresponde ao seu produto. Dica: para produtos genéricos, comece com <strong>⚡ Base</strong> ou <strong>⚡ Base v2</strong>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Faça upload da foto do produto</h4>
+          <p>Clique na área de upload ou arraste a imagem. A IA analisa automaticamente o produto, identifica o público-alvo e cria a persona.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Informe o preço (opcional, mas recomendado)</h4>
+          <p>Digite o preço do produto (só o número, ex: <code>49.90</code>). Isso ativa os ganchos de preço no hook do vídeo.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Clique em "✦ Gerar Prompts com IA"</h4>
+          <p>A IA processa a imagem e gera os prompts em segundos. Aguarde — não feche a aba.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Copie e use os prompts</h4>
+          <p>Cada card tem um botão <strong>⎘ COPIAR</strong>. Cole o prompt no gerador de vídeo ou imagem de sua escolha (Kling AI, Nano Banana, Veo 2…).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip"><strong>Resultado salvo automaticamente:</strong> Todo prompt gerado fica salvo na aba <strong>🖼 Galeria</strong>. Você pode voltar e copiar depois sem precisar gerar novamente.</div>
+  </div>
+
+  <!-- 5. ESTILOS -->
+  <div class="section page-break">
+    <div class="section-label">Seção 5</div>
+    <h2>Estilos disponíveis</h2>
+
+    <p>Cada estilo é otimizado para um tipo de produto e plataforma de geração. <strong>Os estilos mais para baixo na lista são os mais recentes</strong>, mas todos funcionam bem.</p>
+
+    <!-- Base -->
+    <div class="version-card">
+      <div class="version-header">
+        <div class="version-icon">⚡</div>
+        <div>
+          <div class="version-name">Base <span class="version-badge">v1</span></div>
+        </div>
+      </div>
+      <div class="version-desc">
+        O estilo original e mais versátil. Gera um prompt de vídeo UGC de 6 segundos com hook, produto e CTA, além da legenda para o TikTok. Funciona para qualquer tipo de produto.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Qualquer produto</span>
+        <span class="tag orange">Lote: até 20</span>
+        <span class="tag">Kling AI · Veo 2</span>
+      </div>
+    </div>
+
+    <!-- Base v2 -->
+    <div class="version-card">
+      <div class="version-header">
+        <div class="version-icon">⚡</div>
+        <div>
+          <div class="version-name">Base v2 <span class="version-badge">RECOMENDADO</span></div>
+        </div>
+      </div>
+      <div class="version-desc">
+        Versão evoluída do Base. Gera <strong>character sheet</strong> (personagem consistente), <strong>start frame</strong> para Nano Banana, dois <strong>prompts de vídeo de 8s</strong> (principal + continuação) e legendas com variações. Qualidade superior ao Base v1.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Qualquer produto</span>
+        <span class="tag orange">Lote: até 10</span>
+        <span class="tag green">Nano Banana · Kling AI</span>
+        <span class="tag blue">Character Sheet</span>
+      </div>
+    </div>
+
+    <!-- Edredons Premium -->
+    <div class="version-card">
+      <div class="version-header">
+        <div class="version-icon">🛏️</div>
+        <div>
+          <div class="version-name">Edredons Premium</div>
+        </div>
+      </div>
+      <div class="version-desc">
+        Especializado em kits de cama, edredons e produtos têxteis premium. Gera múltiplas cenas com diferentes ângulos e ambientes (quarto caseiro, unboxing, close no tecido). Inclui character sheet e cenas numeradas.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Cama · Têxtil · Kit</span>
+        <span class="tag orange">Lote: até 5</span>
+        <span class="tag">Kling AI · Veo 2</span>
+      </div>
+    </div>
+
+    <!-- Nano + Vídeos -->
+    <div class="version-card">
+      <div class="version-header">
+        <div class="version-icon">🎬</div>
+        <div>
+          <div class="version-name">Edredom Nano + Vídeos</div>
+        </div>
+      </div>
+      <div class="version-desc">
+        Gera character sheet + até 5 cenas completas em formato <strong>blob único</strong> para o Nano Banana — cada cena já vem com o prompt de imagem E o prompt de vídeo juntos. Ideal para quem usa Nano Banana como ferramenta principal.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Edredons · Cama</span>
+        <span class="tag orange">Lote: até 5</span>
+        <span class="tag green">Nano Banana (blob único)</span>
+      </div>
+    </div>
+
+    <!-- Nano + Vídeos 2 -->
+    <div class="version-card latest">
+      <div class="version-header">
+        <div class="version-icon">🎬</div>
+        <div>
+          <div class="version-name">Edredom Nano + Vídeos 2</div>
+        </div>
+      </div>
+      <div class="version-desc">
+        Evolução do estilo anterior. Gera as cenas em <strong>cards separados</strong> (imagem e vídeo em cards distintos), facilitando copiar cada parte individualmente. Mais flexível para quem usa Nano Banana e Kling AI juntos.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Edredons · Cama</span>
+        <span class="tag orange">Lote: até 5</span>
+        <span class="tag green">Nano Banana · Kling AI</span>
+        <span class="tag blue">Cards separados</span>
+      </div>
+    </div>
+
+    <!-- Roupa Feminina -->
+    <div class="version-card latest">
+      <div class="version-header">
+        <div class="version-icon">👗</div>
+        <div>
+          <div class="version-name">Roupa Feminina</div>
+        </div>
+      </div>
+      <div class="version-desc">
+        Especializado em roupas femininas. Analisa a peça na imagem, cria uma personagem coerente com o estilo da roupa e gera prompts para Kling AI com 3 cenas de vídeo (hook, produto, CTA) além de start frame para Nano Banana. Você pode escolher uma personagem da biblioteca ou enviar uma referência própria.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Moda feminina</span>
+        <span class="tag orange">Lote: até 5</span>
+        <span class="tag green">Nano Banana · Kling AI</span>
+        <span class="tag blue">Biblioteca de personagens</span>
+      </div>
+    </div>
+
+    <!-- Roupa Feminina 2 -->
+    <div class="version-card latest">
+      <div class="version-header">
+        <div class="version-icon">👗</div>
+        <div>
+          <div class="version-name">Roupa Feminina 2 <span class="version-badge">MAIS RECENTE</span></div>
+        </div>
+      </div>
+      <div class="version-desc">
+        A versão mais avançada para moda feminina. Analisa a roupa, cria a personagem, e gera <strong>variações de cor</strong> (até 5 cores diferentes) para o mesmo produto — cada cor gera um prompt diferente. Ideal para produtos com múltiplas opções de cor. Inclui face swap para trocar o rosto da personagem.
+      </div>
+      <div class="version-tags">
+        <span class="tag">Moda feminina</span>
+        <span class="tag orange">Lote: até 5</span>
+        <span class="tag green">Nano Banana · Kling AI</span>
+        <span class="tag blue">Até 5 variações de cor</span>
+        <span class="tag">Face Swap</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. LOTE -->
+  <div class="section page-break">
+    <div class="section-label">Seção 6</div>
+    <h2>Modo Lote — gerar vários de uma vez</h2>
+
+    <p>O Modo Lote permite enviar vários produtos de uma vez e gerar todos os prompts em sequência — sem precisar esperar um de cada vez.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Clique em "📦 Lote" na parte superior</h4>
+          <p>Alterna do modo individual para o modo lote.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Escolha o estilo antes de adicionar fotos</h4>
+          <p>O limite de produtos muda conforme o estilo (veja tabela abaixo). Escolha o estilo primeiro.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Adicione as fotos dos produtos</h4>
+          <p>Clique nos slots ou arraste as imagens. Você pode adicionar o preço em cada slot individualmente.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Clique em "⚡ Gerar Lote"</h4>
+          <p>A IA processa todos os produtos em paralelo. Cada produto consome 1 crédito.</p>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Estilo</th><th>Máximo por lote</th><th>Créditos consumidos</th></tr>
+      <tr><td>⚡ Base</td><td>20 produtos</td><td>1 por produto</td></tr>
+      <tr><td>⚡ Base v2</td><td>10 produtos</td><td>1 por produto</td></tr>
+      <tr><td>🛏️ Edredons Premium</td><td>5 produtos</td><td>1 por produto</td></tr>
+      <tr><td>🎬 Edredom Nano + Vídeos</td><td>5 produtos</td><td>1 por produto</td></tr>
+      <tr><td>🎬 Edredom Nano + Vídeos 2</td><td>5 produtos</td><td>1 por produto</td></tr>
+      <tr><td>👗 Roupa Feminina</td><td>5 produtos</td><td>1 por produto</td></tr>
+      <tr><td>👗 Roupa Feminina 2</td><td>5 produtos</td><td>1 por produto</td></tr>
+    </table>
+
+    <div class="tip"><strong>Dica:</strong> Use o lote para gerar vários produtos de uma vez e ter um estoque de conteúdo pronto para a semana.</div>
+  </div>
+
+  <!-- 7. GALERIA -->
+  <div class="section">
+    <div class="section-label">Seção 7</div>
+    <h2>Galeria — seus prompts salvos</h2>
+
+    <p>Todo prompt gerado é salvo automaticamente na <strong>🖼 Galeria</strong>. Você pode acessar, copiar e reutilizar qualquer prompt a qualquer momento — sem gastar créditos novamente.</p>
+
+    <table>
+      <tr><th>Função</th><th>Como usar</th></tr>
+      <tr><td>Visualizar prompt</td><td>Clique em qualquer card da galeria para abrir os detalhes</td></tr>
+      <tr><td>Copiar prompt</td><td>Botão ⎘ COPIAR dentro do card ou no modal de detalhes</td></tr>
+      <tr><td>Marcar como usado</td><td>Botão "☐ Marcar como usado" — aparece com ✅ nos cards já publicados</td></tr>
+      <tr><td>Gerar novo similar</td><td>Botão "↻ Gerar um novo prompt" dentro do modal — usa 1 crédito</td></tr>
+      <tr><td>Deletar</td><td>Botão 🗑 no modal de detalhes</td></tr>
+    </table>
+
+    <div class="tip"><strong>Dica:</strong> Use a marcação ✅ "Já usado" para controlar quais prompts você já publicou e não repetir conteúdo.</div>
+  </div>
+
+  <!-- 8. DICAS -->
+  <div class="section page-break">
+    <div class="section-label">Seção 8</div>
+    <h2>Dicas para melhores resultados</h2>
+
+    <h3>📸 Sobre a foto do produto</h3>
+    <table>
+      <tr><th>✅ Faça</th><th>❌ Evite</th></tr>
+      <tr><td>Fundo branco ou neutro</td><td>Fundo muito poluído ou escuro</td></tr>
+      <tr><td>Produto centralizado na imagem</td><td>Produto cortado ou fora de quadro</td></tr>
+      <tr><td>Boa iluminação, sem sombra pesada</td><td>Fotos escuras ou desfocadas</td></tr>
+      <tr><td>Foto principal do produto (não modelo)</td><td>Fotos com muitos produtos misturados</td></tr>
+    </table>
+
+    <h3>💰 Sobre o preço</h3>
+    <p>Informar o preço ativa os ganchos de conversão por preço no prompt. A IA cria um hook de "choque de preço" que funciona melhor quando o produto tem desconto visível ou preço atraente.</p>
+
+    <h3>🎯 Qual estilo escolher?</h3>
+    <table>
+      <tr><th>Produto</th><th>Estilo recomendado</th></tr>
+      <tr><td>Qualquer produto genérico</td><td>⚡ Base v2</td></tr>
+      <tr><td>Kit cama, edredom, jogo de lençol</td><td>🎬 Edredom Nano + Vídeos 2</td></tr>
+      <tr><td>Roupa feminina (blusa, vestido, calça)</td><td>👗 Roupa Feminina 2</td></tr>
+      <tr><td>Produto com múltiplas cores</td><td>👗 Roupa Feminina 2 (variações de cor)</td></tr>
+      <tr><td>Quando precisa de muito volume</td><td>⚡ Base (lote de 20)</td></tr>
+    </table>
+
+    <h3>🔄 Reutilizando prompts</h3>
+    <p>Se o prompt gerado ficou bom mas você quer uma variação, use o botão <strong>"↻ Gerar um novo prompt"</strong> dentro da galeria. A IA gera uma versão diferente para o mesmo produto.</p>
+
+    <div class="tip"><strong>Estratégia de conteúdo:</strong> Gere um lote de 10 produtos toda segunda-feira com o Base v2. Você terá prompts para publicar durante a semana inteira sem gastar tempo diariamente.</div>
+  </div>
+
+  <!-- 9. FAQ -->
+  <div class="section">
+    <div class="section-label">Seção 9</div>
+    <h2>Perguntas frequentes</h2>
+
+    <h3>Quantos créditos tenho?</h3>
+    <p>Veja no seu perfil (clique no avatar no canto superior direito). O card <strong>"Créditos Restantes"</strong> mostra quantos prompts você ainda pode gerar.</p>
+
+    <h3>Perdi minha senha, o que faço?</h3>
+    <p>Na tela de login, clique em <strong>"Esqueci minha senha"</strong>, informe seu email e siga o link enviado para sua caixa de entrada.</p>
+
+    <h3>O prompt gerado ficou ruim, o que faço?</h3>
+    <p>Tente com uma foto de melhor qualidade, fundo mais limpo ou informe o preço do produto. Você também pode gerar um novo prompt para o mesmo produto pela galeria — a IA vai criar uma variação diferente.</p>
+
+    <h3>Onde colo o prompt de vídeo?</h3>
+    <p>No campo de prompt do <strong>Kling AI</strong>, <strong>Veo 2</strong>, <strong>Runway</strong> ou outro gerador de vídeo de sua escolha. O prompt já está em inglês e no formato correto.</p>
+
+    <h3>Onde colo o prompt de imagem (start frame)?</h3>
+    <p>No <strong>Nano Banana</strong> ou <strong>Midjourney</strong>. O start frame é usado como primeiro frame do vídeo para garantir consistência visual.</p>
+
+    <h3>Meus créditos expiram?</h3>
+    <p>Consulte as condições do seu plano. Dúvidas, entre em contato com o suporte.</p>
+
+    <h3>Posso usar o mesmo prompt em vários produtos?</h3>
+    <p>Os prompts são gerados especificamente para cada produto. Use sempre a foto do produto correto para melhores resultados.</p>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div class="footer">
+    <div>© 2026 <strong>UGC·AI</strong> — Todos os direitos reservados</div>
+    <div>ugc-prompt-generator-six.vercel.app</div>
+  </div>
+
+</div>
+</body>
+</html>
