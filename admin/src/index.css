@@ -76,7 +76,8 @@ html, body {
   border-right: 1px solid var(--m-line);
   display: flex; flex-direction: column; align-items: center;
   padding: 16px 0; gap: 4px;
-  position: fixed; top: 0; left: 0; bottom: 0; width: 64px; z-index: 100;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  width: 64px; flex-shrink: 0;
 }
 .side-logo {
   width: 36px; height: 36px; border-radius: 9px;
@@ -100,7 +101,6 @@ html, body {
 .dash-main {
   padding: 24px 28px 48px;
   overflow-x: hidden;
-  margin-left: 64px;
 }
 
 /* ── Topbar ──────────────────────────────────────────────────── */
