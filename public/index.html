@@ -2049,6 +2049,43 @@
 </head>
 <body>
 
+<!-- ── TRACKER ── -->
+<script>
+(function () {
+  var trk = localStorage.getItem('_trk');
+  if (!trk) {
+    trk = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    localStorage.setItem('_trk', trk);
+  }
+
+  var p = new URLSearchParams(location.search);
+  var base = {
+    trk:          trk,
+    page_url:     location.href,
+    referrer:     document.referrer || null,
+    utm_source:   p.get('utm_source'),
+    utm_medium:   p.get('utm_medium'),
+    utm_campaign: p.get('utm_campaign'),
+    utm_content:  p.get('utm_content'),
+    utm_term:     p.get('utm_term'),
+  };
+
+  window.ugcTrack = function (event_name, properties) {
+    var payload = JSON.stringify(Object.assign({}, base, { event_name: event_name, properties: properties || null }));
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/tracker', new Blob([payload], { type: 'application/json' }));
+    } else {
+      fetch('/tracker', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true });
+    }
+  };
+
+  window.ugcTrack('PageView');
+})();
+</script>
+
 <!-- ── SPLASH SCREEN ── -->
 <div id="splashScreen">
   <div class="splash-logo">
@@ -2471,7 +2508,8 @@
             <div id="cardRoupaCena1"     style="display:none"></div>
             <div id="cardRoupaCena2"     style="display:none"></div>
             <div id="cardRoupaCena3"     style="display:none"></div>
-            <div id="cardRoupaLegenda"   style="display:none"></div>
+            <div id="cardRoupaLegenda"      style="display:none"></div>
+            <div id="cardRoupaLegendaTikTok" style="display:none"></div>
             <!-- Roupa Feminina B -->
             <div id="cardRoupaBStartFrame" style="display:none"></div>
             <div id="cardRoupaBRef"        style="display:none"></div>
@@ -2479,13 +2517,15 @@
             <div id="cardRoupaBCena1"    style="display:none"></div>
             <div id="cardRoupaBCena2"    style="display:none"></div>
             <div id="cardRoupaBCena3"    style="display:none"></div>
-            <div id="cardRoupaBLegenda"  style="display:none"></div>
+            <div id="cardRoupaBLegenda"     style="display:none"></div>
+            <div id="cardRoupaBLegendaTikTok" style="display:none"></div>
             <!-- Roupa Feminina v2 -->
             <div id="cardV2CharSheet"   style="display:none"></div>
             <div id="cardV2StartFrame"  style="display:none"></div>
             <div id="cardV2KlingVideo"  style="display:none"></div>
             <div id="cardV2Script"      style="display:none"></div>
-            <div id="cardV2Legenda"     style="display:none"></div>
+            <div id="cardV2Legenda"        style="display:none"></div>
+            <div id="cardV2LegendaTikTok"  style="display:none"></div>
             <!-- Try-On Haul cards -->
             <div id="cardTryonCharSheet"     style="display:none"></div>
             <div id="cardTryonStartFrame"    style="display:none"></div>
@@ -3878,22 +3918,31 @@
       // Atualiza contador local
       if (_authUser) { _authUser.generations_used = (_authUser.generations_used || 0) + 1; }
       updatePendingProgress(tempId, 100);
-      renderResults(data);
-      // Gallery saved server-side — resolve card directly from response
+      // Resolve gallery card BEFORE renderResults — so even if renderResults throws,
+      // the gallery card is already committed and won't be wiped by the catch block
       const galleryItem = data._gallery;
       if (galleryItem) resolvePendingCard(tempId, galleryItem);
       else rejectPendingCard(tempId);
-      // Tryon: PATCH gallery with full content (selected colors + all kling takes + CTAs)
-      if (data._tryon && data._gallery?.id) {
-        const fullContent = buildTryonFullGalleryContent(data);
-        authFetch(`/api/gallery/${data._gallery.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt_video: fullContent })
-        }).then(r => r.json()).then(updated => {
-          const gi = _galleryItems.find(it => it.id === updated.id);
-          if (gi) gi.prompt_video = updated.prompt_video;
-        }).catch(e => console.warn('[tryon] gallery PATCH failed:', e.message));
+      renderResults(data);
+      // Tryon: se o usuário selecionou cores, faz PATCH para adicionar Nano Banana JSONs
+      // Kling takes + CTAs já foram salvos pelo servidor no insert inicial
+      if (data._tryon && data._gallery?.id && _tryonSelectedColors.size > 0) {
+        try {
+          const fullContent = buildTryonFullGalleryContent(data);
+          // Atualiza em memória imediatamente
+          const gi = _galleryItems.find(it => it.id === data._gallery.id);
+          if (gi) gi.prompt_video = fullContent;
+          // Persiste cores no Supabase (fire-and-forget)
+          authFetch(`/api/gallery/${data._gallery.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt_video: fullContent })
+          }).then(r => {
+            if (!r.ok) r.text().then(t => console.warn('[tryon] PATCH error:', r.status, t));
+          }).catch(e => console.warn('[tryon] gallery PATCH failed:', e.message));
+        } catch(e) {
+          console.warn('[tryon] buildTryonFullGalleryContent failed:', e.message);
+        }
       }
     } catch (err) {
       clearInterval(_simInterval);
@@ -4152,7 +4201,8 @@
     { id: 'cardRoupaCena1',      field: 'cena_1_video_kling', title: 'Cena 1 — Gancho (Kling)', emoji: '🎬', renderer: 'serie' },
     { id: 'cardRoupaCena2',      field: 'cena_2_video_kling', title: 'Cena 2 — Revelação',      emoji: '🎬', renderer: 'serie' },
     { id: 'cardRoupaCena3',      field: 'cena_3_video_kling', title: 'Cena 3 — Fechamento',     emoji: '🎬', renderer: 'serie' },
-    { id: 'cardRoupaLegenda',    field: 'legenda_topo',        title: 'Legenda Topo',            emoji: '📌', renderer: 'card' },
+    { id: 'cardRoupaLegenda',        field: 'legenda_topo', title: 'Legenda Topo',    emoji: '📌', renderer: 'card' },
+    { id: 'cardRoupaLegendaTikTok',  field: 'legenda',      title: 'Legenda TikTok',  emoji: '📝', renderer: 'card' },
   ];
 
   const ROUPA_B_CARD_CONFIG = [
@@ -4162,7 +4212,8 @@
     { id: 'cardRoupaBCena1',      field: 'cena_1_video_kling',   title: 'Cena 1 — Gancho (Kling)',      emoji: '🎬', renderer: 'serie' },
     { id: 'cardRoupaBCena2',      field: 'cena_2_video_kling',   title: 'Cena 2 — Revelação',           emoji: '🎬', renderer: 'serie' },
     { id: 'cardRoupaBCena3',      field: 'cena_3_video_kling',   title: 'Cena 3 — Fechamento',          emoji: '🎬', renderer: 'serie' },
-    { id: 'cardRoupaBLegenda',    field: 'legenda_topo',          title: 'Legenda Topo',                 emoji: '📌', renderer: 'card' },
+    { id: 'cardRoupaBLegenda',       field: 'legenda_topo', title: 'Legenda Topo',   emoji: '📌', renderer: 'card' },
+    { id: 'cardRoupaBLegendaTikTok', field: 'legenda',      title: 'Legenda TikTok', emoji: '📝', renderer: 'card' },
   ];
 
   const BASE_V2_CARD_CONFIG = [
@@ -4178,7 +4229,8 @@
     { id: 'cardV2StartFrame', field: 'start_frame_prompt', title: 'Start Frame (Nano)',     emoji: '🖼️', renderer: 'card' },
     { id: 'cardV2KlingVideo', field: 'prompt_kling_video', title: 'Prompt Kling Vídeo 8s', emoji: '🎬', renderer: 'card' },
     { id: 'cardV2Script',     field: 'script_v2_fmt',      title: 'Script PT-BR',           emoji: '✍️', renderer: 'card' },
-    { id: 'cardV2Legenda',    field: 'legenda_topo',        title: 'Legenda Topo',           emoji: '📌', renderer: 'card' },
+    { id: 'cardV2Legenda',        field: 'legenda_topo', title: 'Legenda Topo',   emoji: '📌', renderer: 'card' },
+    { id: 'cardV2LegendaTikTok',  field: 'legenda',      title: 'Legenda TikTok', emoji: '📝', renderer: 'card' },
   ];
 
   function _hideAllCardSets() {
@@ -4555,12 +4607,13 @@
       ].filter(Boolean);
     } else if (isRoupaV2) {
       parts = [
-        _stored._character_sheet  ? `=== CHARACTER SHEET ===\n${_stored._character_sheet}` : '',
-        _stored.outfit_detectado  ? `=== OUTFIT DETECTADO ===\n${_stored.outfit_detectado}` : '',
-        _stored.start_frame_prompt ? `=== START FRAME (NANO) ===\n${_stored.start_frame_prompt}` : '',
-        _stored.prompt_kling_video ? `=== PROMPT KLING VÍDEO 8s ===\n${_stored.prompt_kling_video}` : '',
-        _stored.script_v2_fmt      ? `=== SCRIPT PT-BR ===\n${_stored.script_v2_fmt}` : '',
-        _stored.legenda_topo       ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}` : '',
+        _stored._character_sheet   ? `=== CHARACTER SHEET ===\n${_stored._character_sheet}`          : '',
+        _stored.outfit_detectado   ? `=== OUTFIT DETECTADO ===\n${_stored.outfit_detectado}`         : '',
+        _stored.start_frame_prompt ? `=== START FRAME (NANO) ===\n${_stored.start_frame_prompt}`     : '',
+        _stored.prompt_kling_video ? `=== PROMPT KLING VÍDEO 8s ===\n${_stored.prompt_kling_video}`  : '',
+        _stored.script_v2_fmt      ? `=== SCRIPT PT-BR ===\n${_stored.script_v2_fmt}`                : '',
+        _stored.legenda_topo       ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}`                  : '',
+        _stored.legenda            ? `=== LEGENDA TIKTOK ===\n${_stored.legenda}`                     : '',
       ].filter(Boolean);
     } else if (isRoupaA) {
       parts = [
@@ -4571,6 +4624,7 @@
         _stored.cena_2_video_kling ? `=== CENA 2 — REVELAÇÃO ===\n${_stored.cena_2_video_kling}`     : '',
         _stored.cena_3_video_kling ? `=== CENA 3 — FECHAMENTO ===\n${_stored.cena_3_video_kling}`    : '',
         _stored.legenda_topo       ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}`                  : '',
+        _stored.legenda            ? `=== LEGENDA TIKTOK ===\n${_stored.legenda}`                     : '',
       ].filter(Boolean);
     } else if (isRoupaB) {
       parts = [
@@ -4581,6 +4635,7 @@
         _stored.cena_2_video_kling   ? `=== CENA 2 — REVELAÇÃO ===\n${_stored.cena_2_video_kling}`   : '',
         _stored.cena_3_video_kling   ? `=== CENA 3 — FECHAMENTO ===\n${_stored.cena_3_video_kling}`  : '',
         _stored.legenda_topo         ? `=== LEGENDA TOPO ===\n${_stored.legenda_topo}`                : '',
+        _stored.legenda              ? `=== LEGENDA TIKTOK ===\n${_stored.legenda}`                   : '',
       ].filter(Boolean);
     } else if (isNano2) {
       parts = [
@@ -5109,8 +5164,11 @@
       // Roupa Feminina — split por --- igual ao nano-veo-2
       const sections = (item.prompt_video || '').split('\n\n---\n\n').filter(Boolean);
       const sectionLabels = item.emocao === 'roupa-feminina-v2'
-        ? ['📋 Character Sheet', '🖼️ Start Frame (Nano)', '🎬 Prompt Kling Vídeo 8s', '✍️ Script PT-BR', '📌 Legenda Topo']
-        : ['📋 Character Sheet / Referência', '✍️ Script PT-BR', '🎬 Cena 1 — Gancho', '🎬 Cena 2 — Revelação', '🎬 Cena 3 — Fechamento', '📌 Legenda Topo'];
+        ? ['📋 Character Sheet', '🖼️ Start Frame (Nano)', '🎬 Prompt Kling Vídeo 8s', '✍️ Script PT-BR', '📌 Legenda Topo', '📝 Legenda TikTok']
+        : item.emocao === 'roupa-feminina-a'
+        ? ['📋 Character Sheet', '🖼️ Start Frame (Nano)', '✍️ Script PT-BR', '🎬 Cena 1 — Gancho', '🎬 Cena 2 — Revelação', '🎬 Cena 3 — Fechamento', '📌 Legenda Topo', '📝 Legenda TikTok']
+        : /* roupa-feminina-b */
+          ['🖼️ Start Frame (Nano)', '📋 Referência de Modelo', '✍️ Script PT-BR', '🎬 Cena 1 — Gancho', '🎬 Cena 2 — Revelação', '🎬 Cena 3 — Fechamento', '📌 Legenda Topo', '📝 Legenda TikTok'];
       let sectionsHtml = '';
       sections.forEach((sec, idx) => {
         const label = sectionLabels[idx] || `Seção ${idx + 1}`;

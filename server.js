@@ -13,6 +13,7 @@ const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const flags            = require('./lib/feature-flags');
 const { requireAdmin } = require('./lib/require-admin');
+const tracker          = require('./lib/tracker');
 
 // ── Logging em arquivo para debug de batch ──
 // Em produção serverless (Vercel Lambda), __dirname é read-only — usa /tmp.
@@ -2453,6 +2454,44 @@ app.get('/api/health', async (req, res) => {
 
   const allOk = Object.values(checks).every(v => v === 'ok');
   res.status(allOk ? 200 : 503).json({ checks, ts: Date.now() });
+});
+
+// ── TRACKER ──
+// POST /tracker — recebe PageView e eventos customizados do frontend.
+// Fire-and-forget: responde 204 imediatamente, grava em background.
+app.post('/tracker', (req, res) => {
+  res.status(204).end();
+  if (!flags.TRACKER_ENABLED) return;
+
+  const {
+    trk, session_id, event_name, page_url, referrer,
+    utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+    user_id, properties,
+  } = req.body || {};
+
+  const ip         = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress;
+  const user_agent = req.headers['user-agent'];
+
+  tracker.trackSession(supabase, { trk, user_id, page_url, referrer, utm_source, utm_medium, utm_campaign, utm_content, utm_term, ip, user_agent });
+  tracker.trackEvent(supabase, { session_id, trk, user_id, event_name: event_name || 'PageView', page_url, properties });
+});
+
+// POST /checkout-session — usuário iniciou fluxo de checkout.
+// Registra evento 'Checkout' com o plano escolhido.
+app.post('/checkout-session', (req, res) => {
+  res.status(204).end();
+  if (!flags.TRACKER_ENABLED) return;
+
+  const { trk, session_id, user_id, plan, page_url } = req.body || {};
+
+  tracker.trackEvent(supabase, {
+    session_id,
+    trk,
+    user_id,
+    event_name: 'Checkout',
+    page_url,
+    properties: { plan: plan || null },
+  });
 });
 
 // Lê index.html no startup. Em serverless (Vercel) o sistema de arquivos é
