@@ -70,7 +70,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <main style={{ minHeight: '100vh', background: 'var(--m-bg)', overflow: 'hidden' }}>
+      <main style={{ flex: 1, minWidth: 0, background: 'var(--m-bg)' }}>
         {children}
       </main>
     </div>
