@@ -2869,6 +2869,9 @@
       if (!res.ok) { errorEl.textContent = data.error || 'Erro desconhecido'; errorEl.classList.add('visible'); return; }
       setToken(data.token);
       _authUser = data.user;
+      // Redireciona de volta se veio de /admin ou outra rota protegida
+      const redirectTo = new URLSearchParams(window.location.search).get('redirect');
+      if (redirectTo && redirectTo.startsWith('/')) { window.location.href = redirectTo; return; }
       showApp(data.user);
     } catch (err) {
       errorEl.textContent = 'Erro de conexão: ' + err.message;
