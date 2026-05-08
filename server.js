@@ -2570,8 +2570,12 @@ app.use('/api/admin', require('./routes/admin')(supabase));
 
 // ── ADMIN SPA ──
 // Serve public/admin/index.html para qualquer rota /admin/* (SPA routing)
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin/index.html')));
-app.get('/admin/*', (req, res) => res.sendFile(path.join(__dirname, 'public/admin/index.html')));
+// Cache-Control: no-cache garante que o browser sempre busca o HTML atualizado
+// (os assets JS/CSS têm hash no nome e podem ser cacheados indefinidamente)
+const adminHtml = path.join(__dirname, 'public/admin/index.html');
+const adminNoCacheOpts = { headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' } };
+app.get('/admin',   (req, res) => res.sendFile(adminHtml, adminNoCacheOpts));
+app.get('/admin/*', (req, res) => res.sendFile(adminHtml, adminNoCacheOpts));
 
 // ── TRACKER ──
 // POST /tracker — recebe PageView e eventos customizados do frontend.
