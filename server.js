@@ -11,6 +11,8 @@ const nodemailer = require('nodemailer');
 const Jimp = require('jimp');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
+const flags            = require('./lib/feature-flags');
+const { requireAdmin } = require('./lib/require-admin');
 
 // ── Logging em arquivo para debug de batch ──
 // Em produção serverless (Vercel Lambda), __dirname é read-only — usa /tmp.
@@ -142,6 +144,7 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
         if (scriptText) parts.push(scriptText);
       }
       if (result.legenda_topo) parts.push(result.legenda_topo);
+      if (result.legenda)     parts.push(result.legenda); // Legenda TikTok completa
     } else {
       // roupa-feminina-a / roupa-feminina-b
       if (result.character_sheet)                       parts.push(result.character_sheet);
@@ -150,13 +153,18 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
       if (result.outfit_detectado)                      parts.push('OUTFIT: ' + result.outfit_detectado);
       if (result.script) {
         const s = result.script;
-        const scriptText = [s.hook, s.beneficio, s.prova_social, s.cta].filter(Boolean).join('\n');
-        if (scriptText) parts.push(scriptText);
+        // Format igual ao script_formatado do frontend para consistência visual
+        const scriptText = `🎯 HOOK (0–3s)\n${s.hook || ''}` +
+          `\n\n💎 BENEFÍCIO (3–10s)\n${s.beneficio || ''}` +
+          (s.prova_social ? `\n\n⭐ PROVA SOCIAL (10–18s)\n${s.prova_social}` : '') +
+          `\n\n🛒 CTA (18–25s)\n${s.cta || ''}`;
+        parts.push(scriptText);
       }
       if (result.cena_1_video_kling) parts.push(result.cena_1_video_kling);
       if (result.cena_2_video_kling) parts.push(result.cena_2_video_kling);
       if (result.cena_3_video_kling) parts.push(result.cena_3_video_kling);
       if (result.legenda_topo)       parts.push(result.legenda_topo);
+      if (result.legenda)            parts.push(result.legenda); // Legenda TikTok completa
     }
     prompt_video = parts.join('\n\n---\n\n');
     legenda = style === 'roupa-feminina-v2' ? '👗 Roupa Feminina v2'
@@ -186,13 +194,52 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
     nicho   = isNano ? 'Edredom Nano + Vídeos'   : 'Edredons Premium';
     emocao  = isNano ? 'nano'                      : 'serie';
   } else if (isTryon) {
+    // ── Constantes Kling — espelham as do index.html, NUNCA alterar os prompts ──
+    const KLING_TAKES_SERVER = [
+      { num:1, uso:'Abertura de vídeo / transição suave',
+        prompt:`She slowly raises her right hand up to her hair near her ear and gently runs her fingers through her wavy locks, sliding them down toward her shoulder. As her hand falls back to her side, she gives a soft confident closed-mouth smile and tilts her head slightly. Subtle natural breathing throughout. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:2, uso:'Take com leve aproximação — igual ao do conjunto preto original',
+        prompt:`She takes one slow small step forward toward the camera, body coming slightly closer in frame. As she steps, she gives a subtle confident smirk that grows into a soft smile. Her hair sways gently with the movement. She stops naturally and lets her arms relax at her sides. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:3, uso:'Mostrando o caimento do conjunto / meio do vídeo',
+        prompt:`She gently places both hands flat on her toned stomach between the crop top and skirt, fingers softly spread, drawing attention to the outfit. She looks down briefly at her outfit, then lifts her gaze back up to the camera with a sweet closed-mouth smile. Slight natural body sway. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:4, uso:'Mostrar o caimento da saia / movimento do tecido',
+        prompt:`She slowly rotates her body about 45 degrees to her right showing the side profile of the outfit, the flared skater skirt swings naturally with the movement showing its flow. She pauses in profile briefly, then turns back to face the camera with a soft smile. Hair flows naturally with the rotation. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:5, uso:'Pose confidence / mostrar caimento do quadril',
+        prompt:`She slowly brings both hands up and places them confidently on her hips, framing the high waistband of the skirt. She gives a small playful side-to-side hip sway making the flared skirt swing softly. Soft confident smile, eyes locked on camera. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:6, uso:'Take com mais movimento / clip rico para múltiplos cortes',
+        prompt:`She raises her right hand to gently touch her hair near her shoulder, then slowly slides her hand down across her body and rests it lightly on her stomach. As her hand settles, she breaks into a wide genuine smile with teeth showing, eyes warm and connected with the camera. Subtle weight shift to one leg. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:7, uso:'Detalhe casual / transição entre cores',
+        prompt:`She brings her right hand up and casually adjusts the strap of her sports bra near her shoulder with two fingers, then lets her hand fall back to her side. Subtle confident closed-mouth smile, calm energy. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:8, uso:'Abertura candid / clip de personalidade',
+        prompt:`She glances briefly off-camera to her right as if reacting to something, then turns her gaze back to the camera with a knowing soft smile. Hair shifts naturally with the head movement. Arms stay relaxed at her sides. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:9, uso:'Clip de finalização / momento autêntico',
+        prompt:`She breaks into a sudden natural laugh, tilting her head back slightly, eyes crinkling, hair bouncing with the movement. The laugh softens back into a warm closed-mouth smile. Authentic candid energy. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    ];
+    const CTA_TAKES_SERVER = [
+      { num:'CTA 1', uso:'Finalização pessoal e feminina — alto engajamento',
+        prompt:`She raises both hands and points both index fingers downward toward the bottom of the frame twice in a light natural motion, a knowing soft smile on her face. After the second point, she lets her right hand rise and gently touches her hair near her shoulder, while her left arm relaxes at her side. Subtle head tilt, warm eyes on camera. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:'CTA 2', uso:'CTA com referência ao produto — chama atenção para o conjunto',
+        prompt:`She gently bends both elbows close to her sides and points both index fingers downward toward the bottom of the frame twice in a small natural motion, arms staying low and relaxed near her waist, a soft smile growing on her face. After the second point, she lets her right hand rest lightly flat on her stomach while her left arm relaxes at her side. Warm eyes on camera, slight natural body sway. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+      { num:'CTA 3', uso:'CTA com pose confiante — encerramento elegante e limpo',
+        prompt:`She gently bends both elbows close to her sides and points both index fingers downward toward the bottom of the frame twice in a small natural motion, arms staying low near her waist, a confident closed-mouth smile on her face. After the second point, she smoothly places her right hand on her hip while her left arm falls naturally to her side, settling into a relaxed pose. Eyes stay warm and connected with the camera. Static camera, vertical 9:16, photorealistic UGC, real skin texture, maintain facial consistency, no morphing.` },
+    ];
+    const TRYON_FACESWAP_SERVER = `Replace the face of the girl from Photo 2 onto the body and background of the girl in Photo 1. Keep the exact body position, outfit, hair, lighting, angle, and environment from Photo 1 completely unchanged. Only the face is replaced. The final result must look completely natural and seamless, with no visible editing marks.\n\nPreserve all facial details from Photo 2 — skin texture, pores, natural shadows, expression, and proportions. Match the lighting direction, color temperature, and shadow softness to the scene in Photo 1 so the face blends perfectly with the body.\n\nThe image must look like it was taken with an iPhone 16 front camera. Maintain realistic smartphone sharpness, natural skin tones, subtle dynamic range, and slight front-camera depth characteristics. Do not over-smooth the skin. Keep natural imperfections for authenticity.\n\nStyle: TikTok UGC influencer content.\nFraming: vertical 9:16.\nCamera: fixed, eye-level selfie angle, slightly below eye line.\nLighting: natural daylight, soft shadows, realistic exposure.\nOverall result must look like a normal influencer selfie video frame — completely realistic, unedited, and organic.`;
+
     const parts = [];
     if (result.char_sheet_prompt)  parts.push(result.char_sheet_prompt);
     if (result.start_frame_prompt) parts.push(result.start_frame_prompt);
-    if (result.environment)        parts.push(`🏠 Ambiente: ${result.environment}`);
-    if (result.char_description)   parts.push(`👤 Personagem: ${result.char_description}`);
-    if (result.outfit_detected)    parts.push(`👗 Outfit: ${result.outfit_detected}`);
-    parts.push(`🎭 Face Swap — Troca de Rosto\n\n📌 COMO USAR:\n→ Photo 1 = Start Frame gerado (roupa, ambiente, corpo, pose — tudo preservado)\n→ Photo 2 = character sheet ou foto da influencer (apenas o rosto é transferido)\n→ Resultado: mesma roupa · mesmo ambiente · mesmo cabelo · mesmo corpo — só o rosto muda\n\n──────────────────────────────────────────\n\nReplace the face of the girl from Photo 2 onto the body and background of the girl in Photo 1. Keep the exact body position, outfit, hair, lighting, angle, and environment from Photo 1 completely unchanged. Only the face is replaced. The final result must look completely natural and seamless, with no visible editing marks.\n\nPreserve all facial details from Photo 2 — skin texture, pores, natural shadows, expression, and proportions. Match the lighting direction, color temperature, and shadow softness to the scene in Photo 1 so the face blends perfectly with the body.\n\nThe image must look like it was taken with an iPhone 16 front camera. Maintain realistic smartphone sharpness, natural skin tones, subtle dynamic range, and slight front-camera depth characteristics. Do not over-smooth the skin. Keep natural imperfections for authenticity.\n\nStyle: TikTok UGC influencer content.\nFraming: vertical 9:16.\nCamera: fixed, eye-level selfie angle, slightly below eye line.\nLighting: natural daylight, soft shadows, realistic exposure.\nOverall result must look like a normal influencer selfie video frame — completely realistic, unedited, and organic.`);
+    parts.push(`🏠 Ambiente: ${result.environment || ''}`);
+    parts.push(`👤 Personagem: ${result.char_description || ''}`);
+    parts.push(`👗 Outfit: ${result.outfit_detected || ''}`);
+    parts.push(TRYON_FACESWAP_SERVER);
+    // 9 Kling takes (estáticos — não dependem de seleção do usuário)
+    KLING_TAKES_SERVER.forEach(t => {
+      parts.push(`🎬 Take #${t.num} — ${t.uso}:\n${t.prompt}`);
+    });
+    // 3 CTAs (estáticos)
+    CTA_TAKES_SERVER.forEach(t => {
+      parts.push(`🛒 ${t.num} — ${t.uso}:\n${t.prompt}`);
+    });
     prompt_video = parts.join('\n\n---\n\n');
     legenda = '🎬 Try-On Haul';
     nicho   = 'Try-On Haul';
@@ -2364,6 +2411,48 @@ app.get('/termos', (req, res) => {
   </div>
 </body>
 </html>`);
+});
+
+// ── HEALTH CHECK ──
+// Público — sem feature flag. Usado pelo CI/CD para validar deploys.
+// Testa Anthropic (1 token, modelo mais barato) e Supabase (1 row read).
+app.get('/api/health', async (req, res) => {
+  const checks = { server: 'ok', anthropic: 'unknown', supabase: 'unknown' };
+
+  await Promise.allSettled([
+    (async () => {
+      try {
+        const r = await Promise.race([
+          fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': (process.env.ANTHROPIC_API_KEY || '').trim(),
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 1,
+              messages: [{ role: 'user', content: 'ping' }],
+            }),
+          }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000)),
+        ]);
+        checks.anthropic = r.ok ? 'ok' : 'fail';
+      } catch { checks.anthropic = 'fail'; }
+    })(),
+
+    (async () => {
+      try {
+        if (!supabase) { checks.supabase = 'unconfigured'; return; }
+        const { error } = await supabase.from('users').select('id').limit(1);
+        checks.supabase = error ? 'fail' : 'ok';
+      } catch { checks.supabase = 'fail'; }
+    })(),
+  ]);
+
+  const allOk = Object.values(checks).every(v => v === 'ok');
+  res.status(allOk ? 200 : 503).json({ checks, ts: Date.now() });
 });
 
 // Lê index.html no startup. Em serverless (Vercel) o sistema de arquivos é
