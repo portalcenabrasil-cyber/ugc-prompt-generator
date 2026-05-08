@@ -11,9 +11,10 @@ const nodemailer = require('nodemailer');
 const Jimp = require('jimp');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
-const flags            = require('./lib/feature-flags');
-const { requireAdmin } = require('./lib/require-admin');
-const tracker          = require('./lib/tracker');
+const flags                      = require('./lib/feature-flags');
+const { requireAdmin }           = require('./lib/require-admin');
+const tracker                    = require('./lib/tracker');
+const { recordCost, calcCostUsd } = require('./lib/anthropic-cost');
 
 // ── Logging em arquivo para debug de batch ──
 // Em produção serverless (Vercel Lambda), __dirname é read-only — usa /tmp.
@@ -1648,6 +1649,106 @@ app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
   }
 });
 
+// ── WEBHOOK KIWIFY v2 ──
+// Rota nova — não toca no /api/webhook/kiwify original.
+// Controlada por KIWIFY_WEBHOOK_ENABLED (default false).
+// KIWIFY_WEBHOOK_SECRET: configurar no Vercel quando a Kiwify fornecer o segredo.
+app.post('/api/webhook/kiwify-v2', requireSupabase, async (req, res) => {
+  if (!flags.KIWIFY_WEBHOOK_ENABLED) return res.status(404).end();
+
+  // ── Verificação de assinatura HMAC-SHA256 ──
+  // Enquanto KIWIFY_WEBHOOK_SECRET não estiver configurado, a verificação é pulada.
+  const KIWIFY_SECRET = process.env.KIWIFY_WEBHOOK_SECRET; // placeholder
+  if (KIWIFY_SECRET) {
+    const sig      = req.headers['x-kiwify-signature'] || '';
+    const expected = crypto.createHmac('sha256', KIWIFY_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+    if (sig !== expected) return res.status(401).json({ error: 'Assinatura inválida' });
+  }
+
+  try {
+    const body   = req.body;
+    const event  = body?.event;
+    const status = body?.order_status;
+    const email  = (body?.customer?.email || body?.Customer?.email)?.toLowerCase();
+
+    if (!email) return res.status(400).json({ error: 'Email não encontrado no payload' });
+
+    const orderId       = body?.order_id || body?.id || null;
+    const amountCents   = body?.Charges?.[0]?.amount || body?.amount || 0;
+    const amountBrl     = amountCents / 100;
+    const paymentMethod = body?.Charges?.[0]?.payment_method || body?.payment_method || null;
+
+    // ── Ativação de plano ──
+    if (event === 'order.approved' || status === 'paid') {
+      let config;
+      if (body?.product?.name) {
+        const productKey = body.product.name.toLowerCase().replace(/ê/g, 'e').replace(/[^a-z]/g, '');
+        config = PLAN_CONFIG_BY_NAME[productKey];
+      }
+      if (!config) config = PLAN_CONFIG_BY_AMOUNT[amountCents];
+
+      if (!config) {
+        const productName = body?.product?.name || 'desconhecido';
+        console.warn(`[kiwify-v2] Plano não mapeado: "${productName}" — email: ${email}`);
+        return res.status(200).json({ message: `Plano "${productName}" não mapeado, ignorado` });
+      }
+
+      const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
+
+      if (existing) {
+        await supabase.from('users')
+          .update({ plan: config.plan, plan_active: true, generations_limit: config.generations_limit })
+          .eq('email', email);
+      } else {
+        await supabase.from('users').insert({
+          email,
+          name:          body?.customer?.name || body?.Customer?.name || email,
+          password_hash: 'PENDING_REGISTRATION',
+          plan:          config.plan,
+          plan_active:   true,
+          generations_limit: config.generations_limit,
+          generations_used:  0,
+        });
+      }
+
+      // Registra venda — idempotente via kiwify_order_id unique (conflito = duplicata ignorada)
+      if (orderId) {
+        const { data: user } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
+        await supabase.from('sales').upsert({
+          kiwify_order_id: orderId,
+          user_id:         user?.id       || null,
+          email,
+          name:            body?.customer?.name || body?.Customer?.name || null,
+          plan:            config.plan,
+          amount_brl:      amountBrl,
+          net_brl:         amountBrl,
+          payment_method:  paymentMethod,
+          kiwify_event:    event || status,
+          raw_payload:     body,
+          paid_at:         body?.created_at || new Date().toISOString(),
+        }, { onConflict: 'kiwify_order_id', ignoreDuplicates: true });
+      }
+
+      console.log(`[kiwify-v2] Plano ${config.plan} ativado para ${email} (${existing ? 'atualizado' : 'pré-criado'})`);
+      return res.json({ message: `Plano ${config.plan} ativado`, plan: config.plan, email, created: !existing });
+
+    // ── Cancelamento ──
+    } else if (event === 'subscription.cancelled' || status === 'refunded' || status === 'chargedback') {
+      await supabase.from('users').update({ plan_active: false }).eq('email', email);
+      console.log(`[kiwify-v2] Plano desativado para ${email} (${event || status})`);
+      return res.json({ message: 'Plano desativado', email });
+
+    } else {
+      return res.status(200).json({ message: `Evento "${event || status || 'desconhecido'}" ignorado` });
+    }
+  } catch (err) {
+    console.error('[kiwify-v2] Erro:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GENERATE (Protected) ──
 
 app.post('/api/generate', requireAuth, async (req, res) => {
@@ -1759,6 +1860,7 @@ app.post('/api/generate', requireAuth, async (req, res) => {
     }
 
     res.json({ ...result, _gallery: galleryItem });
+    recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate', style, model: 'claude-sonnet-4-6', input_tokens: result._usage?.input_tokens, output_tokens: result._usage?.output_tokens });
   } catch (err) {
     console.error('Erro interno:', err);
     res.status(500).json({ error: err.message });
@@ -1803,8 +1905,10 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
   const RETRY_DELAY  = 3000;
   const queue        = Array.from({ length: items.length }, (_, i) => i);
   const retryQueue   = []; // items that exhausted main attempts — get one final try
-  let batchPrompts   = 0;
-  let batchTokens    = 0;
+  let batchPrompts      = 0;
+  let batchTokens       = 0;
+  let batchInputTokens  = 0;
+  let batchOutputTokens = 0;
 
   // Try Claude up to MAX_ATTEMPTS times with delay between — silent retries, no SSE events
   async function tryCallClaude(image_base64, image_type, price) {
@@ -1832,6 +1936,8 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
 
       if (result._usage) {
         batchPrompts++;
+        batchInputTokens  += result._usage.input_tokens  || 0;
+        batchOutputTokens += result._usage.output_tokens || 0;
         batchTokens += (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0);
       }
 
@@ -1870,6 +1976,8 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
       const result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao);
       if (result._usage) {
         batchPrompts++;
+        batchInputTokens  += result._usage.input_tokens  || 0;
+        batchOutputTokens += result._usage.output_tokens || 0;
         batchTokens += (result._usage.input_tokens || 0) + (result._usage.output_tokens || 0);
       }
       const pvR = result?.prompt_video || '';
@@ -1899,6 +2007,7 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
 
   res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
   res.end();
+  recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate-batch', style, model: 'claude-sonnet-4-6', input_tokens: batchInputTokens, output_tokens: batchOutputTokens });
 });
 
 // ── DEBUG — leitura do log de batch (somente admin) ──
