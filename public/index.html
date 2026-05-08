@@ -2944,6 +2944,13 @@
       // Restrição de acesso — bloqueia geração para não-admins
       applyAccessRestriction(user);
       renderProfilePage(user);
+      // Garante que a galeria começa limpa ao logar (evita cache de outra sessão)
+      _galleryItems      = [];
+      _galleryLoaded     = false;
+      _galleryOffset     = 0;
+      _galleryTotal      = 0;
+      _galleryServerDone = false;
+      _galleryGeneration++;
       prefetchGallery();
     } catch (err) {
       console.error('[showApp] erro ao montar UI:', err);
@@ -3206,6 +3213,15 @@
     document.getElementById('results').classList.remove('visible');
     document.getElementById('batchResults').classList.remove('visible');
     document.getElementById('emptyState').style.display = 'flex';
+    // ── limpa estado da galeria para não vazar dados entre sessões ──
+    _galleryItems      = [];
+    _galleryLoaded     = false;
+    _galleryOffset     = 0;
+    _galleryTotal      = 0;
+    _galleryServerDone = false;
+    _galleryGeneration++;
+    const galleryGrid = document.getElementById('galleryGrid');
+    if (galleryGrid) galleryGrid.innerHTML = '';
     // reseta tab de auth
     setAuthTab('login');
     document.getElementById('authEmail').value = '';
