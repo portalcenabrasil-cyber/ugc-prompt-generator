@@ -445,8 +445,8 @@ Retorne apenas o JSON, sem texto adicional.`;
 }
 
 // claude-haiku-4-5-20251001 pricing (per million tokens, USD)
-const PRICE_INPUT_PER_M  = 0.80;
-const PRICE_OUTPUT_PER_M = 4.00;
+const PRICE_INPUT_PER_M  = 3.00;   // Claude Sonnet 4.6
+const PRICE_OUTPUT_PER_M = 15.00;  // Claude Sonnet 4.6
 
 // Session accumulator (resets on server restart)
 let sessionTokens = { input: 0, output: 0 };
