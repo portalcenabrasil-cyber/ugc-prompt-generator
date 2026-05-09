@@ -149,9 +149,8 @@
     }
 
     /* ══ KPI GRID ════════════════════════════════════════════════════ */
-    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-    @media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 800px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 900px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 
     .kpi {
       background: var(--card);
@@ -956,10 +955,7 @@ function renderKPIs(kpis, stats, metrics) {
   const grid = document.getElementById('kpi-grid');
   if (!grid || !kpis) return;
 
-  const receita  = kpis.revenue?.last_30d_brl || 0;
-  const margem   = receita > 0 ? ((receita - (kpis.api_costs?.last_30d_brl||0)) / receita * 100).toFixed(1) : '0.0';
-  const pagantes = kpis.users?.active_plan || 1;
-  const ticket   = pagantes > 0 ? (receita / pagantes) : 0;
+  const receita      = kpis.revenue?.last_30d_brl || 0;
   const geracoesHoje = kpis.geracoes_hoje || 0;
 
   // Saldo Anthropic
@@ -978,13 +974,11 @@ function renderKPIs(kpis, stats, metrics) {
     <div class="kpi accent" style="animation-delay:.0s">
       <div class="kpi-label">Receita 30d</div>
       <div class="kpi-value green">${fmtBRL(receita)}</div>
-      <div class="kpi-sub">MRR estimado: ${fmtBRL(kpis.revenue?.mrr_brl)}</div>
     </div>
     <div class="kpi" style="animation-delay:.05s">
       <div class="kpi-label">Custo Total API</div>
       <div class="kpi-value">${fmtBRL(spentBrl)}</div>
       <div class="kpi-sub">${fmtUSD(spentUsd)} gastos desde o início</div>
-      <div class="kpi-sub" style="margin-top:3px;color:var(--mute2)">30d real: ${fmtBRL(kpis.api_costs?.last_30d_brl)}</div>
     </div>
     <div class="kpi" ${balClass} style="animation-delay:.1s">
       <div class="kpi-label">Saldo Anthropic</div>
@@ -993,20 +987,10 @@ function renderKPIs(kpis, stats, metrics) {
       ${balAlert}
       <div class="kpi-sub" style="margin-top:3px;color:var(--mute2)">Para atualizar: vercel env add ANTHROPIC_BALANCE_USD</div>
     </div>
-    <div class="kpi" style="animation-delay:.15s">
-      <div class="kpi-label">Margem bruta</div>
-      <div class="kpi-value" style="color:${parseFloat(margem)>50?'var(--acc)':'var(--ylw)'}">${margem}%</div>
-      <div class="kpi-sub">Receita − Custo API 30d</div>
-    </div>
-    <div class="kpi" style="animation-delay:.2s" id="kpi-geracoes-hoje">
+    <div class="kpi" style="animation-delay:.15s" id="kpi-geracoes-hoje">
       <div class="kpi-label"><span class="kpi-pulse-dot"></span>Gerações hoje</div>
       <div class="kpi-value">${fmtNum(geracoesHoje)}</div>
       <div class="kpi-sub">Total histórico: ${fmtNum(stats?.total_geracoes_historico)}</div>
-    </div>
-    <div class="kpi" style="animation-delay:.25s">
-      <div class="kpi-label">Ticket médio</div>
-      <div class="kpi-value">${fmtBRL(ticket)}</div>
-      <div class="kpi-sub">${fmtNum(kpis.users?.active_plan)} pagantes · ${kpis.online_now} online</div>
     </div>
   `;
 }
