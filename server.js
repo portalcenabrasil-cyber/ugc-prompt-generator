@@ -1859,8 +1859,8 @@ app.post('/api/generate', requireAuth, async (req, res) => {
         });
     }
 
-    res.json({ ...result, _gallery: galleryItem });
     recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate', style, model: 'claude-sonnet-4-6', input_tokens: result._usage?.input_tokens, output_tokens: result._usage?.output_tokens });
+    res.json({ ...result, _gallery: galleryItem });
   } catch (err) {
     console.error('Erro interno:', err);
     res.status(500).json({ error: err.message });
@@ -2005,9 +2005,9 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
       });
   }
 
+  recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate-batch', style, model: 'claude-sonnet-4-6', input_tokens: batchInputTokens, output_tokens: batchOutputTokens });
   res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
   res.end();
-  recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate-batch', style, model: 'claude-sonnet-4-6', input_tokens: batchInputTokens, output_tokens: batchOutputTokens });
 });
 
 // ── DEBUG — leitura do log de batch (somente admin) ──
