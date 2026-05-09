@@ -60,11 +60,13 @@ module.exports = function adminRoutes(supabase) {
   // KPIs principais: usuários, MRR estimado, receita 30d, custo API 30d, online agora.
   router.get('/kpis', async (req, res) => {
     try {
-      const [usersRes, salesRes, costsRes, rate] = await Promise.allSettled([
+      const todayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
+      const [usersRes, salesRes, costsRes, rate, galleryTodayRes] = await Promise.allSettled([
         supabase.from('users').select('plan, plan_active, email, is_admin'),
         supabase.from('sales').select('amount_brl').gte('paid_at', daysAgo(30)),
         supabase.from('api_costs').select('cost_usd').gte('created_at', daysAgo(30)),
         getRate(),
+        supabase.from('gallery').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
       ]);
 
       // Usuários — exclui admins e contas de teste dos cálculos
@@ -89,6 +91,8 @@ module.exports = function adminRoutes(supabase) {
       const costUsd  = costs.reduce((s, r) => s + (parseFloat(r.cost_usd) || 0), 0);
       const usdToBrl = rate.status === 'fulfilled' ? rate.value : _rateCache.rate;
 
+      const geracoesHoje = galleryTodayRes.value?.count || 0;
+
       // Online agora — last_ping_at nos últimos 2 minutos
       const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       const { data: onlineRows } = await supabase
@@ -110,6 +114,7 @@ module.exports = function adminRoutes(supabase) {
           last_30d_usd: +costUsd.toFixed(6),
           last_30d_brl: +(costUsd * usdToBrl).toFixed(2),
         },
+        geracoes_hoje: geracoesHoje,
         online_now:   onlineNow,
         rate_usd_brl: usdToBrl,
         ts:           Date.now(),
