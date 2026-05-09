@@ -338,5 +338,53 @@ module.exports = function adminRoutes(supabase) {
     }
   });
 
+  // ── GET /api/admin/costs-by-user ─────────────────────────────────────────────
+  // Custo total por usuário real (excl. admins e testes).
+  // Junta api_costs + gallery (total gerações) por user_id, resolve email via users.
+  router.get('/costs-by-user', async (req, res) => {
+    try {
+      const rate = await getRate();
+
+      const [usersRes, costsRes, galleryRes] = await Promise.allSettled([
+        supabase.from('users').select('id, email, name, plan, plan_active, is_admin'),
+        supabase.from('api_costs').select('user_id, cost_usd'),
+        supabase.from('gallery').select('user_id'),
+      ]);
+
+      const users = (usersRes.value?.data || []).filter(isRealClient);
+      const userMap = new Map(users.map(u => [u.id, u]));
+
+      // Custo por user_id
+      const costByUser = {};
+      for (const row of (costsRes.value?.data || [])) {
+        if (!row.user_id) continue;
+        costByUser[row.user_id] = (costByUser[row.user_id] || 0) + (parseFloat(row.cost_usd) || 0);
+      }
+
+      // Gerações por user_id
+      const genByUser = {};
+      for (const row of (galleryRes.value?.data || [])) {
+        if (!row.user_id) continue;
+        genByUser[row.user_id] = (genByUser[row.user_id] || 0) + 1;
+      }
+
+      // Merge — apenas usuários reais
+      const result = users.map(u => ({
+        id:              u.id,
+        email:           u.email,
+        name:            u.name,
+        plan:            u.plan,
+        plan_active:     u.plan_active,
+        total_geracoes:  genByUser[u.id]  || 0,
+        custo_usd:       +(costByUser[u.id] || 0).toFixed(6),
+        custo_brl:       +((costByUser[u.id] || 0) * rate).toFixed(2),
+      })).sort((a, b) => b.custo_usd - a.custo_usd);
+
+      res.json({ data: result, rate_usd_brl: rate });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
