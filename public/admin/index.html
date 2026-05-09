@@ -700,43 +700,50 @@ function setChartPeriod(days) {
 }
 
 function _buildChart(days) {
-  const cutoff  = days === 1
+  const cutoff = days === 1
     ? new Date().toISOString().slice(0,10)
     : new Date(Date.now() - days * 86_400_000).toISOString().slice(0,10);
 
-  // Fonte 1: daily_metrics (pré-computado)
+  // Fonte 1: daily_metrics
   const metricsFiltered = (_metricsCache || []).filter(r =>
     days === 1 ? r.date === cutoff : r.date >= cutoff
   );
 
-  // Fonte 2: sales agrupados por dia (BRL)
+  // Fonte 2: sales agrupados por dia
   const salesFiltered = (_salesCache || []).filter(r => {
     const d = (r.paid_at || '').slice(0,10);
     return days === 1 ? d === cutoff : d >= cutoff;
   });
 
-  let rows, isSimulated = false;
+  let realRows = null, realTotal = 0, realCount = 0;
 
   if (metricsFiltered.length > 0) {
-    // Prioridade 1: daily_metrics → revenue_brl
-    rows = [...metricsFiltered].sort((a,b) => a.date < b.date ? -1 : 1).map(r => ({
+    realRows = [...metricsFiltered].sort((a,b) => a.date < b.date ? -1 : 1).map(r => ({
       date: r.date, value: parseFloat(r.revenue_brl) || 0
     }));
+    realTotal = realRows.reduce((s,r) => s+r.value, 0);
+    realCount = realRows.length;
   } else if (salesFiltered.length > 0) {
-    // Prioridade 2: agrupar sales por dia
     const byDay = {};
     for (const s of salesFiltered) {
       const d = (s.paid_at || '').slice(0,10);
       if (d) byDay[d] = (byDay[d] || 0) + (parseFloat(s.amount_brl) || 0);
     }
-    rows = Object.entries(byDay).sort((a,b) => a[0]<b[0]?-1:1).map(([date,val]) => ({ date, value: val }));
+    realRows  = Object.entries(byDay).sort((a,b) => a[0]<b[0]?-1:1).map(([date,val]) => ({ date, value: val }));
+    realTotal = realRows.reduce((s,r) => s+r.value, 0);
+    realCount = salesFiltered.length; // nº de vendas individuais
+  }
+
+  // Menos de 3 pontos → onda simulada (título mantém receita real)
+  let rows, isSimulated = false;
+  if (realRows && realRows.length >= 3) {
+    rows = realRows;
   } else {
-    // Prioridade 3: curva simulada (seno + ruído) para mostrar o visual
     const n = Math.max(days, 14);
     rows = Array.from({ length: n }, (_, i) => {
-      const d = new Date(Date.now() - (n - 1 - i) * 86_400_000);
-      const base = 320 + Math.sin(i / 3.5) * 120 + Math.sin(i / 8) * 60;
-      const noise = (Math.random() - 0.5) * 80;
+      const d    = new Date(Date.now() - (n - 1 - i) * 86_400_000);
+      const base = 320 + Math.sin(i / 3.2) * 130 + Math.sin(i / 7.5) * 70;
+      const noise = (Math.random() - 0.5) * 70;
       return { date: d.toISOString().slice(0,10), value: Math.max(20, base + noise) };
     });
     isSimulated = true;
@@ -745,21 +752,26 @@ function _buildChart(days) {
   const noteEl = document.getElementById('chart-note');
   if (noteEl) {
     noteEl.style.display = isSimulated ? 'block' : 'none';
-    noteEl.textContent   = 'dados simulados — sem vendas no período';
+    noteEl.textContent   = realCount > 0
+      ? `dados simulados — ${realCount} venda${realCount > 1 ? 's' : ''} real${realCount > 1 ? 'is' : ''} no período`
+      : 'dados simulados — sem vendas no período';
   }
 
-  renderRevenueChart(rows, isSimulated);
+  renderRevenueChart(rows, isSimulated, realTotal);
 }
 
-function renderRevenueChart(rows, isSimulated) {
+function renderRevenueChart(rows, isSimulated, realTotal) {
   const skeleton = document.getElementById('chart-skeleton');
   const canvas   = document.getElementById('revenue-canvas');
   const totalEl  = document.getElementById('chart-total');
   if (!canvas) return;
   if (skeleton) skeleton.style.display = 'none';
 
-  const total = rows.reduce((s,r) => s + (r.value || 0), 0);
-  if (totalEl) totalEl.textContent = isSimulated ? '—' : fmtBRL(total);
+  // Título: receita real quando disponível, mesmo com onda simulada
+  if (totalEl) {
+    const showTotal = realTotal > 0 ? realTotal : (!isSimulated ? rows.reduce((s,r) => s+(r.value||0), 0) : null);
+    totalEl.textContent = showTotal != null ? fmtBRL(showTotal) : '—';
+  }
 
   const labels = rows.map(r => {
     const d = new Date(r.date + 'T00:00:00');
@@ -768,19 +780,32 @@ function renderRevenueChart(rows, isSimulated) {
   const data = rows.map(r => r.value || 0);
 
   const ctx = canvas.getContext('2d');
-  const h = 300;
 
-  // Gradiente área: amarelo-limão (#e8ff00) → verde (#00ff87) → transparente
-  const areaGrad = ctx.createLinearGradient(0, 0, 0, h);
-  areaGrad.addColorStop(0,   'rgba(232,255,0,0.60)');
-  areaGrad.addColorStop(0.35,'rgba(0,255,135,0.38)');
-  areaGrad.addColorStop(1,   'rgba(0,255,135,0.00)');
+  // Gradiente scriptable — criado APÓS Chart.js calcular chartArea
+  // Evita o bug de canvas.width=0 que colapsava o gradiente em verde sólido
+  function makeAreaGrad(context) {
+    const chart = context.chart;
+    const { ctx: c, chartArea } = chart;
+    if (!chartArea) return 'rgba(0,255,135,0.3)';
+    const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    grad.addColorStop(0,    'rgba(232,255,0,0.72)');   // amarelo-limão no topo
+    grad.addColorStop(0.30, 'rgba(0,255,135,0.45)');   // verde neon
+    grad.addColorStop(0.65, 'rgba(0,255,135,0.12)');
+    grad.addColorStop(1,    'rgba(0,255,135,0.00)');   // transparente
+    return grad;
+  }
 
-  // Gradiente linha
-  const lineGrad = ctx.createLinearGradient(0, 0, canvas.width || 800, 0);
-  lineGrad.addColorStop(0,   '#e8ff00');
-  lineGrad.addColorStop(0.5, '#00ff87');
-  lineGrad.addColorStop(1,   '#e8ff00');
+  function makeLineGrad(context) {
+    const chart = context.chart;
+    const { ctx: c, chartArea } = chart;
+    if (!chartArea) return '#00ff87';
+    const grad = c.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+    grad.addColorStop(0,    '#e8ff00');
+    grad.addColorStop(0.40, '#00ff87');
+    grad.addColorStop(0.60, '#00ff87');
+    grad.addColorStop(1,    '#e8ff00');
+    return grad;
+  }
 
   if (_revenueChart) _revenueChart.destroy();
   _revenueChart = new Chart(ctx, {
@@ -790,15 +815,15 @@ function renderRevenueChart(rows, isSimulated) {
       datasets: [{
         data,
         fill: true,
-        backgroundColor: areaGrad,
-        borderColor: lineGrad,
+        backgroundColor: makeAreaGrad,
+        borderColor: makeLineGrad,
         borderWidth: 2.5,
         pointRadius: 0,
         pointHoverRadius: 6,
         pointHoverBackgroundColor: '#e8ff00',
         pointHoverBorderColor: '#0a0a0a',
         pointHoverBorderWidth: 2,
-        tension: 0.45,
+        tension: 0.42,
       }]
     },
     options: {
