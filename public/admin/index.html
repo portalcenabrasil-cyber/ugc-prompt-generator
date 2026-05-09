@@ -420,7 +420,7 @@
         <div class="tbl-wrap">
           <table>
             <thead><tr>
-              <th>Nome</th><th>Email</th><th>Plano</th><th>Status</th>
+              <th>Nome</th><th>Email</th><th>Tipo</th><th>Plano</th><th>Status</th>
               <th>Gerações</th><th>Tokens</th><th>Cadastro</th>
             </tr></thead>
             <tbody id="users-body"></tbody>
@@ -539,6 +539,16 @@ function statusPill(active) {
   return active
     ? `<span class="pill pill-grn">Ativo</span>`
     : `<span class="pill pill-mute">Inativo</span>`;
+}
+
+const TEST_EMAILS_FE = new Set([
+  'teste@ugc.com','teste.pro@gmail.com','teste.agencia@gmail.com',
+  'teste.registro3@gmail.com','test@test.com','fhdyx@gmail.com',
+]);
+function tipoPill(r) {
+  if (r.is_admin) return `<span class="pill pill-red">Admin</span>`;
+  if (TEST_EMAILS_FE.has((r.email||'').toLowerCase())) return `<span class="pill pill-ylw">Teste</span>`;
+  return `<span class="pill pill-grn">Cliente</span>`;
 }
 
 // ══ FETCH HELPER ═════════════════════════════════════════════════════════════
@@ -942,11 +952,12 @@ function renderUsers() {
 
   const body = document.getElementById('users-body');
   if (!body) return;
-  if (!page.length) { body.innerHTML = '<tr><td colspan="7" class="empty">Nenhum usuário encontrado</td></tr>'; return; }
+  if (!page.length) { body.innerHTML = '<tr><td colspan="8" class="empty">Nenhum usuário encontrado</td></tr>'; return; }
   body.innerHTML = page.map(r => `
     <tr>
       <td class="fw6">${r.name || '—'}</td>
       <td class="text-mute mono">${r.email || '—'}</td>
+      <td>${tipoPill(r)}</td>
       <td>${planPill(r.plan, r.plan_active)}</td>
       <td>${statusPill(r.plan_active)}</td>
       <td>${fmtNum(r.generations_used)} / ${fmtNum(r.generations_limit)}</td>

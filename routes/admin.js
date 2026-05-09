@@ -27,6 +27,22 @@ function daysAgo(n) {
   return new Date(Date.now() - n * 86_400_000).toISOString();
 }
 
+// Emails de teste/admin a excluir de todos os cálculos financeiros
+const TEST_EMAILS = new Set([
+  'teste@ugc.com',
+  'teste.pro@gmail.com',
+  'teste.agencia@gmail.com',
+  'teste.registro3@gmail.com',
+  'test@test.com',
+  'fhdyx@gmail.com',
+]);
+
+function isRealClient(u) {
+  if (u.is_admin) return false;
+  if (TEST_EMAILS.has((u.email || '').toLowerCase())) return false;
+  return true;
+}
+
 // ── Factory — recebe supabase de server.js ──
 module.exports = function adminRoutes(supabase) {
   const router = express.Router();
@@ -45,18 +61,18 @@ module.exports = function adminRoutes(supabase) {
   router.get('/kpis', async (req, res) => {
     try {
       const [usersRes, salesRes, costsRes, rate] = await Promise.allSettled([
-        supabase.from('users').select('plan, plan_active'),
+        supabase.from('users').select('plan, plan_active, email, is_admin'),
         supabase.from('sales').select('amount_brl').gte('paid_at', daysAgo(30)),
         supabase.from('api_costs').select('cost_usd').gte('created_at', daysAgo(30)),
         getRate(),
       ]);
 
-      // Usuários — agrupa por plano para MRR
+      // Usuários — exclui admins e contas de teste dos cálculos
       const users    = usersRes.value?.data || [];
       const byPlan   = {};
       let activePlan = 0;
       for (const u of users) {
-        if (u.plan_active) {
+        if (u.plan_active && isRealClient(u)) {
           activePlan++;
           byPlan[u.plan] = (byPlan[u.plan] || 0) + 1;
         }
@@ -115,7 +131,7 @@ module.exports = function adminRoutes(supabase) {
       let query = supabase
         .from('users')
         .select(
-          'id, email, name, plan, plan_active, generations_used, generations_limit, prompts_count, tokens_used, created_at',
+          'id, email, name, plan, plan_active, is_admin, generations_used, generations_limit, prompts_count, tokens_used, created_at',
           { count: 'exact' }
         )
         .order('created_at', { ascending: false })
@@ -284,7 +300,7 @@ module.exports = function adminRoutes(supabase) {
       const [galleryCount, costsRes, usersRes] = await Promise.allSettled([
         supabase.from('gallery').select('id', { count: 'exact', head: true }),
         supabase.from('api_costs').select('cost_usd'),
-        supabase.from('users').select('plan, plan_active'),
+        supabase.from('users').select('plan, plan_active, email, is_admin'),
       ]);
 
       const totalGeracoes = galleryCount.value?.count || 0;
@@ -294,9 +310,9 @@ module.exports = function adminRoutes(supabase) {
 
       const custoHistoricoUsd = totalGeracoes * CUSTO_MEDIO_ESTIMADO_USD;
 
-      // Usuários com plano pago ativo (excl. free e admin)
+      // Apenas clientes reais (excl. admins e emails de teste)
       const users = usersRes.value?.data || [];
-      const pagantes = users.filter(u => u.plan_active && u.plan && !['free','admin'].includes(u.plan)).length;
+      const pagantes = users.filter(u => u.plan_active && u.plan && !['free'].includes(u.plan) && isRealClient(u)).length;
 
       const geracoesPorPagante = pagantes > 0 ? +(totalGeracoes / pagantes).toFixed(1) : 0;
 

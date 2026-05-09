@@ -108,7 +108,11 @@
       "Bash(kill 1137)",
       "Bash(npm run:*)",
       "Bash(node_modules/.bin/tsc -b)",
-      "Bash(node_modules/.bin/vite build:*)"
+      "Bash(node_modules/.bin/vite build:*)",
+      "Bash(printf \"true\")",
+      "Bash(grep -n \"cost\\\\|input_cost\\\\|output_cost\\\\|total_cost\\\\|fmtCost\\\\|R\\\\$\\\\|pricing\\\\|per_million\\\\|1_000_000\\\\|1000000\" /c/Users/phalm/Desktop/ugc-prompt-generator/public/index.html)",
+      "Bash(git reset:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
