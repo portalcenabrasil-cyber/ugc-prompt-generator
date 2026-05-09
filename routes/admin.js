@@ -349,6 +349,7 @@ module.exports = function adminRoutes(supabase) {
   router.get('/costs-by-user', async (req, res) => {
     try {
       const rate = await getRate();
+      const CUSTO_MEDIO_USD = 0.021249; // custo médio real medido por geração
 
       const [usersRes, costsRes, galleryRes] = await Promise.allSettled([
         supabase.from('users').select('id, email, name, plan, plan_active, is_admin'),
@@ -357,33 +358,45 @@ module.exports = function adminRoutes(supabase) {
       ]);
 
       const users = (usersRes.value?.data || []).filter(isRealClient);
-      const userMap = new Map(users.map(u => [u.id, u]));
 
-      // Custo por user_id
+      // Custo real por user_id (de api_costs)
       const costByUser = {};
       for (const row of (costsRes.value?.data || [])) {
         if (!row.user_id) continue;
         costByUser[row.user_id] = (costByUser[row.user_id] || 0) + (parseFloat(row.cost_usd) || 0);
       }
 
-      // Gerações por user_id
+      // Gerações por user_id (de gallery)
       const genByUser = {};
       for (const row of (galleryRes.value?.data || [])) {
         if (!row.user_id) continue;
         genByUser[row.user_id] = (genByUser[row.user_id] || 0) + 1;
       }
 
-      // Merge — apenas usuários reais
-      const result = users.map(u => ({
-        id:              u.id,
-        email:           u.email,
-        name:            u.name,
-        plan:            u.plan,
-        plan_active:     u.plan_active,
-        total_geracoes:  genByUser[u.id]  || 0,
-        custo_usd:       +(costByUser[u.id] || 0).toFixed(6),
-        custo_brl:       +((costByUser[u.id] || 0) * rate).toFixed(2),
-      })).sort((a, b) => b.custo_usd - a.custo_usd);
+      // Merge — custo real se disponível, estimado se não
+      const result = users.map(u => {
+        const realCost  = costByUser[u.id] || 0;
+        const geracoes  = genByUser[u.id]  || 0;
+        const hasReal   = realCost > 0;
+        const estCost   = hasReal ? 0 : geracoes * CUSTO_MEDIO_USD;
+        const effective = hasReal ? realCost : estCost;
+        return {
+          id:                 u.id,
+          email:              u.email,
+          name:               u.name,
+          plan:               u.plan,
+          plan_active:        u.plan_active,
+          total_geracoes:     geracoes,
+          custo_usd:          hasReal ? +realCost.toFixed(6) : 0,
+          custo_estimado_usd: hasReal ? null : +estCost.toFixed(6),
+          custo_brl:          +(effective * rate).toFixed(2),
+          custo_tipo:         hasReal ? 'real' : 'estimado',
+        };
+      }).sort((a, b) => {
+        const aEff = a.custo_usd || a.custo_estimado_usd || 0;
+        const bEff = b.custo_usd || b.custo_estimado_usd || 0;
+        return bEff - aEff;
+      });
 
       res.json({ data: result, rate_usd_brl: rate });
     } catch (err) {

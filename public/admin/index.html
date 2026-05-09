@@ -455,7 +455,7 @@
         <div class="card-title">Custo por usuário (histórico)</div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Gerações</th><th>Custo USD</th><th>Custo BRL</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Gerações</th><th>Custo USD</th><th>Custo BRL</th><th>Tipo</th></tr></thead>
             <tbody id="cost-user-body">
               <tr><td colspan="6"><div class="skeleton sk-row"></div></td></tr>
             </tbody>
@@ -909,19 +909,26 @@ function renderCostByUser(rows, rate) {
   const tbody = document.getElementById('cost-user-body');
   if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Sem dados de custo por usuário</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Sem dados de custo por usuário</td></tr>';
     return;
   }
-  tbody.innerHTML = rows.map(r => `
+  tbody.innerHTML = rows.map(r => {
+    const isReal      = r.custo_tipo === 'real';
+    const custoUsd    = isReal ? r.custo_usd : r.custo_estimado_usd;
+    const tipoPill    = isReal
+      ? '<span class="pill pill-grn">real</span>'
+      : '<span class="pill pill-ylw">estimado</span>';
+    return `
     <tr>
       <td class="fw7">${r.name||'—'}</td>
       <td class="muted mono">${r.email||'—'}</td>
       <td>${planPill(r.plan, true)}</td>
       <td class="muted">${fmtNum(r.total_geracoes)}</td>
-      <td class="green">${fmtUSD(r.custo_usd)}</td>
+      <td class="${isReal ? 'green' : 'muted'}">${fmtUSD(custoUsd)}</td>
       <td class="muted">${fmtBRL(r.custo_brl)}</td>
-    </tr>
-  `).join('');
+      <td>${tipoPill}</td>
+    </tr>`;
+  }).join('');
 }
 
 function renderRankingGeracoes(rows) {
@@ -968,6 +975,7 @@ function renderKPIs(kpis, stats, metrics) {
       <div class="kpi-label">Custo API 30d</div>
       <div class="kpi-value">${fmtBRL(custo)}</div>
       <div class="kpi-sub">${fmtUSD(kpis.api_costs?.last_30d_usd)} · câmbio ${kpis.rate_usd_brl}</div>
+      <div class="kpi-sub" style="margin-top:3px;color:var(--mute2)">+ est. histórico: ${fmtBRL(stats?.custo_historico_estimado_brl)}</div>
     </div>
     <div class="kpi" style="animation-delay:.1s">
       <div class="kpi-label">Margem bruta</div>
