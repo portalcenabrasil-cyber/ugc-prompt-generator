@@ -699,9 +699,19 @@ function setChartPeriod(days) {
   _buildChart(days);
 }
 
+// Gera array de datas do intervalo [from, to] inclusive (strings YYYY-MM-DD)
+function _dateRange(from, to) {
+  const dates = [];
+  const d = new Date(from + 'T00:00:00Z');
+  const end = new Date(to   + 'T00:00:00Z');
+  while (d <= end) { dates.push(d.toISOString().slice(0,10)); d.setUTCDate(d.getUTCDate() + 1); }
+  return dates;
+}
+
 function _buildChart(days) {
+  const today  = new Date().toISOString().slice(0,10);
   const cutoff = days === 1
-    ? new Date().toISOString().slice(0,10)
+    ? today
     : new Date(Date.now() - days * 86_400_000).toISOString().slice(0,10);
 
   // Fonte 1: daily_metrics
@@ -715,31 +725,33 @@ function _buildChart(days) {
     return days === 1 ? d === cutoff : d >= cutoff;
   });
 
-  let realRows = null, realTotal = 0, realCount = 0;
+  let realMap = new Map(), realTotal = 0, realCount = 0;
 
   if (metricsFiltered.length > 0) {
-    realRows = [...metricsFiltered].sort((a,b) => a.date < b.date ? -1 : 1).map(r => ({
-      date: r.date, value: parseFloat(r.revenue_brl) || 0
-    }));
-    realTotal = realRows.reduce((s,r) => s+r.value, 0);
-    realCount = realRows.length;
+    for (const r of metricsFiltered) {
+      const v = parseFloat(r.revenue_brl) || 0;
+      realMap.set(r.date, (realMap.get(r.date) || 0) + v);
+    }
+    realTotal = [...realMap.values()].reduce((s,v) => s+v, 0);
+    realCount = metricsFiltered.length;
   } else if (salesFiltered.length > 0) {
-    const byDay = {};
     for (const s of salesFiltered) {
       const d = (s.paid_at || '').slice(0,10);
-      if (d) byDay[d] = (byDay[d] || 0) + (parseFloat(s.amount_brl) || 0);
+      if (d) realMap.set(d, (realMap.get(d) || 0) + (parseFloat(s.amount_brl) || 0));
     }
-    realRows  = Object.entries(byDay).sort((a,b) => a[0]<b[0]?-1:1).map(([date,val]) => ({ date, value: val }));
-    realTotal = realRows.reduce((s,r) => s+r.value, 0);
-    realCount = salesFiltered.length; // nº de vendas individuais
+    realTotal = [...realMap.values()].reduce((s,v) => s+v, 0);
+    realCount = salesFiltered.length;
   }
 
-  // Onda simulada SOMENTE quando não há nenhum dado real no período
   let rows, isSimulated = false;
-  if (realRows && realRows.length > 0) {
-    rows = realRows;
-  } else {
-    const n = Math.max(days, 14);
+
+  if (realMap.size > 0) {
+    // Tem dados reais: preenche todo o período com zeros e sobrepõe os reais
+    // Cria spike no(s) dia(s) de venda — honesto e visualmente correto
+    rows = _dateRange(cutoff, today).map(date => ({ date, value: realMap.get(date) || 0 }));
+  } else if (days === 1) {
+    // 1d sem nenhuma venda → onda simulada estética (único caso permitido)
+    const n = 14;
     rows = Array.from({ length: n }, (_, i) => {
       const d    = new Date(Date.now() - (n - 1 - i) * 86_400_000);
       const base = 320 + Math.sin(i / 3.2) * 130 + Math.sin(i / 7.5) * 70;
@@ -747,14 +759,15 @@ function _buildChart(days) {
       return { date: d.toISOString().slice(0,10), value: Math.max(20, base + noise) };
     });
     isSimulated = true;
+  } else {
+    // 7d/14d/30d sem dados → linha plana em zero (sem simulação)
+    rows = _dateRange(cutoff, today).map(date => ({ date, value: 0 }));
   }
 
   const noteEl = document.getElementById('chart-note');
   if (noteEl) {
     noteEl.style.display = isSimulated ? 'block' : 'none';
-    noteEl.textContent   = realCount > 0
-      ? `dados simulados — ${realCount} venda${realCount > 1 ? 's' : ''} real${realCount > 1 ? 'is' : ''} no período`
-      : 'dados simulados — sem vendas no período';
+    noteEl.textContent   = 'dados simulados — sem vendas hoje';
   }
 
   renderRevenueChart(rows, isSimulated, realTotal);
