@@ -327,6 +327,27 @@
         </div>
       </div>
 
+      <!-- Análise Financeira -->
+      <div>
+        <div class="section-title">Análise financeira</div>
+        <div class="kpi-grid" id="fin-kpi-grid">
+          <div class="kpi skeleton sk-kpi"></div>
+          <div class="kpi skeleton sk-kpi"></div>
+          <div class="kpi skeleton sk-kpi"></div>
+          <div class="kpi skeleton sk-kpi"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Custo histórico vs real</div>
+          <div id="fin-cost-detail"><div class="skeleton sk-row"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Projeção mensal</div>
+          <div id="fin-projecao"><div class="skeleton sk-row"></div></div>
+        </div>
+      </div>
+
       <!-- Last sales -->
       <div class="card">
         <div class="card-title">Últimas vendas</div>
@@ -578,12 +599,13 @@ function toggleTheme() {
 
 // ══ DASHBOARD ════════════════════════════════════════════════════════════════
 async function loadDashboard() {
-  const [kpis, sales, presence, costs, metrics] = await Promise.all([
+  const [kpis, sales, presence, costs, metrics, stats] = await Promise.all([
     api('/api/admin/kpis'),
     api('/api/admin/sales?days=30&limit=10'),
     api('/api/admin/presence'),
     api('/api/admin/costs?days=30&limit=500'),
     api('/api/admin/metrics?days=30'),
+    api('/api/admin/stats'),
   ]);
 
   renderKPIs(kpis);
@@ -594,6 +616,7 @@ async function loadDashboard() {
   renderModelBars('model-bars', costs?.summary?.by_model || {});
   renderFunnel(kpis, sales);
   renderChart(metrics?.data || []);
+  renderFinanceiro(stats, kpis, sales);
 }
 
 function renderKPIs(d) {
@@ -746,6 +769,86 @@ function renderChart(rows) {
     <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--m-mute);margin-top:4px">
       <span>${sorted[0]?.date || ''}</span>
       <span>${sorted[sorted.length-1]?.date || ''}</span>
+    </div>
+  `;
+}
+
+// ══ FINANCEIRO ═══════════════════════════════════════════════════════════════
+function renderFinanceiro(s, kpis, sales) {
+  const grid   = document.getElementById('fin-kpi-grid');
+  const detail = document.getElementById('fin-cost-detail');
+  const proj   = document.getElementById('fin-projecao');
+  if (!s) {
+    if (grid)   grid.innerHTML   = '<div class="empty">Sem dados</div>';
+    if (detail) detail.innerHTML = '<div class="empty">Sem dados</div>';
+    if (proj)   proj.innerHTML   = '<div class="empty">Sem dados</div>';
+    return;
+  }
+
+  const receita   = kpis?.revenue?.last_30d_brl || 0;
+  const custoReal = s.custo_real_brl || 0;
+  const margem    = receita > 0 ? ((receita - custoReal) / receita * 100).toFixed(1) : '—';
+
+  if (grid) grid.innerHTML = `
+    <div class="kpi">
+      <div class="kpi-icon">🔢</div>
+      <div class="kpi-label">Gerações históricas</div>
+      <div class="kpi-value">${fmtNum(s.total_geracoes_historico)}</div>
+      <div class="kpi-sub">${fmtNum(s.usuarios_pagantes)} usuários pagantes · ${s.geracoes_por_pagante}/usuário</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-label">Custo médio/geração</div>
+      <div class="kpi-value">${fmtUSD(s.custo_medio_por_geracao_usd)}</div>
+      <div class="kpi-sub">${fmtBRL(s.custo_medio_por_geracao_brl)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">💳</div>
+      <div class="kpi-label">Custo histórico estimado</div>
+      <div class="kpi-value">${fmtUSD(s.custo_historico_estimado_usd)}</div>
+      <div class="kpi-sub">${fmtBRL(s.custo_historico_estimado_brl)} · ${fmtNum(s.total_geracoes_historico)} × $${s.custo_medio_por_geracao_usd}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-label">Margem bruta 30d</div>
+      <div class="kpi-value" style="color:${parseFloat(margem) > 50 ? 'var(--m-grn)' : 'var(--m-ylw)'}">${margem !== '—' ? margem + '%' : '—'}</div>
+      <div class="kpi-sub">Receita ${fmtBRL(receita)} − Custo ${fmtBRL(custoReal)}</div>
+    </div>
+  `;
+
+  if (detail) detail.innerHTML = `
+    <div class="bar-list">
+      <div class="bar-row">
+        <div class="bar-label"><span>Custo histórico estimado (todas gerações)</span><span>${fmtUSD(s.custo_historico_estimado_usd)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--m-mute)"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span>Custo real gravado em api_costs</span><span>${fmtUSD(s.custo_real_usd)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${s.custo_historico_estimado_usd > 0 ? Math.min(s.custo_real_usd / s.custo_historico_estimado_usd * 100, 100).toFixed(1) : 0}%;background:var(--m-acc)"></div></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:var(--m-mute);line-height:1.7">
+      O custo histórico é estimado pois <code>api_costs</code> só grava desde 2026-05-09.<br>
+      Base: ${fmtNum(s.total_geracoes_historico)} gerações × $${s.custo_medio_por_geracao_usd}/geração = ${fmtUSD(s.custo_historico_estimado_usd)} ≈ ${fmtBRL(s.custo_historico_estimado_brl)}
+    </div>
+  `;
+
+  if (proj) proj.innerHTML = `
+    <div class="bar-list" style="margin-bottom:14px">
+      <div class="bar-row">
+        <div class="bar-label">
+          <span>${fmtNum(s.usuarios_pagantes)} pagantes × ${s.geracoes_por_pagante} gerações/mês</span>
+          <span style="color:var(--m-acc)">${fmtUSD(s.projecao_30d_usd)}/mês</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:60%"></div></div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--m-mute);line-height:1.8">
+      <div>Projeção 30d: <strong style="color:var(--m-text)">${fmtBRL(s.projecao_30d_brl)}</strong></div>
+      <div>Câmbio atual: <strong style="color:var(--m-text)">R$ ${s.rate_usd_brl}</strong></div>
+      <div>Receita total histórica: <strong style="color:var(--m-grn)">R$ 61,90</strong></div>
+      <div>Custo histórico estimado: <strong style="color:var(--m-ylw)">${fmtBRL(s.custo_historico_estimado_brl)}</strong></div>
+      <div>Margem estimada histórica: <strong style="color:var(--m-text)">${(61.90 > 0 ? ((61.90 - s.custo_historico_estimado_brl) / 61.90 * 100).toFixed(1) : '—')}%</strong></div>
     </div>
   `;
 }

@@ -273,5 +273,54 @@ module.exports = function adminRoutes(supabase) {
     }
   });
 
+  // ── GET /api/admin/stats ─────────────────────────────────────────────────────
+  // Análise financeira: gerações históricas (gallery), custo real (api_costs),
+  // custo estimado histórico (antes do recordCost existir), médias e projeções.
+  router.get('/stats', async (req, res) => {
+    try {
+      const CUSTO_MEDIO_ESTIMADO_USD = 0.021249; // custo médio real medido
+      const rate = await getRate();
+
+      const [galleryCount, costsRes, usersRes] = await Promise.allSettled([
+        supabase.from('gallery').select('id', { count: 'exact', head: true }),
+        supabase.from('api_costs').select('cost_usd'),
+        supabase.from('users').select('plan, plan_active'),
+      ]);
+
+      const totalGeracoes = galleryCount.value?.count || 0;
+
+      const custoRealUsd = (costsRes.value?.data || [])
+        .reduce((s, r) => s + (parseFloat(r.cost_usd) || 0), 0);
+
+      const custoHistoricoUsd = totalGeracoes * CUSTO_MEDIO_ESTIMADO_USD;
+
+      // Usuários com plano pago ativo (excl. free e admin)
+      const users = usersRes.value?.data || [];
+      const pagantes = users.filter(u => u.plan_active && u.plan && !['free','admin'].includes(u.plan)).length;
+
+      const geracoesPorPagante = pagantes > 0 ? +(totalGeracoes / pagantes).toFixed(1) : 0;
+
+      // Projeção mensal: custo se cada pagante fizer X gerações/mês
+      const projecao30d_usd = geracoesPorPagante * pagantes * CUSTO_MEDIO_ESTIMADO_USD;
+
+      res.json({
+        total_geracoes_historico:        totalGeracoes,
+        custo_historico_estimado_usd:    +custoHistoricoUsd.toFixed(4),
+        custo_historico_estimado_brl:    +(custoHistoricoUsd * rate).toFixed(2),
+        custo_real_usd:                  +custoRealUsd.toFixed(6),
+        custo_real_brl:                  +(custoRealUsd * rate).toFixed(2),
+        custo_medio_por_geracao_usd:     +CUSTO_MEDIO_ESTIMADO_USD.toFixed(6),
+        custo_medio_por_geracao_brl:     +(CUSTO_MEDIO_ESTIMADO_USD * rate).toFixed(4),
+        usuarios_pagantes:               pagantes,
+        geracoes_por_pagante:            geracoesPorPagante,
+        projecao_30d_usd:                +projecao30d_usd.toFixed(4),
+        projecao_30d_brl:                +(projecao30d_usd * rate).toFixed(2),
+        rate_usd_brl:                    rate,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
