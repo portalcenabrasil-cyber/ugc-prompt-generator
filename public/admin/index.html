@@ -149,8 +149,8 @@
     }
 
     /* ══ KPI GRID ════════════════════════════════════════════════════ */
-    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-    @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+    @media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 800px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 
     .kpi {
@@ -957,13 +957,22 @@ function renderKPIs(kpis, stats, metrics) {
   if (!grid || !kpis) return;
 
   const receita  = kpis.revenue?.last_30d_brl || 0;
-  const custo    = kpis.api_costs?.last_30d_brl || 0;
-  const margem   = receita > 0 ? ((receita - custo) / receita * 100).toFixed(1) : '0.0';
+  const margem   = receita > 0 ? ((receita - (kpis.api_costs?.last_30d_brl||0)) / receita * 100).toFixed(1) : '0.0';
   const pagantes = kpis.users?.active_plan || 1;
   const ticket   = pagantes > 0 ? (receita / pagantes) : 0;
-
-  // Gerações hoje: vem do kpis endpoint (conta gallery WHERE created_at >= hoje)
   const geracoesHoje = kpis.geracoes_hoje || 0;
+
+  // Saldo Anthropic
+  const balUsd   = kpis.anthropic_balance_usd || 0;
+  const spentUsd = kpis.anthropic_spent_usd   || 0;
+  const rate     = kpis.rate_usd_brl || 5.70;
+  const balBrl   = balUsd   * rate;
+  const spentBrl = spentUsd * rate;
+  const balClass = balUsd < 3 ? 'style="border-color:rgba(255,77,109,.4);box-shadow:0 0 20px rgba(255,77,109,.1)"'
+                 : balUsd < 8 ? 'style="border-color:rgba(255,209,102,.3)"' : '';
+  const balColor = balUsd < 3 ? 'var(--red)' : balUsd < 8 ? 'var(--ylw)' : 'var(--acc)';
+  const balAlert = balUsd < 3 ? '<div class="kpi-sub" style="color:var(--red);margin-top:3px">⚠️ Saldo crítico — recarregue já</div>'
+                 : balUsd < 8 ? '<div class="kpi-sub" style="color:var(--ylw);margin-top:3px">Saldo baixo</div>' : '';
 
   grid.innerHTML = `
     <div class="kpi accent" style="animation-delay:.0s">
@@ -972,25 +981,32 @@ function renderKPIs(kpis, stats, metrics) {
       <div class="kpi-sub">MRR estimado: ${fmtBRL(kpis.revenue?.mrr_brl)}</div>
     </div>
     <div class="kpi" style="animation-delay:.05s">
-      <div class="kpi-label">Custo API 30d</div>
-      <div class="kpi-value">${fmtBRL(custo)}</div>
-      <div class="kpi-sub">${fmtUSD(kpis.api_costs?.last_30d_usd)} · câmbio ${kpis.rate_usd_brl}</div>
-      <div class="kpi-sub" style="margin-top:3px;color:var(--mute2)">+ est. histórico: ${fmtBRL(stats?.custo_historico_estimado_brl)}</div>
+      <div class="kpi-label">Custo Total API</div>
+      <div class="kpi-value">${fmtBRL(spentBrl)}</div>
+      <div class="kpi-sub">${fmtUSD(spentUsd)} gastos desde o início</div>
+      <div class="kpi-sub" style="margin-top:3px;color:var(--mute2)">30d real: ${fmtBRL(kpis.api_costs?.last_30d_brl)}</div>
     </div>
-    <div class="kpi" style="animation-delay:.1s">
+    <div class="kpi" ${balClass} style="animation-delay:.1s">
+      <div class="kpi-label">Saldo Anthropic</div>
+      <div class="kpi-value" style="color:${balColor}">${fmtBRL(balBrl)}</div>
+      <div class="kpi-sub">${fmtUSD(balUsd)} restante · câmbio ${rate}</div>
+      ${balAlert}
+      <div class="kpi-sub" style="margin-top:3px;color:var(--mute2)">Para atualizar: vercel env add ANTHROPIC_BALANCE_USD</div>
+    </div>
+    <div class="kpi" style="animation-delay:.15s">
       <div class="kpi-label">Margem bruta</div>
       <div class="kpi-value" style="color:${parseFloat(margem)>50?'var(--acc)':'var(--ylw)'}">${margem}%</div>
-      <div class="kpi-sub">Receita − Custo API</div>
+      <div class="kpi-sub">Receita − Custo API 30d</div>
     </div>
-    <div class="kpi" style="animation-delay:.15s" id="kpi-geracoes-hoje">
+    <div class="kpi" style="animation-delay:.2s" id="kpi-geracoes-hoje">
       <div class="kpi-label"><span class="kpi-pulse-dot"></span>Gerações hoje</div>
       <div class="kpi-value">${fmtNum(geracoesHoje)}</div>
       <div class="kpi-sub">Total histórico: ${fmtNum(stats?.total_geracoes_historico)}</div>
     </div>
-    <div class="kpi" style="animation-delay:.2s">
+    <div class="kpi" style="animation-delay:.25s">
       <div class="kpi-label">Ticket médio</div>
       <div class="kpi-value">${fmtBRL(ticket)}</div>
-      <div class="kpi-sub">${fmtNum(kpis.users?.active_plan)} usuários pagantes · ${kpis.online_now} online</div>
+      <div class="kpi-sub">${fmtNum(kpis.users?.active_plan)} pagantes · ${kpis.online_now} online</div>
     </div>
   `;
 }

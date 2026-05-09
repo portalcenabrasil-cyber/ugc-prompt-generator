@@ -114,10 +114,12 @@ module.exports = function adminRoutes(supabase) {
           last_30d_usd: +costUsd.toFixed(6),
           last_30d_brl: +(costUsd * usdToBrl).toFixed(2),
         },
-        geracoes_hoje: geracoesHoje,
-        online_now:   onlineNow,
-        rate_usd_brl: usdToBrl,
-        ts:           Date.now(),
+        geracoes_hoje:          geracoesHoje,
+        online_now:             onlineNow,
+        rate_usd_brl:           usdToBrl,
+        anthropic_balance_usd:  parseFloat(process.env.ANTHROPIC_BALANCE_USD    || 0),
+        anthropic_spent_usd:    parseFloat(process.env.ANTHROPIC_TOTAL_SPENT_USD || 0),
+        ts:                     Date.now(),
       });
     } catch (err) {
       res.status(500).json({ error: err.message });
