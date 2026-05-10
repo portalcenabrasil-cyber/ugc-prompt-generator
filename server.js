@@ -298,6 +298,35 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Multer (memória — buffer enviado direto ao Supabase Storage) ──
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } });
 
+// ── Rate limiter in-memory (sem dependência externa) ──
+// Usado em endpoints públicos como /tracker para limitar spam.
+// Nota: state reseta em cold start Vercel — suficiente para limitar rafagas.
+const _rateLimitStore = new Map(); // ip → { count, windowStart }
+function makeRateLimiter(maxRequests, windowMs) {
+  return function rateLimitMiddleware(req, res, next) {
+    const ip  = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = _rateLimitStore.get(ip);
+
+    if (!entry || (now - entry.windowStart) >= windowMs) {
+      _rateLimitStore.set(ip, { count: 1, windowStart: now });
+      return next();
+    }
+    if (entry.count >= maxRequests) {
+      return res.status(429).json({ error: 'Too Many Requests' });
+    }
+    entry.count++;
+    next();
+  };
+}
+// Limpeza periódica para não acumular IPs antigos em memória (a cada 5 min)
+setInterval(() => {
+  const cutoff = Date.now() - 60_000;
+  for (const [ip, entry] of _rateLimitStore) {
+    if (entry.windowStart < cutoff) _rateLimitStore.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
 const PROMPT_FILE = path.join(__dirname, 'PROMPT.md');
 const SYSTEM_PROMPT_BASE = fs.existsSync(PROMPT_FILE)
   ? fs.readFileSync(PROMPT_FILE, 'utf8')
@@ -1568,110 +1597,33 @@ const PLAN_CONFIG_BY_AMOUNT = {
   24790: { plan: 'agencia', generations_limit: 850 },   // R$247,90
 };
 
-app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
-  try {
-    const body = req.body;
-
-    // Suporta Kiwify v2 (event + customer) e v1 (order_status + Customer)
-    const event  = body?.event;
-    const status = body?.order_status;
-    const email  = (body?.customer?.email || body?.Customer?.email)?.toLowerCase();
-
-    if (!email) return res.status(400).json({ error: 'Email não encontrado no payload' });
-
-    // ── Ativação de plano ──
-    // v2: event === 'order.approved'  |  v1: order_status === 'paid'
-    if (event === 'order.approved' || status === 'paid') {
-      let config;
-
-      // v2: identifica pelo nome do produto
-      if (body?.product?.name) {
-        const productKey = body.product.name.toLowerCase().replace(/ê/g, 'e').replace(/[^a-z]/g, '');
-        config = PLAN_CONFIG_BY_NAME[productKey];
-      }
-
-      // v1 (ou fallback): identifica pelo valor em centavos
-      if (!config) {
-        const amountCents = body?.Charges?.[0]?.amount || body?.amount || 0;
-        config = PLAN_CONFIG_BY_AMOUNT[amountCents];
-      }
-
-      if (!config) {
-        const productName = body?.product?.name || 'desconhecido';
-        console.warn(`[kiwify] Plano não mapeado: "${productName}" — email: ${email}`);
-        return res.status(200).json({ message: `Plano "${productName}" não mapeado, ignorado` });
-      }
-
-      // Tenta atualizar usuário existente primeiro
-      const { data: existing, error: selectErr } = await supabase.from('users')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (selectErr) return res.status(500).json({ error: selectErr.message });
-
-      if (existing) {
-        // Usuário já existe — apenas atualiza o plano
-        const { error: updateErr } = await supabase.from('users')
-          .update({ plan: config.plan, plan_active: true, generations_limit: config.generations_limit })
-          .eq('email', email);
-        if (updateErr) return res.status(500).json({ error: updateErr.message });
-      } else {
-        // Usuário ainda não registrou — pré-cria com plano ativo (senha temporária)
-        const { error: insertErr } = await supabase.from('users')
-          .insert({
-            email,
-            name: body?.customer?.name || body?.Customer?.name || email,
-            password_hash: 'PENDING_REGISTRATION',
-            plan: config.plan,
-            plan_active: true,
-            generations_limit: config.generations_limit,
-            generations_used: 0,
-          });
-        if (insertErr) return res.status(500).json({ error: insertErr.message });
-      }
-
-      console.log(`[kiwify] Plano ${config.plan} ativado para ${email} (${existing ? 'atualizado' : 'pré-criado'})`);
-      return res.json({ message: `Plano ${config.plan} ativado`, plan: config.plan, email, created: !existing });
-
-    // ── Cancelamento ──
-    // v2: event === 'subscription.cancelled'  |  v1: order_status === 'refunded'/'chargedback'
-    } else if (event === 'subscription.cancelled' || status === 'refunded' || status === 'chargedback') {
-      const { error } = await supabase.from('users')
-        .update({ plan_active: false })
-        .eq('email', email);
-
-      if (error) return res.status(500).json({ error: error.message });
-      const reason = event || status;
-      console.log(`[kiwify] Plano desativado para ${email} (${reason})`);
-      return res.json({ message: 'Plano desativado', email });
-
-    } else {
-      const ignored = event || status || 'desconhecido';
-      return res.status(200).json({ message: `Evento "${ignored}" ignorado` });
-    }
-  } catch (err) {
-    console.error('[kiwify] Erro:', err.message);
-    res.status(500).json({ error: err.message });
-  }
+// ── WEBHOOK KIWIFY v1 — DESATIVADO ──
+// Removido: sem verificação HMAC — qualquer um podia forjar ativações de plano.
+// Usar exclusivamente /api/webhook/kiwify-v2 (com HMAC-SHA256).
+app.post('/api/webhook/kiwify', (req, res) => {
+  console.warn('[kiwify-v1] Tentativa de acesso ao endpoint removido — IP:', req.ip);
+  res.status(410).json({ error: 'Endpoint removido. Use /api/webhook/kiwify-v2.' });
 });
 
 // ── WEBHOOK KIWIFY v2 ──
-// Rota nova — não toca no /api/webhook/kiwify original.
 // Controlada por KIWIFY_WEBHOOK_ENABLED (default false).
-// KIWIFY_WEBHOOK_SECRET: configurar no Vercel quando a Kiwify fornecer o segredo.
+// KIWIFY_WEBHOOK_SECRET OBRIGATÓRIO — sem ele, retorna 503 (não processa sem HMAC).
 app.post('/api/webhook/kiwify-v2', requireSupabase, async (req, res) => {
   if (!flags.KIWIFY_WEBHOOK_ENABLED) return res.status(404).end();
 
-  // ── Verificação de assinatura HMAC-SHA256 ──
-  // Enquanto KIWIFY_WEBHOOK_SECRET não estiver configurado, a verificação é pulada.
-  const KIWIFY_SECRET = process.env.KIWIFY_WEBHOOK_SECRET; // placeholder
-  if (KIWIFY_SECRET) {
-    const sig      = req.headers['x-kiwify-signature'] || '';
-    const expected = crypto.createHmac('sha256', KIWIFY_SECRET)
-      .update(JSON.stringify(req.body))
-      .digest('hex');
-    if (sig !== expected) return res.status(401).json({ error: 'Assinatura inválida' });
+  // ── Verificação de assinatura HMAC-SHA256 — OBRIGATÓRIA ──
+  const KIWIFY_SECRET = process.env.KIWIFY_WEBHOOK_SECRET;
+  if (!KIWIFY_SECRET) {
+    console.error('[kiwify-v2] KIWIFY_WEBHOOK_SECRET não configurado — recusando request');
+    return res.status(503).json({ error: 'Webhook não configurado: KIWIFY_WEBHOOK_SECRET ausente' });
+  }
+  const sig      = req.headers['x-kiwify-signature'] || '';
+  const expected = crypto.createHmac('sha256', KIWIFY_SECRET)
+    .update(JSON.stringify(req.body))
+    .digest('hex');
+  if (sig !== expected) {
+    console.warn('[kiwify-v2] Assinatura HMAC inválida — IP:', req.ip);
+    return res.status(401).json({ error: 'Assinatura inválida' });
   }
 
   try {
@@ -2663,9 +2615,12 @@ app.get('/admin',   (req, res) => res.sendFile(adminHtml, adminNoCacheOpts));
 app.get('/admin/*', (req, res) => res.sendFile(adminHtml, adminNoCacheOpts));
 
 // ── TRACKER ──
+// Rate limiter: 10 req/min por IP para endpoints públicos de tracking
+const trackerRateLimit = makeRateLimiter(10, 60_000);
+
 // POST /tracker — recebe PageView e eventos customizados do frontend.
 // Fire-and-forget: responde 204 imediatamente, grava em background.
-app.post('/tracker', (req, res) => {
+app.post('/tracker', trackerRateLimit, (req, res) => {
   res.status(204).end();
   if (!flags.TRACKER_ENABLED) return;
 
@@ -2684,7 +2639,7 @@ app.post('/tracker', (req, res) => {
 
 // POST /checkout-session — usuário iniciou fluxo de checkout.
 // Registra evento 'Checkout' com o plano escolhido.
-app.post('/checkout-session', (req, res) => {
+app.post('/checkout-session', trackerRateLimit, (req, res) => {
   res.status(204).end();
   if (!flags.TRACKER_ENABLED) return;
 
