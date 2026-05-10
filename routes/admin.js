@@ -61,10 +61,11 @@ module.exports = function adminRoutes(supabase) {
   router.get('/kpis', async (req, res) => {
     try {
       const todayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
-      const [usersRes, salesRes, costsRes, rate, galleryTodayRes] = await Promise.allSettled([
+      const [usersRes, salesRes, costsRes, allCostsRes, rate, galleryTodayRes] = await Promise.allSettled([
         supabase.from('users').select('plan, plan_active, email, is_admin'),
         supabase.from('sales').select('amount_brl').gte('paid_at', daysAgo(30)),
         supabase.from('api_costs').select('cost_usd').gte('created_at', daysAgo(30)),
+        supabase.from('api_costs').select('cost_usd'), // all-time — para saldo Anthropic
         getRate(),
         supabase.from('gallery').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
       ]);
@@ -90,6 +91,12 @@ module.exports = function adminRoutes(supabase) {
       const costs    = costsRes.value?.data || [];
       const costUsd  = costs.reduce((s, r) => s + (parseFloat(r.cost_usd) || 0), 0);
       const usdToBrl = rate.status === 'fulfilled' ? rate.value : _rateCache.rate;
+
+      // Saldo Anthropic dinâmico: ANTHROPIC_BALANCE_USD - total gasto all-time em api_costs
+      const anthropicCredit  = parseFloat(process.env.ANTHROPIC_BALANCE_USD || 0);
+      const allCosts         = allCostsRes.value?.data || [];
+      const totalSpentAllTime = allCosts.reduce((s, r) => s + (parseFloat(r.cost_usd) || 0), 0);
+      const anthropicBalance = Math.max(0, anthropicCredit - totalSpentAllTime);
 
       const geracoesHoje = galleryTodayRes.value?.count || 0;
 
@@ -117,8 +124,9 @@ module.exports = function adminRoutes(supabase) {
         geracoes_hoje:          geracoesHoje,
         online_now:             onlineNow,
         rate_usd_brl:           usdToBrl,
-        anthropic_balance_usd:  parseFloat(process.env.ANTHROPIC_BALANCE_USD    || 0),
-        anthropic_spent_usd:    parseFloat(process.env.ANTHROPIC_TOTAL_SPENT_USD || 0),
+        anthropic_balance_usd:  +anthropicBalance.toFixed(4),
+        anthropic_spent_usd:    +totalSpentAllTime.toFixed(6),
+        anthropic_credit_usd:   anthropicCredit, // saldo carregado (atualizar no Vercel ao recarregar)
         ts:                     Date.now(),
       });
     } catch (err) {
