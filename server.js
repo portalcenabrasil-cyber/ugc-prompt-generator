@@ -445,8 +445,8 @@ Retorne apenas o JSON, sem texto adicional.`;
 }
 
 // claude-haiku-4-5-20251001 pricing (per million tokens, USD)
-const PRICE_INPUT_PER_M  = 3.00;   // Claude Sonnet 4.6
-const PRICE_OUTPUT_PER_M = 15.00;  // Claude Sonnet 4.6
+const PRICE_INPUT_PER_M  = 0.80;   // Claude Haiku 4.5
+const PRICE_OUTPUT_PER_M = 4.00;   // Claude Haiku 4.5
 
 // Session accumulator (resets on server restart)
 let sessionTokens = { input: 0, output: 0 };
@@ -851,7 +851,14 @@ function loadFrasesNicho(nichoName) {
   return result;
 }
 
-async function callClaudeBaseV2(image_base64, image_type, price, extras_v2) {
+// ── Instrução PT-BR injetada em TODOS os prompts de produção ──────────────────
+const PTBR_SUFFIX = `As falas do personagem e legendas DEVEM ser escritas em português brasileiro. O restante do prompt (descrições técnicas, cena, câmera, etc) pode permanecer em inglês.
+
+As legendas para TikTok DEVEM conter emojis relevantes, no estilo UGC brasileiro.
+
+NUNCA inclua texto em tela, tipografia, letreiros, títulos, legendas visuais ou qualquer texto aparecendo no vídeo. Zero texto visual.`;
+
+async function callClaudeBaseV2(image_base64, image_type, price, extras_v2, _model = 'claude-haiku-4-5-20251001') {
   const { nicho, char, cenario, frasesAncora } = extras_v2;
 
   const charContent = readCharacterContent(char);
@@ -920,9 +927,9 @@ Retorne APENAS o JSON:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: _model,
         max_tokens: 14000,
-        system: systemPrompt,
+        system: systemPrompt + '\n\n' + PTBR_SUFFIX,
         messages: [{
           role: 'user',
           content: [
@@ -997,7 +1004,7 @@ async function detectarNicho(image_base64, image_type) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null, image_base64_2 = null, image_type_2 = null, extras = null) {
+async function callClaude(image_base64, image_type, tipo, promo, price, gender, style = 'base', duracao = null, image_base64_2 = null, image_type_2 = null, extras = null, _model = 'claude-haiku-4-5-20251001') {
   const MAX_RETRIES = 3;
   let lastError;
 
@@ -1076,9 +1083,9 @@ Retorne apenas o JSON, sem texto adicional.`;
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: _model,
         max_tokens: maxTokens,
-        system: loadSystemPrompt(style),
+        system: loadSystemPrompt(style) + '\n\n' + PTBR_SUFFIX,
         messages: [{ role: 'user', content: userContent }]
       })
     });
@@ -1166,7 +1173,7 @@ async function callClaudeTryon(image_base64, image_type, personagem_id = null, m
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 3000,
       system: systemPrompt,
       messages: [{
@@ -1549,16 +1556,16 @@ app.post('/api/auth/reset-password', requireSupabase, async (req, res) => {
 
 // Mapeamento por nome do produto (Kiwify v2 format: event + product.name)
 const PLAN_CONFIG_BY_NAME = {
-  'starter': { plan: 'starter', generations_limit: 200 },
-  'pro':     { plan: 'pro',     generations_limit: 500 },
-  'agencia': { plan: 'agencia', generations_limit: 1200 },
+  'starter': { plan: 'starter', generations_limit: 125 },
+  'pro':     { plan: 'pro',     generations_limit: 385 },
+  'agencia': { plan: 'agencia', generations_limit: 850 },
 };
 
 // Mapeamento legado por valor em centavos (Kiwify v1 format)
 const PLAN_CONFIG_BY_AMOUNT = {
-  6990:  { plan: 'starter', generations_limit: 200 },   // R$69,90
-  12790: { plan: 'pro',     generations_limit: 500 },   // R$127,90
-  24790: { plan: 'agencia', generations_limit: 1200 },  // R$247,90
+  6990:  { plan: 'starter', generations_limit: 125 },   // R$69,90
+  12790: { plan: 'pro',     generations_limit: 385 },   // R$127,90
+  24790: { plan: 'agencia', generations_limit: 850 },   // R$247,90
 };
 
 app.post('/api/webhook/kiwify', requireSupabase, async (req, res) => {
@@ -1859,10 +1866,88 @@ app.post('/api/generate', requireAuth, async (req, res) => {
         });
     }
 
-    await recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate', style, model: 'claude-sonnet-4-6', input_tokens: result._usage?.input_tokens, output_tokens: result._usage?.output_tokens });
+    await recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate', style, model: 'claude-haiku-4-5-20251001', input_tokens: result._usage?.input_tokens, output_tokens: result._usage?.output_tokens });
     res.json({ ...result, _gallery: galleryItem });
   } catch (err) {
     console.error('Erro interno:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── TEST ENDPOINT — comparação de modelos (localhost only, no DB writes) ──
+// Aceita campo opcional `model` no body para testar qualquer modelo.
+// Default: claude-haiku-4-5-20251001
+// PTBR_SUFFIX é sempre aplicado — baked in callClaude e callClaudeBaseV2.
+app.post('/api/generate-test', requireAuth, async (req, res) => {
+  const { image_base64, image_type, image_base64_2, image_type_2, tipo, promo, price, gender, style = 'base', model: reqModel } = req.body;
+  const TEST_MODEL = reqModel || 'claude-haiku-4-5-20251001';
+  // suffix removido — PTBR_SUFFIX agora é sempre aplicado dentro das funções
+  const duracao = (style === 'serie' || style === 'nano' || style === 'nano-veo-2') ? (req.body.duracao || null) : null;
+
+  if (!image_base64) return res.status(400).json({ error: 'Imagem é obrigatória' });
+  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'coloque_sua_chave_aqui')
+    return res.status(500).json({ error: 'Configure sua ANTHROPIC_API_KEY no arquivo .env' });
+
+  // ── Roupa Feminina v2 — prepara extras (idêntico ao /api/generate) ──
+  let extras = null;
+  if (style === 'roupa-feminina-v2') {
+    const { personagem_id, cenario_id, modo } = req.body;
+    let character_block = null;
+    let character_sheet = null;
+    if (modo !== 'ugc-da-137') {
+      if (!personagem_id) return res.status(400).json({ error: 'personagem_id é obrigatório.' });
+      const charFile = findCharFile(personagem_id);
+      if (!charFile) return res.status(400).json({ error: `Personagem "${personagem_id}" não encontrado.` });
+      const charContent = fs.readFileSync(charFile, 'utf8');
+      character_block = parseCharBlock(charContent);
+      character_sheet = parseCharSheet(charContent);
+    } else if (!image_base64_2) {
+      return res.status(400).json({ error: 'Modo UGC da 137 requer imagem da modelo de referência.' });
+    }
+    if (!cenario_id) return res.status(400).json({ error: 'cenario_id é obrigatório.' });
+    const cenFile = findCenarioFile(cenario_id);
+    if (!cenFile) return res.status(400).json({ error: `Cenário "${cenario_id}" não encontrado.` });
+    const cenContent = fs.readFileSync(cenFile, 'utf8');
+    const cenario = parseCenarioMd(cenContent);
+    extras = { character_block, character_sheet, cenario, modo: modo || 'biblioteca' };
+  }
+
+  // ── Base v2 — detecta nicho e sorteia personagem/cenário (idêntico ao /api/generate) ──
+  let extrasV2 = null;
+  if (style === 'base-v2') {
+    const { history_chars = [] } = req.body;
+    const nicho = await detectarNicho(image_base64, image_type);
+    const nichoConfig = NICHOS_V2[nicho] || NICHOS_V2.generico;
+    const allChars = nichoConfig.pools.flatMap(pool => listPoolIds(pool));
+    const [char]   = pickRandom(allChars, 1, history_chars);
+    const cenarios = nichoConfig.cenarios || ['sala de estar casual, sofá, iluminação quente'];
+    const cenario  = cenarios[Math.floor(Math.random() * cenarios.length)];
+    const frasesAncora = loadFrasesNicho(nichoConfig.frasesFile);
+    extrasV2 = { nicho, char, cenario, frasesAncora };
+  }
+
+  const t0 = Date.now();
+  try {
+    let result;
+    if (style === 'base-v2') {
+      result = await callClaudeBaseV2(image_base64, image_type, price, extrasV2, TEST_MODEL);
+    } else {
+      result = await callClaude(image_base64, image_type, tipo, promo, price, gender, style, duracao, image_base64_2, image_type_2, extras, TEST_MODEL);
+    }
+    const elapsed = Date.now() - t0;
+    res.json({
+      ...result,
+      _test: {
+        model: TEST_MODEL,
+        style,
+        elapsed_ms: elapsed,
+        input_tokens:  result._usage?.input_tokens,
+        output_tokens: result._usage?.output_tokens,
+        cost_usd: calcCostUsd(TEST_MODEL, result._usage?.input_tokens || 0, result._usage?.output_tokens || 0),
+      }
+    });
+  } catch (err) {
+    console.error('[generate-test] Erro:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -2005,7 +2090,7 @@ app.post('/api/generate-batch', requireAuth, async (req, res) => {
       });
   }
 
-  await recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate-batch', style, model: 'claude-sonnet-4-6', input_tokens: batchInputTokens, output_tokens: batchOutputTokens });
+  await recordCost(supabase, { user_id: req.user.id, endpoint: '/api/generate-batch', style, model: 'claude-haiku-4-5-20251001', input_tokens: batchInputTokens, output_tokens: batchOutputTokens });
   res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
   res.end();
 });
