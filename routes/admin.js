@@ -47,6 +47,7 @@ function daysAgo(n) {
 // Emails de teste/admin a excluir de todos os cálculos financeiros
 const TEST_EMAILS = new Set([
   'teste@ugc.com',
+  'teste.starter@gmail.com',
   'teste.pro@gmail.com',
   'teste.agencia@gmail.com',
   'teste.registro3@gmail.com',
@@ -79,10 +80,10 @@ module.exports = function adminRoutes(supabase) {
     try {
       const todayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
       const [usersRes, salesRes, costsRes, allCostsRes, rate, galleryTodayRes] = await Promise.allSettled([
-        supabase.from('users').select('plan, plan_active, email, is_admin'),
+        supabase.from('users').select('id, plan, plan_active, email, is_admin'),
         supabase.from('sales').select('amount_brl').gte('paid_at', daysAgo(30)),
-        supabase.from('api_costs').select('cost_usd').gte('created_at', daysAgo(30)),
-        supabase.from('api_costs').select('cost_usd'), // all-time — para saldo Anthropic
+        supabase.from('api_costs').select('user_id, cost_usd').gte('created_at', daysAgo(30)),
+        supabase.from('api_costs').select('user_id, cost_usd'), // all-time — para saldo Anthropic
         getRate(),
         supabase.from('gallery').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
       ]);
@@ -104,14 +105,22 @@ module.exports = function adminRoutes(supabase) {
       const sales      = salesRes.value?.data || [];
       const revenue30d = sales.reduce((s, r) => s + (parseFloat(r.amount_brl) || 0), 0);
 
-      // Custo API 30d
-      const costs    = costsRes.value?.data || [];
+      // IDs de admins e contas de teste — excluídos dos custos de API
+      const adminIds = new Set(
+        (usersRes.value?.data || [])
+          .filter(u => !isRealClient(u))
+          .map(u => u.id)
+          .filter(Boolean)
+      );
+
+      // Custo API 30d — exclui admins/teste
+      const costs    = (costsRes.value?.data || []).filter(r => !adminIds.has(r.user_id));
       const costUsd  = costs.reduce((s, r) => s + (parseFloat(r.cost_usd) || 0), 0);
       const usdToBrl = rate.status === 'fulfilled' ? rate.value : _rateCache.rate;
 
-      // Saldo Anthropic dinâmico: ANTHROPIC_BALANCE_USD - total gasto all-time em api_costs
+      // Saldo Anthropic dinâmico: ANTHROPIC_BALANCE_USD - total gasto all-time (exclui admins)
       const anthropicCredit  = parseFloat(process.env.ANTHROPIC_BALANCE_USD || 0);
-      const allCosts         = allCostsRes.value?.data || [];
+      const allCosts         = (allCostsRes.value?.data || []).filter(r => !adminIds.has(r.user_id));
       const totalSpentAllTime = allCosts.reduce((s, r) => s + (parseFloat(r.cost_usd) || 0), 0);
       const anthropicBalance = Math.max(0, anthropicCredit - totalSpentAllTime);
 

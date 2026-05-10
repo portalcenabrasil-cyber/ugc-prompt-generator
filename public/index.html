@@ -4823,7 +4823,7 @@
     if (grid && !el.parentNode) grid.prepend(el);
     const leg   = (item.legenda || '').replace(/</g, '&lt;');
     const date  = fmtDate(item.created_at);
-    const cost  = (isAdmin() && item.cost) ? `<span class="gallery-card-cost">${fmt$(item.cost.total_cost)}</span>` : '';
+    const cost  = (isAdmin() && item.cost) ? `<span class="gallery-card-cost">${fmtCostCard(item.cost.total_cost)}</span>` : '';
     const thumb = item.image
       ? `<div class="gallery-card-thumb" style="background-image:url('${item.image}')"></div>`
       : `<div class="gallery-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📦</div>`;
