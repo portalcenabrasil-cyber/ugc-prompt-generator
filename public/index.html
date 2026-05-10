@@ -3928,6 +3928,7 @@
       if (galleryItem) resolvePendingCard(tempId, galleryItem);
       else rejectPendingCard(tempId);
       renderResults(data);
+      loadProfileStats(); // Atualiza custo total e créditos após geração
       // Tryon: se o usuário selecionou cores, faz PATCH para adicionar Nano Banana JSONs
       // Kling takes + CTAs já foram salvos pelo servidor no insert inicial
       if (data._tryon && data._gallery?.id && _tryonSelectedColors.size > 0) {
@@ -4065,6 +4066,7 @@
       btn.disabled = false;
       btn.classList.remove('loading');
       sessionStorage.removeItem('ugc_batch_id');
+      loadProfileStats(); // Atualiza custo total e créditos após lote
     }
   }
 

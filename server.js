@@ -2452,7 +2452,7 @@ async function getLiveRate() {
   const AGE = Date.now() - _exchangeCache.fetchedAt;
   if (AGE < 60 * 60 * 1000) return _exchangeCache.rate; // cache válido por 1h
   try {
-    const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { timeout: 5000 });
+    const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { signal: AbortSignal.timeout(5000) });
     if (!r.ok) throw new Error('status ' + r.status);
     const d = await r.json();
     const rate = parseFloat(d?.USDBRL?.bid);

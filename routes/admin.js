@@ -15,7 +15,7 @@ let _rateCache = { rate: 5.70, at: 0 };
 async function getRate() {
   if (Date.now() - _rateCache.at < 3_600_000) return _rateCache.rate;
   try {
-    const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
+    const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { timeout: 5000 });
     const d = await r.json();
     const rate = parseFloat(d?.USDBRL?.bid);
     if (!isNaN(rate) && rate > 1) _rateCache = { rate: +rate.toFixed(4), at: Date.now() };
@@ -301,7 +301,7 @@ module.exports = function adminRoutes(supabase) {
   // custo estimado histórico (antes do recordCost existir), médias e projeções.
   router.get('/stats', async (req, res) => {
     try {
-      const CUSTO_MEDIO_ESTIMADO_USD = 0.021249; // custo médio real medido
+      const CUSTO_MEDIO_ESTIMADO_USD = 0.011000; // custo médio Haiku (migrado 2026-05)
       const rate = await getRate();
 
       const [galleryCount, costsRes, usersRes] = await Promise.allSettled([
@@ -351,7 +351,7 @@ module.exports = function adminRoutes(supabase) {
   router.get('/costs-by-user', async (req, res) => {
     try {
       const rate = await getRate();
-      const CUSTO_MEDIO_USD = 0.021249; // custo médio real medido por geração
+      const CUSTO_MEDIO_USD = 0.011000; // custo médio Haiku (migrado 2026-05)
 
       const [usersRes, costsRes, galleryRes] = await Promise.allSettled([
         supabase.from('users').select('id, email, name, plan, plan_active, is_admin'),
