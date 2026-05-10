@@ -2398,22 +2398,40 @@ app.get('/api/stats', requireSupabase, requireAuth, async (req, res) => {
 });
 
 // ── Câmbio ao vivo USD→BRL (cache 1h) ──
+// Usa node-fetch v2 (timeout option válido) com dois provedores em cascata.
 let _exchangeCache = { rate: 5.70, fetchedAt: 0 };
+
+async function _fetchRate(url, extract) {
+  const r = await fetch(url, { timeout: 6000 }); // node-fetch v2 — timeout em ms
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  return extract(d);
+}
 
 async function getLiveRate() {
   const AGE = Date.now() - _exchangeCache.fetchedAt;
   if (AGE < 60 * 60 * 1000) return _exchangeCache.rate; // cache válido por 1h
-  try {
-    const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) throw new Error('status ' + r.status);
-    const d = await r.json();
-    const rate = parseFloat(d?.USDBRL?.bid);
-    if (!isNaN(rate) && rate > 1) {
-      _exchangeCache = { rate: +rate.toFixed(4), fetchedAt: Date.now() };
+
+  const sources = [
+    // Fonte 1: awesomeapi (BR)
+    () => _fetchRate('https://economia.awesomeapi.com.br/json/last/USD-BRL', d => parseFloat(d?.USDBRL?.bid)),
+    // Fonte 2: open.er-api.com (backup global, sem auth)
+    () => _fetchRate('https://open.er-api.com/v6/latest/USD', d => parseFloat(d?.rates?.BRL)),
+  ];
+
+  for (const source of sources) {
+    try {
+      const rate = await source();
+      if (!isNaN(rate) && rate > 1) {
+        _exchangeCache = { rate: +rate.toFixed(4), fetchedAt: Date.now() };
+        return _exchangeCache.rate;
+      }
+    } catch (e) {
+      console.warn('[exchange] fonte falhou, tentando próxima:', e.message);
     }
-  } catch (e) {
-    console.warn('[exchange] fallback para cache:', e.message);
   }
+
+  console.warn('[exchange] todas as fontes falharam — usando cache:', _exchangeCache.rate);
   return _exchangeCache.rate;
 }
 

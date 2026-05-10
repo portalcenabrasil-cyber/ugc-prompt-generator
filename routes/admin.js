@@ -14,12 +14,29 @@ const PLAN_PRICE = { starter: 69.90, pro: 127.90, agencia: 247.90 };
 let _rateCache = { rate: 5.70, at: 0 };
 async function getRate() {
   if (Date.now() - _rateCache.at < 3_600_000) return _rateCache.rate;
-  try {
-    const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { timeout: 5000 });
-    const d = await r.json();
-    const rate = parseFloat(d?.USDBRL?.bid);
-    if (!isNaN(rate) && rate > 1) _rateCache = { rate: +rate.toFixed(4), at: Date.now() };
-  } catch { /* usa valor em cache */ }
+
+  const sources = [
+    async () => {
+      const r = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', { timeout: 6000 });
+      const d = await r.json();
+      return parseFloat(d?.USDBRL?.bid);
+    },
+    async () => {
+      const r = await fetch('https://open.er-api.com/v6/latest/USD', { timeout: 6000 });
+      const d = await r.json();
+      return parseFloat(d?.rates?.BRL);
+    },
+  ];
+
+  for (const source of sources) {
+    try {
+      const rate = await source();
+      if (!isNaN(rate) && rate > 1) {
+        _rateCache = { rate: +rate.toFixed(4), at: Date.now() };
+        return _rateCache.rate;
+      }
+    } catch { /* tenta próxima fonte */ }
+  }
   return _rateCache.rate;
 }
 
