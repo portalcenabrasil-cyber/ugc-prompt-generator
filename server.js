@@ -249,20 +249,33 @@ async function _saveGalleryItem(userId, result, image_base64, image_type, price,
     tipo    = null; // tryon não usa tipo de vídeo
   }
 
-  // ── Crop automático + resize/compress — remove card e gera thumbnail leve ──
-  let gallery_image_base64 = null;
-  let gallery_image_type   = image_type || 'image/jpeg';
+  // ── Crop + upload para Supabase Storage (bucket "gallery-imgs") ──
+  // Novas gerações salvam URL em vez de base64 inline no PostgreSQL.
+  // Fallback: se o upload falhar, salva base64 (não perde a geração).
+  let gallery_image_url = null;
   if (image_base64) {
-    const cropped = await cropImageBase64(image_base64, image_type || 'image/jpeg');
-    gallery_image_base64 = cropped.base64;
-    gallery_image_type   = cropped.mimeType;
+    try {
+      const cropped   = await cropImageBase64(image_base64, image_type || 'image/jpeg');
+      const imgBuffer = Buffer.from(cropped.base64, 'base64');
+      const filePath  = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`;
+      const { error: uploadErr } = await supabase.storage
+        .from('gallery-imgs')
+        .upload(filePath, imgBuffer, { contentType: 'image/jpeg', upsert: false });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from('gallery-imgs').getPublicUrl(filePath);
+      gallery_image_url = urlData.publicUrl;
+    } catch (e) {
+      console.warn('[gallery] Storage upload falhou — usando base64 inline:', e.message);
+      const cropped = await cropImageBase64(image_base64, image_type || 'image/jpeg');
+      gallery_image_url = `data:${cropped.mimeType};base64,${cropped.base64}`;
+    }
   }
 
   const newItem = {
     id:           Date.now() + '-' + Math.random().toString(36).substr(2, 9),
     user_id:      userId,
     created_at:   new Date().toISOString(),
-    image:        gallery_image_base64 ? `data:${gallery_image_type};base64,${gallery_image_base64}` : null,
+    image:        gallery_image_url,
     prompt_video: prompt_video,
     legenda:      legenda,
     nicho:        nicho,
