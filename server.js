@@ -80,6 +80,46 @@ async function sendResetEmail(toEmail, resetLink) {
   return true;
 }
 
+async function sendWelcomeEmail(toEmail, toName, plan) {
+  const mailer = getMailer();
+  if (!mailer) return false;
+
+  const planNames = { starter: 'Starter', pro: 'Pro', agencia: 'Agência' };
+  const planName  = planNames[plan] || plan;
+  const loginUrl  = 'https://ugcai.com.br';
+
+  await mailer.sendMail({
+    from: `"UGC·AI" <${process.env.EMAIL_USER}>`,
+    to: toEmail,
+    subject: `🎉 Bem-vindo ao UGC·AI — Plano ${planName} ativado!`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0a0a;color:#fff;border-radius:12px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#ff6600,#cc44ff,#0099ff);padding:32px;text-align:center;">
+          <h1 style="margin:0;font-size:28px;font-weight:800;color:white;">UGC·AI</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Prompts que vendem no TikTok Shop</p>
+        </div>
+        <div style="padding:32px;">
+          <h2 style="color:#00ff87;font-size:20px;margin:0 0 12px;">Plano ${planName} ativado! 🚀</h2>
+          <p style="color:#ccc;line-height:1.7;margin:0 0 24px;">Olá ${toName || ''},<br><br>
+          Sua compra foi confirmada e seu acesso já está liberado. Clique no botão abaixo para acessar sua conta e começar a gerar prompts agora mesmo.</p>
+          <div style="text-align:center;margin:28px 0;">
+            <a href="${loginUrl}" style="background:#ff6600;color:white;padding:14px 36px;border-radius:100px;text-decoration:none;font-weight:700;font-size:15px;">
+              ✦ Acessar minha conta →
+            </a>
+          </div>
+          <p style="color:#888;font-size:13px;line-height:1.6;">
+            <strong style="color:#ccc;">Seu email de acesso:</strong> ${toEmail}<br>
+            Se ainda não definiu sua senha, clique em "Esqueci minha senha" na tela de login.
+          </p>
+          <hr style="border:none;border-top:1px solid #222;margin:24px 0;">
+          <p style="color:#555;font-size:12px;text-align:center;">UGC·AI — TikTok Shop Brasil<br>ugcai.com.br</p>
+        </div>
+      </div>
+    `
+  });
+  return true;
+}
+
 // ── Guard: rejeita se Supabase não estiver configurado ──
 function requireSupabase(req, res, next) {
   if (!supabase) return res.status(503).json({ error: 'Banco de dados não configurado. Adicione SUPABASE_URL e SUPABASE_SERVICE_KEY no .env e na Vercel.' });
@@ -1673,6 +1713,9 @@ app.post('/api/webhook/kiwify-v2', requireSupabase, async (req, res) => {
         await supabase.from('users')
           .update({ plan: config.plan, plan_active: true, generations_limit: config.generations_limit })
           .eq('email', email);
+        // Notifica usuário existente sobre ativação/upgrade
+        const nameExisting = body?.customer?.name || body?.Customer?.name || null;
+        await sendWelcomeEmail(email, nameExisting, config.plan).catch(e => console.error('[webhook] email upgrade falhou:', e));
       } else {
         await supabase.from('users').insert({
           email,
@@ -1683,6 +1726,9 @@ app.post('/api/webhook/kiwify-v2', requireSupabase, async (req, res) => {
           generations_limit: config.generations_limit,
           generations_used:  0,
         });
+        // Envia email de boas-vindas para usuário novo
+        const nameNew = body?.customer?.name || body?.Customer?.name || null;
+        await sendWelcomeEmail(email, nameNew, config.plan).catch(e => console.error('[webhook] email boas-vindas falhou:', e));
       }
 
       // Registra venda — idempotente via kiwify_order_id unique (conflito = duplicata ignorada)

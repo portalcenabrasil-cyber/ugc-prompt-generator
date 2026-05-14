@@ -2285,7 +2285,7 @@
                 <button class="seg-btn"        data-value="negra"   onclick="filterHair('negra')">Negra</button>
                 <button class="seg-btn"        data-value="asiatica" onclick="filterHair('asiatica')">Asiática</button>
               </div>
-              <button id="btnUGC137" onclick="toggleUGC137()" style="margin-top:8px;width:100%;padding:8px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;transition:all 0.2s;">📱 UGC da 137 — usar minha modelo</button>
+              <button id="btnUGC137" onclick="toggleUGC137()" style="margin-top:8px;width:100%;padding:8px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;transition:all 0.2s;">📱 Usar minha modelo</button>
             </div>
 
             <!-- Step B: Grid de personagens -->
@@ -2340,7 +2340,7 @@
                 <button class="seg-btn"        data-value="negra"    onclick="tryonFilterHair('negra')">Negra</button>
                 <button class="seg-btn"        data-value="asiatica" onclick="tryonFilterHair('asiatica')">Asiática</button>
               </div>
-              <button id="btnTryonUGC137" onclick="tryonToggleUGC137()" style="margin-top:8px;width:100%;padding:8px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;transition:all 0.2s;">📱 UGC da 137 — usar minha modelo</button>
+              <button id="btnTryonUGC137" onclick="tryonToggleUGC137()" style="margin-top:8px;width:100%;padding:8px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;transition:all 0.2s;">📱 Usar minha modelo</button>
             </div>
 
             <!-- Grid de personagens -->
@@ -3675,7 +3675,18 @@
     ]
   };
 
+  const BATCH_DISABLED_STYLES = new Set(['roupa-feminina-v2', 'tryon-haul']);
+
   function onStyleChange(style) {
+    // Estilos sem suporte a lote — esconde botão e volta para single
+    const batchBtn = document.getElementById('modeBatch');
+    if (BATCH_DISABLED_STYLES.has(style)) {
+      batchBtn.style.display = 'none';
+      if (currentMode === 'batch') setMode('single');
+    } else {
+      batchBtn.style.display = '';
+    }
+
     // Truncar slots de lote ao limite do novo estilo
     const newMax = BATCH_MAX_BY_STYLE[style] || 20;
     if (batchItems.length > newMax) {
@@ -3877,7 +3888,7 @@
     }
     // tryon-haul pre-validation
     if (_style === 'tryon-haul' && _tryonModo !== 'ugc-da-137' && !_tryonSelectedCharId) {
-      showError('Selecione um personagem antes de gerar, ou ative "UGC da 137" para usar sua própria modelo.');
+      showError('Selecione um personagem antes de gerar, ou ative "Usar minha modelo" para usar sua própria modelo.');
       btn.disabled=false; btn.classList.remove('loading'); clearInterval(_simInterval); rejectPendingCard(tempId); return;
     }
 
@@ -4499,9 +4510,21 @@
   function fmtTok(n) { return n.toLocaleString('pt-BR') + '\u00a0tok'; }
 
   function renderCostBox(usage) {
-    if (!isAdmin()) return;
     const el = document.getElementById('costBox');
     if (!el) return;
+    if (!isAdmin()) {
+      // Usuários comuns: exibe apenas crédito consumido, sem preços em dinheiro
+      const used  = _authUser?.generations_used  || 0;
+      const limit = _authUser?.generations_limit || 0;
+      const remaining = Math.max(0, limit - used);
+      el.innerHTML = `
+        <div class="cost-box" style="text-align:center;padding:10px 14px;">
+          <div style="font-size:13px;color:var(--text);font-weight:600;">✅ 1 crédito usado</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Restam <strong style="color:var(--orange)">${remaining}</strong> de ${limit} créditos do seu plano</div>
+        </div>`;
+      return;
+    }
+    // Admin: exibe breakdown completo de custo em USD/BRL
     el.innerHTML = `
       <div class="cost-box">
         <div class="cost-row">
@@ -5938,7 +5961,7 @@
       if (btn) { btn.style.background = 'rgba(255,107,0,0.15)'; btn.style.borderColor = 'rgba(255,107,0,0.4)'; btn.style.color = '#FF8533'; }
       if (charGridField) charGridField.style.display = 'none';
       if (hairFilter) hairFilter.parentElement.style.display = 'none';
-      if (hint) hint.innerHTML = '💡 <strong>UGC da 137:</strong> suba a foto da modelo usando a roupa abaixo. A IA vai analisar a personagem, o outfit e o ambiente automaticamente.';
+      if (hint) hint.innerHTML = '💡 <strong>Usar minha modelo:</strong> suba a foto da modelo usando a roupa abaixo. A IA vai analisar a personagem, o outfit e o ambiente automaticamente.';
     } else {
       if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
       if (charGridField) charGridField.style.display = 'block';

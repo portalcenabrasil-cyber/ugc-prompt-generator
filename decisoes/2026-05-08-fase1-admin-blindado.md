@@ -1,4 +1,4 @@
-# Decisão: Painel Admin Fase 1 — Arquitetura Blindada
+a# Decisão: Painel Admin Fase 1 — Arquitetura Blindada
 
 **Data:** 2026-05-08
 **Status:** Em implementação

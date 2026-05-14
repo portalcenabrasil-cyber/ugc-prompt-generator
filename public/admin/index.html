@@ -9,6 +9,8 @@
   <style>
     /* ══ RESET ══════════════════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { overflow-x: hidden; }
+    img, video, canvas, svg, iframe { max-width: 100%; }
 
     /* ══ TOKENS — Emerald Night ══════════════════════════════════ */
     :root {
@@ -127,7 +129,7 @@
       flex-shrink: 0;
     }
     .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: -.2px; }
-    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .topbar-left  { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
     .avatar {
       width: 32px; height: 32px; border-radius: 50%;
       background: var(--acc); color: #000;
@@ -328,6 +330,150 @@
     .green { color: var(--acc); }
     .muted { color: var(--mute); }
     .red   { color: var(--red); }
+
+    /* ══ BOTTOM NAV (hidden desktop) ════════════════════════════════ */
+    .bottom-nav { display: none; }
+
+    /* ══ MOBILE ≤ 600px ══════════════════════════════════════════════ */
+    @media (max-width: 600px) {
+
+      /* P1 — App sem overflow */
+      .app { overflow-x: hidden; }
+
+      /* P2 — Sidebar → oculta; conteúdo ocupa 100% */
+      .side { display: none; }
+      .main { width: 100%; padding-bottom: 68px; }
+
+      /* P5 — Header compacto */
+      .topbar {
+        height: auto; min-height: 52px;
+        padding: 8px 16px; gap: 2px;
+      }
+      .topbar-left { flex-direction: column; align-items: flex-start; gap: 1px; }
+      .topbar-title { font-size: 15px; }
+      .email-chip { font-size: 11px; color: var(--mute2); }
+
+      /* P6 — Padding e gaps reduzidos */
+      .page { padding: 14px 12px; gap: 12px; }
+      .card { padding: 16px; }
+      .kpi  { padding: 14px; gap: 6px; }
+      .kpi-value { font-size: 22px; }
+      .chart-card { padding: 16px 16px 0; }
+      .chart-wrap { margin: 0 -16px; }
+      .chart-total { font-size: 26px; margin-bottom: 12px; }
+
+      /* P3 — Grids → 2 col (KPI) ou 1 col (margens/inline) */
+      .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      #margens-grid { grid-template-columns: 1fr !important; }
+      #sales-kpis,
+      #costs-kpis { grid-template-columns: repeat(2, 1fr) !important; }
+
+      /* Filtros: empilha verticalmente */
+      .filters { flex-direction: column; gap: 8px; }
+      .filter-input { min-width: unset; width: 100%; }
+      .filter-select { width: 100%; }
+
+      /* Projeção: empilha inputs + resultado */
+      .proj-wrap { flex-direction: column !important; }
+      #proj-resultado { min-width: unset !important; }
+
+      /* P4 — Tabelas → cards empilhados */
+      .tbl-wrap table,
+      .tbl-wrap tbody { display: block; }
+      .tbl-wrap thead { display: none; }
+      .tbl-wrap tr {
+        display: block;
+        background: var(--card2);
+        border: 1px solid var(--brd2);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+      }
+      .tbl-wrap tr:hover td { background: transparent; }
+      .tbl-wrap td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        border-bottom: 1px solid var(--brd);
+        font-size: 12px;
+        gap: 8px;
+      }
+      .tbl-wrap tr td:last-child { border-bottom: none; }
+      .tbl-wrap td::before {
+        content: attr(data-label);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--mute);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        min-width: 72px;
+        flex-shrink: 0;
+      }
+
+      /* P7 — Hierarquia: 1º td = Nome grande (header do card) */
+      .tbl-wrap tr td:first-child {
+        font-size: 15px;
+        font-weight: 700;
+        padding-bottom: 2px;
+        border-bottom: none;
+      }
+      .tbl-wrap tr td:first-child::before { display: none; }
+
+      /* 2º td = Email pequeno/muted (subheader) */
+      .tbl-wrap tr td:nth-child(2) {
+        font-size: 11px;
+        color: var(--mute);
+        padding-top: 0;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--brd2);
+        margin-bottom: 2px;
+      }
+      .tbl-wrap tr td:nth-child(2)::before { display: none; }
+
+      /* Verde neon apenas em valores monetários principais */
+      #sales-body      tr td[data-label="Bruto"],
+      #dash-sales-body tr td[data-label="Valor"] {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--acc);
+        border-bottom: none;
+        padding-top: 8px;
+      }
+      #sales-body      tr td[data-label="Bruto"]::before,
+      #dash-sales-body tr td[data-label="Valor"]::before {
+        color: var(--mute2);
+        font-size: 9px;
+      }
+
+      /* P2 — Bottom nav iOS premium */
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 60px;
+        background: var(--surf);
+        border-top: 1px solid var(--brd);
+        z-index: 200;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .bottom-nav .side-item {
+        flex: 1; height: 60px;
+        border-radius: 0;
+        flex-direction: column;
+        gap: 3px;
+        overflow: visible;
+      }
+      .bottom-nav .side-item::before { display: none !important; }
+      .bottom-nav .side-item span {
+        display: block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .02em;
+      }
+      .bottom-nav .side-item svg { width: 20px; height: 20px; }
+      .bottom-nav .side-item.active { color: var(--acc); background: transparent; }
+    }
   </style>
 </head>
 <body>
@@ -363,11 +509,11 @@
   <!-- ══ MAIN ═════════════════════════════════════════════════════ -->
   <div class="main">
     <div class="topbar">
-      <span class="topbar-title" id="page-title">Dashboard</span>
-      <div class="topbar-right">
+      <div class="topbar-left">
+        <span class="topbar-title" id="page-title">Dashboard</span>
         <span class="email-chip" id="user-email"></span>
-        <div class="avatar" id="user-avatar">A</div>
       </div>
+      <div class="avatar" id="user-avatar">A</div>
     </div>
 
     <!-- ════════════ DASHBOARD ════════════ -->
@@ -449,6 +595,47 @@
         </div>
       </div>
 
+      <!-- Financeiro & Margens -->
+      <div class="card" id="card-margens">
+        <div class="card-title">Margens por plano</div>
+        <div id="margens-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px;">
+          <div class="skeleton sk-row" style="height:140px"></div>
+          <div class="skeleton sk-row" style="height:140px"></div>
+          <div class="skeleton sk-row" style="height:140px"></div>
+        </div>
+      </div>
+
+      <!-- Projeção de receita -->
+      <div class="card" id="card-projecao">
+        <div class="card-title">Projeção de receita</div>
+        <div class="proj-wrap" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:8px;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <label style="font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:4px;">
+              Starter
+              <input type="number" id="proj-starter" min="0" value="0" oninput="calcProjecao()"
+                style="width:80px;background:var(--card2);border:1px solid var(--brd2);color:var(--text);border-radius:6px;padding:6px 8px;font-size:14px;font-weight:600;">
+            </label>
+            <label style="font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:4px;">
+              Pro
+              <input type="number" id="proj-pro" min="0" value="0" oninput="calcProjecao()"
+                style="width:80px;background:var(--card2);border:1px solid var(--brd2);color:var(--text);border-radius:6px;padding:6px 8px;font-size:14px;font-weight:600;">
+            </label>
+            <label style="font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:4px;">
+              Agência
+              <input type="number" id="proj-agencia" min="0" value="0" oninput="calcProjecao()"
+                style="width:80px;background:var(--card2);border:1px solid var(--brd2);color:var(--text);border-radius:6px;padding:6px 8px;font-size:14px;font-weight:600;">
+            </label>
+          </div>
+          <div id="proj-resultado" style="flex:1;min-width:200px;background:var(--card2);border:1px solid var(--brd2);border-radius:8px;padding:14px 18px;">
+            <div style="font-size:11px;color:var(--mute);margin-bottom:6px;">RESULTADO ESTIMADO</div>
+            <div id="proj-bruta"  style="font-size:13px;color:var(--mute);">Receita bruta: —</div>
+            <div id="proj-custo"  style="font-size:13px;color:var(--mute);">Custo API est.: —</div>
+            <div id="proj-lucro"  style="font-size:22px;font-weight:700;color:var(--acc);margin-top:6px;">R$ 0,00</div>
+            <div id="proj-margem" style="font-size:12px;color:var(--mute);">Margem: —</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Custo por usuário -->
       <div class="card">
         <div class="card-title">Custo por usuário (histórico)</div>
@@ -518,7 +705,10 @@
     <!-- ════════════ USERS ════════════ -->
     <div class="page" id="page-users">
       <div>
-        <div class="section-title">Usuários cadastrados</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+          <div class="section-title" style="margin-bottom:0">Usuários cadastrados</div>
+          <button onclick="openCreateUser()" style="background:var(--acc);color:#000;border:none;border-radius:8px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer">+ Criar usuário</button>
+        </div>
         <div class="filters">
           <input class="filter-input" id="users-search" type="text" placeholder="Buscar por email…" oninput="filterUsers()" />
           <select class="filter-select" id="users-plan" onchange="filterUsers()">
@@ -533,6 +723,45 @@
             <option value="true">Ativo</option>
             <option value="false">Inativo</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Modal criar usuário -->
+      <div id="modal-create-user" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center">
+        <div style="background:var(--card);border:1px solid var(--brd2);border-radius:12px;padding:28px 32px;width:100%;max-width:420px;margin:16px">
+          <div style="font-size:16px;font-weight:700;margin-bottom:20px">Criar usuário manualmente</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div>
+              <label style="font-size:12px;color:var(--mute);display:block;margin-bottom:4px">Nome (opcional)</label>
+              <input id="cu-name" type="text" placeholder="Nome completo" style="width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--mute);display:block;margin-bottom:4px">Email *</label>
+              <input id="cu-email" type="email" placeholder="cliente@email.com" style="width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--mute);display:block;margin-bottom:4px">Senha *</label>
+              <input id="cu-password" type="text" placeholder="mínimo 6 caracteres" style="width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--mute);display:block;margin-bottom:4px">Plano</label>
+              <select id="cu-plan" onchange="cuUpdateLimit()" style="width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px">
+                <option value="free">Free (0 gerações)</option>
+                <option value="starter" selected>Starter (190 gerações)</option>
+                <option value="pro">Pro (500 gerações)</option>
+                <option value="agencia">Agência (2000 gerações)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--mute);display:block;margin-bottom:4px">Gerações (limite)</label>
+              <input id="cu-limit" type="number" value="190" min="0" style="width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px" />
+            </div>
+            <div id="cu-error" style="display:none;color:var(--red);font-size:13px;padding:8px 12px;background:rgba(255,77,109,.1);border-radius:8px"></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button onclick="closeCreateUser()" style="flex:1;background:var(--card2);border:1px solid var(--brd2);border-radius:8px;padding:10px;color:var(--mute);font-size:14px;cursor:pointer">Cancelar</button>
+            <button id="cu-btn" onclick="submitCreateUser()" style="flex:2;background:var(--acc);color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:14px;cursor:pointer">Criar conta</button>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -582,6 +811,26 @@
   </div><!-- .main -->
 </div><!-- .app -->
 
+<!-- ══ BOTTOM NAV (mobile only) ════════════════════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="side-item" data-page="dashboard" onclick="navigate('dashboard',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Dashboard</span>
+  </button>
+  <button class="side-item" data-page="sales" onclick="navigate('sales',this)">
+    <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    <span>Vendas</span>
+  </button>
+  <button class="side-item" data-page="users" onclick="navigate('users',this)">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    <span>Usuários</span>
+  </button>
+  <button class="side-item" data-page="costs" onclick="navigate('costs',this)">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+    <span>Custos</span>
+  </button>
+</nav>
+
 <script>
 // ══ AUTH ══════════════════════════════════════════════════════════════════════
 const TOKEN_KEY = 'ugc_token';
@@ -599,6 +848,8 @@ function initAuth() {
   const av = document.getElementById('user-avatar');
   if (el) el.textContent = u.email || '';
   if (av) av.textContent = initials(u.email || u.name || 'A');
+  // Sincroniza bottom nav com estado inicial da página
+  document.querySelectorAll(`.side-item[data-page="${_currentPage}"]`).forEach(b => b.classList.add('active'));
 }
 function logout() { localStorage.removeItem(TOKEN_KEY); redirectToLogin(); }
 
@@ -636,13 +887,13 @@ function tipoPill(r) {
 }
 
 // ══ FETCH ═════════════════════════════════════════════════════════════════════
-async function api(path) {
+async function api(path, opts = {}) {
   const tok = getToken();
   if (!tok) { redirectToLogin(); return null; }
   try {
-    const r = await fetch(path, { headers: { Authorization: 'Bearer ' + tok } });
+    const r = await fetch(path, { ...opts, headers: { Authorization: 'Bearer ' + tok, ...(opts.headers||{}) } });
     if (r.status === 401 || r.status === 403) { redirectToLogin(); return null; }
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) { const body = await r.json().catch(()=>{}); return { error: body?.error || 'HTTP ' + r.status }; }
     return await r.json();
   } catch (e) { console.error('[api]', path, e.message); return null; }
 }
@@ -673,7 +924,7 @@ function navigate(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.side-item[data-page]').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + page)?.classList.add('active');
-  (btn || document.querySelector(`.side-item[data-page="${page}"]`))?.classList.add('active');
+  document.querySelectorAll(`.side-item[data-page="${page}"]`).forEach(b => b.classList.add('active'));
   document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
   if (page === 'sales' && !_salesLoaded) loadSales();
   if (page === 'users' && !_usersLoaded) loadUsers();
@@ -891,16 +1142,19 @@ async function loadDashboard() {
   _costsCache   = costs?.data   || [];
   _salesCache   = sales?.data   || [];
 
+  _lastKpis = kpis;
   renderKPIs(kpis, stats, metrics);
   renderBanner(kpis);
   renderPresence(presence);
   renderFunnel(kpis, sales);
-  renderBarList('style-bars', costs?.summary?.by_style || {}, fmtUSD);
+  const styleRate = kpis?.rate_usd_brl || 5.00;
+  renderBarList('style-bars', costs?.summary?.by_style || {}, n => fmtBRL((+n)*styleRate));
   renderFinDetail(stats, kpis);
   renderDashSales(sales?.data || []);
   renderCostByUser(costsByUser?.data || [], costsByUser?.rate_usd_brl || 5.70);
   renderRankingGeracoes(costsByUser?.data || []);
   _buildChart(30);
+  renderMargens();
 }
 
 // ══ COSTS BY USER ═════════════════════════════════════════════════════════════
@@ -919,13 +1173,13 @@ function renderCostByUser(rows, rate) {
       : '<span class="pill pill-ylw">estimado</span>';
     return `
     <tr>
-      <td class="fw7">${r.name||'—'}</td>
-      <td class="muted mono">${r.email||'—'}</td>
-      <td>${planPill(r.plan, true)}</td>
-      <td class="muted">${fmtNum(r.total_geracoes)}</td>
-      <td class="${isReal ? 'green' : 'muted'}">${fmtUSD(custoUsd)}</td>
-      <td class="muted">${fmtBRL(r.custo_brl)}</td>
-      <td>${tipoPill}</td>
+      <td data-label="Nome" class="fw7">${r.name||'—'}</td>
+      <td data-label="Email" class="muted mono">${r.email||'—'}</td>
+      <td data-label="Plano">${planPill(r.plan, true)}</td>
+      <td data-label="Gerações" class="muted">${fmtNum(r.total_geracoes)}</td>
+      <td data-label="USD" class="${isReal ? 'green' : 'muted'}">${fmtUSD(custoUsd)}</td>
+      <td data-label="BRL" class="muted">${fmtBRL(r.custo_brl)}</td>
+      <td data-label="Tipo">${tipoPill}</td>
     </tr>`;
   }).join('');
 }
@@ -1077,11 +1331,11 @@ function renderDashSales(rows) {
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Nenhuma venda recente</td></tr>'; return; }
   tbody.innerHTML = rows.slice(0, 8).map(r => `
     <tr>
-      <td class="fw7">${r.name || '—'}</td>
-      <td class="muted">${r.email || '—'}</td>
-      <td>${planPill(r.plan, true)}</td>
-      <td class="green fw7">${fmtBRL(r.amount_brl)}</td>
-      <td class="muted">${fmtDate(r.paid_at)}</td>
+      <td data-label="Nome" class="fw7">${r.name || '—'}</td>
+      <td data-label="Email" class="muted">${r.email || '—'}</td>
+      <td data-label="Plano">${planPill(r.plan, true)}</td>
+      <td data-label="Valor" class="green fw7">${fmtBRL(r.amount_brl)}</td>
+      <td data-label="Data" class="muted">${fmtDate(r.paid_at)}</td>
     </tr>
   `).join('');
 }
@@ -1111,16 +1365,145 @@ async function loadSales() {
   if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma venda no período</td></tr>'; return; }
   body.innerHTML = rows.map(r => `
     <tr>
-      <td class="fw7">${r.name||'—'}</td>
-      <td class="muted">${r.email||'—'}</td>
-      <td>${planPill(r.plan,true)}</td>
-      <td class="green fw7">${fmtBRL(r.amount_brl)}</td>
-      <td class="muted">${fmtBRL(r.net_brl)}</td>
-      <td class="muted">${r.payment_method||'—'}</td>
-      <td class="muted">${fmtDateTime(r.paid_at)}</td>
+      <td data-label="Nome" class="fw7">${r.name||'—'}</td>
+      <td data-label="Email" class="muted">${r.email||'—'}</td>
+      <td data-label="Plano">${planPill(r.plan,true)}</td>
+      <td data-label="Bruto" class="green fw7">${fmtBRL(r.amount_brl)}</td>
+      <td data-label="Líquido" class="muted">${fmtBRL(r.net_brl)}</td>
+      <td data-label="Método" class="muted">${r.payment_method||'—'}</td>
+      <td data-label="Data" class="muted">${fmtDateTime(r.paid_at)}</td>
     </tr>
   `).join('');
 }
+
+// ══ FINANCEIRO & MARGENS ══════════════════════════════════════════════════════
+let _lastKpis = null;
+const PLANOS = {
+  starter: { nome:'Starter', preco:69.90,  geracoes:150, custo_por_geracao:0.05 },
+  pro:     { nome:'Pro',     preco:127.90, geracoes:400, custo_por_geracao:0.05 },
+  agencia: { nome:'Agência', preco:247.90, geracoes:850, custo_por_geracao:0.05 },
+};
+function fmt$(n) { return (+n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function renderMargens() {
+  const kpis   = _lastKpis;
+  const byPlan = kpis?.users?.by_plan || {};
+  const rate   = kpis?.rate_usd_brl   || 5.00;
+  const grid   = document.getElementById('margens-grid');
+  if (!grid) return;
+
+  grid.innerHTML = Object.entries(PLANOS).map(([key, p]) => {
+    const clientes   = byPlan[key] || 0;
+    const custoMax   = p.geracoes * p.custo_por_geracao;
+    const lucroMin   = p.preco - custoMax;
+    const margemPct  = Math.round((lucroMin / p.preco) * 100);
+    const receitaMes = p.preco * clientes;
+    const cor = margemPct >= 80 ? 'var(--acc)' : margemPct >= 70 ? 'var(--ylw)' : 'var(--red)';
+    return `
+      <div style="background:var(--card2);border:1px solid var(--brd2);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">${p.nome}</div>
+        <div style="font-size:11px;color:var(--mute);">Preço mensal</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);">R$ ${fmt$(p.preco)}</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:6px;">Custo API máx.</div>
+        <div style="font-size:13px;color:var(--red);">R$ ${fmt$(custoMax)}</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:6px;">Lucro mín. garantido</div>
+        <div style="font-size:16px;font-weight:700;color:${cor};">R$ ${fmt$(lucroMin)}</div>
+        <div style="font-size:20px;font-weight:800;color:${cor};margin-top:4px;">${margemPct}%</div>
+        <div style="height:1px;background:var(--brd2);margin:10px 0;"></div>
+        <div style="font-size:11px;color:var(--mute);">Clientes ativos</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);">${clientes}</div>
+        <div style="font-size:11px;color:var(--mute);margin-top:4px;">Receita estimada/mês</div>
+        <div style="font-size:15px;font-weight:700;color:var(--acc);">R$ ${fmt$(receitaMes)}</div>
+      </div>`;
+  }).join('');
+
+  // Preenche defaults dos inputs de projeção com clientes atuais
+  const si = document.getElementById('proj-starter');
+  const pi = document.getElementById('proj-pro');
+  const ai = document.getElementById('proj-agencia');
+  if (si && !si._initialized) { si.value = byPlan.starter||0; si._initialized=true; }
+  if (pi && !pi._initialized) { pi.value = byPlan.pro||0;     pi._initialized=true; }
+  if (ai && !ai._initialized) { ai.value = byPlan.agencia||0; ai._initialized=true; }
+  calcProjecao();
+}
+
+function calcProjecao() {
+  const s    = +(document.getElementById('proj-starter')?.value||0);
+  const p    = +(document.getElementById('proj-pro')?.value||0);
+  const a    = +(document.getElementById('proj-agencia')?.value||0);
+  const rate = _lastKpis?.rate_usd_brl || 5.00;
+  const USO  = 0.7;
+
+  const bruta  = s*PLANOS.starter.preco + p*PLANOS.pro.preco + a*PLANOS.agencia.preco;
+  const custo  = (s*PLANOS.starter.geracoes + p*PLANOS.pro.geracoes + a*PLANOS.agencia.geracoes)
+                 * PLANOS.starter.custo_por_geracao * USO;
+  const lucro  = bruta - custo;
+  const margem = bruta > 0 ? Math.round((lucro/bruta)*100) : 0;
+  const cor    = margem >= 80 ? 'var(--acc)' : margem >= 70 ? 'var(--ylw)' : 'var(--red)';
+
+  const el = id => document.getElementById(id);
+  if (el('proj-bruta'))  el('proj-bruta').textContent  = `Receita bruta: R$ ${fmt$(bruta)}`;
+  if (el('proj-custo'))  el('proj-custo').textContent  = `Custo API est. (70%): R$ ${fmt$(custo)}`;
+  if (el('proj-lucro'))  { el('proj-lucro').textContent = `R$ ${fmt$(lucro)}`; el('proj-lucro').style.color = cor; }
+  if (el('proj-margem')) el('proj-margem').textContent = `Margem: ${margem}%`;
+}
+
+
+// ══ CREATE USER MODAL ════════════════════════════════════════════════════════
+const CU_LIMITS = { free: 0, starter: 190, pro: 500, agencia: 2000 };
+
+function openCreateUser() {
+  const m = document.getElementById('modal-create-user');
+  m.style.display = 'flex';
+  document.getElementById('cu-name').value = '';
+  document.getElementById('cu-email').value = '';
+  document.getElementById('cu-password').value = '';
+  document.getElementById('cu-plan').value = 'starter';
+  document.getElementById('cu-limit').value = 190;
+  document.getElementById('cu-error').style.display = 'none';
+}
+
+function closeCreateUser() {
+  document.getElementById('modal-create-user').style.display = 'none';
+}
+
+function cuUpdateLimit() {
+  const plan = document.getElementById('cu-plan').value;
+  document.getElementById('cu-limit').value = CU_LIMITS[plan] ?? 0;
+}
+
+async function submitCreateUser() {
+  const btn   = document.getElementById('cu-btn');
+  const errEl = document.getElementById('cu-error');
+  const email    = document.getElementById('cu-email').value.trim();
+  const password = document.getElementById('cu-password').value.trim();
+  const name     = document.getElementById('cu-name').value.trim();
+  const plan     = document.getElementById('cu-plan').value;
+  const limit    = parseInt(document.getElementById('cu-limit').value) || 0;
+
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Email e senha são obrigatórios.'; errEl.style.display='block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Criando…';
+  const d = await api('/api/admin/users/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, name, plan, generations_limit: limit }),
+  });
+  btn.disabled = false; btn.textContent = 'Criar conta';
+
+  if (!d || d.error) { errEl.textContent = d?.error || 'Erro desconhecido'; errEl.style.display='block'; return; }
+  closeCreateUser();
+  alert(`Conta criada!\nEmail: ${d.user.email}\nPlano: ${d.user.plan}\nGerações: ${d.user.generations_limit}`);
+  _usersLoaded = false;
+  loadUsers();
+}
+
+// fechar modal clicando fora
+document.addEventListener('click', e => {
+  const m = document.getElementById('modal-create-user');
+  if (m && e.target === m) closeCreateUser();
+});
 
 // ══ USERS PAGE ════════════════════════════════════════════════════════════════
 let _usersLoaded = false, _usersData = [], _usersPage = 1;
@@ -1158,14 +1541,14 @@ function renderUsers() {
   if (!page.length) { body.innerHTML = '<tr><td colspan="8" class="empty">Nenhum usuário encontrado</td></tr>'; return; }
   body.innerHTML = page.map(r => `
     <tr>
-      <td class="fw7">${r.name||'—'}</td>
-      <td class="muted mono">${r.email||'—'}</td>
-      <td>${tipoPill(r)}</td>
-      <td>${planPill(r.plan,r.plan_active)}</td>
-      <td>${statusPill(r.plan_active)}</td>
-      <td>${fmtNum(r.generations_used)} / ${fmtNum(r.generations_limit)}</td>
-      <td class="muted">${fmtNum(r.tokens_used)}</td>
-      <td class="muted">${fmtDate(r.created_at)}</td>
+      <td data-label="Nome" class="fw7">${r.name||'—'}</td>
+      <td data-label="Email" class="muted mono">${r.email||'—'}</td>
+      <td data-label="Tipo">${tipoPill(r)}</td>
+      <td data-label="Plano">${planPill(r.plan,r.plan_active)}</td>
+      <td data-label="Status">${statusPill(r.plan_active)}</td>
+      <td data-label="Gerações">${fmtNum(r.generations_used)} / ${fmtNum(r.generations_limit)}</td>
+      <td data-label="Tokens" class="muted">${fmtNum(r.tokens_used)}</td>
+      <td data-label="Cadastro" class="muted">${fmtDate(r.created_at)}</td>
     </tr>
   `).join('');
 
@@ -1177,6 +1560,7 @@ function renderUsers() {
         `<button onclick="_usersPage=${p};renderUsers()" style="background:${p===_usersPage?'var(--acc)':'var(--card2)'};color:${p===_usersPage?'#000':'var(--mute)'};border:1px solid var(--brd2);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:${p===_usersPage?700:400}">${p}</button>`
       ).join('') : '');
   }
+  renderMargens();
 }
 
 // ══ COSTS PAGE ════════════════════════════════════════════════════════════════
@@ -1198,21 +1582,22 @@ async function loadCosts() {
     <div class="kpi"><div class="kpi-label">Chamadas</div><div class="kpi-value">${fmtNum(d.data?.length||0)}</div></div>
   `;
 
-  renderBarList('costs-style-bars', d.summary.by_style||{}, fmtUSD);
-  renderBarList('costs-model-bars', d.summary.by_model||{}, fmtUSD);
+  const costsRate = d.rate_usd_brl || 5.00;
+  renderBarList('costs-style-bars', d.summary.by_style||{}, n => fmtBRL((+n)*costsRate));
+  renderBarList('costs-model-bars', d.summary.by_model||{}, n => fmtBRL((+n)*costsRate));
 
   const rows = d.data||[];
   if (!body) return;
   if (!rows.length) { body.innerHTML = '<tr><td colspan="7" class="empty">Sem dados no período</td></tr>'; return; }
   body.innerHTML = rows.slice(0,200).map(r => `
     <tr>
-      <td>${r.style||'—'}</td>
-      <td class="mono muted">${(r.model||'—').replace('claude-','').replace(/-20\d{6}$/,'')}</td>
-      <td class="muted">${fmtNum(r.input_tokens)}</td>
-      <td class="muted">${fmtNum(r.output_tokens)}</td>
-      <td class="green">${fmtUSD(r.cost_usd)}</td>
-      <td>${r.status==='ok'?'<span class="pill pill-grn">ok</span>':`<span class="pill pill-red">${r.status||'—'}</span>`}</td>
-      <td class="muted">${fmtDateTime(r.created_at)}</td>
+      <td data-label="Estilo">${r.style||'—'}</td>
+      <td data-label="Modelo" class="mono muted">${(r.model||'—').replace('claude-','').replace(/-20\d{6}$/,'')}</td>
+      <td data-label="Tok.in" class="muted">${fmtNum(r.input_tokens)}</td>
+      <td data-label="Tok.out" class="muted">${fmtNum(r.output_tokens)}</td>
+      <td data-label="USD" class="green">${fmtUSD(r.cost_usd)}</td>
+      <td data-label="Status">${r.status==='ok'?'<span class="pill pill-grn">ok</span>':`<span class="pill pill-red">${r.status||'—'}</span>`}</td>
+      <td data-label="Data" class="muted">${fmtDateTime(r.created_at)}</td>
     </tr>
   `).join('');
 }
