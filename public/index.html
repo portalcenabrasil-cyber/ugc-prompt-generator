@@ -2996,7 +2996,32 @@
       console.error('[showApp] erro ao montar UI:', err);
     }
     hideSplash();
+
+    // ── Polling em tempo real: detecta mudanças de plano/créditos feitas pelo admin ──
+    if (_userPollInterval) clearInterval(_userPollInterval);
+    _userPollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+        if (!res.ok) return;
+        const { user: fresh } = await res.json();
+        if (!fresh || !_authUser) return;
+        const changed = fresh.plan_active    !== _authUser.plan_active    ||
+                        fresh.generations_limit !== _authUser.generations_limit ||
+                        fresh.plan           !== _authUser.plan;
+        if (changed) {
+          _authUser = { ..._authUser, ...fresh };
+          applyAccessRestriction(_authUser);
+          loadProfileStats();
+        } else {
+          // Atualiza contador de créditos mesmo sem mudança de plano
+          _authUser.generations_used  = fresh.generations_used;
+          _authUser.generations_limit = fresh.generations_limit;
+        }
+      } catch { /* silencioso */ }
+    }, 30_000);
   }
+
+  let _userPollInterval = null;
 
   function applyAccessRestriction(user) {
     const isAdmin = user.is_admin || user.plan === 'admin';
@@ -3232,6 +3257,7 @@
   function logout() {
     clearToken();
     _authUser = null;
+    if (_userPollInterval) { clearInterval(_userPollInterval); _userPollInterval = null; }
     document.getElementById('authOverlay').classList.remove('hidden');
     document.getElementById('authOverlay').style.background = '';
     document.getElementById('btnLogout').style.display = 'none';

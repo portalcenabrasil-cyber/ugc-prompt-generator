@@ -350,10 +350,11 @@ module.exports = function adminRoutes(supabase) {
       const CUSTO_MEDIO_ESTIMADO_USD = 0.011000; // custo médio Haiku (migrado 2026-05)
       const rate = await getRate();
 
-      const [galleryCount, costsRes, usersRes] = await Promise.allSettled([
+      const [galleryCount, costsRes, usersRes, salesAllTimeRes] = await Promise.allSettled([
         supabase.from('gallery').select('id', { count: 'exact', head: true }),
         supabase.from('api_costs').select('cost_usd'),
         supabase.from('users').select('plan, plan_active, email, is_admin'),
+        supabase.from('sales').select('amount_brl'),
       ]);
 
       const totalGeracoes = galleryCount.value?.count || 0;
@@ -368,6 +369,9 @@ module.exports = function adminRoutes(supabase) {
       const pagantes = users.filter(u => u.plan_active && u.plan && !['free'].includes(u.plan) && isRealClient(u)).length;
 
       const geracoesPorPagante = pagantes > 0 ? +(totalGeracoes / pagantes).toFixed(1) : 0;
+
+      const totalReceitaBrl = (salesAllTimeRes.value?.data || [])
+        .reduce((s, r) => s + (parseFloat(r.amount_brl) || 0), 0);
 
       // Projeção mensal: custo se cada pagante fizer X gerações/mês
       const projecao30d_usd = geracoesPorPagante * pagantes * CUSTO_MEDIO_ESTIMADO_USD;
@@ -384,6 +388,7 @@ module.exports = function adminRoutes(supabase) {
         geracoes_por_pagante:            geracoesPorPagante,
         projecao_30d_usd:                +projecao30d_usd.toFixed(4),
         projecao_30d_brl:                +(projecao30d_usd * rate).toFixed(2),
+        total_receita_brl:               +totalReceitaBrl.toFixed(2),
         rate_usd_brl:                    rate,
       });
     } catch (err) {

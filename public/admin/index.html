@@ -474,6 +474,19 @@
       .bottom-nav .side-item svg { width: 20px; height: 20px; }
       .bottom-nav .side-item.active { color: var(--acc); background: transparent; }
     }
+
+  /* ══ TOAST ══════════════════════════════════════════════════ */
+  #toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+  .toast {
+    background:#111; border:1px solid var(--acc); border-radius:10px;
+    padding:14px 18px; font-size:13px; color:var(--text);
+    box-shadow:0 0 24px rgba(0,255,135,.2);
+    animation: toastIn .3s ease;
+    max-width:320px;
+  }
+  .toast-title { font-weight:700; color:var(--acc); margin-bottom:2px; }
+  .toast-body  { color:var(--mute); font-size:12px; }
+  @keyframes toastIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body>
@@ -1311,15 +1324,15 @@ function renderBarList(id, obj, fmtFn) {
 function renderFinDetail(s, kpis) {
   const el = document.getElementById('fin-detail');
   if (!el || !s) return;
-  const receita = kpis?.revenue?.last_30d_brl || 0;
+  const receita = s.total_receita_brl || 0;
   const custo   = s.custo_historico_estimado_brl || 0;
-  const margem  = 61.90 > 0 ? ((61.90 - custo) / 61.90 * 100).toFixed(1) : '—';
+  const margem  = receita > 0 ? ((receita - custo) / receita * 100).toFixed(1) : '—';
   el.innerHTML = `
     <div class="fin-row"><span class="fin-row-label">Gerações históricas</span><span class="fin-row-val">${fmtNum(s.total_geracoes_historico)}</span></div>
     <div class="fin-row"><span class="fin-row-label">Custo estimado histórico</span><span class="fin-row-val">${fmtBRL(s.custo_historico_estimado_brl)}</span></div>
     <div class="fin-row"><span class="fin-row-label">Custo real (api_costs)</span><span class="fin-row-val green">${fmtBRL(s.custo_real_brl)}</span></div>
     <div class="fin-row"><span class="fin-row-label">Custo médio/geração</span><span class="fin-row-val">${fmtUSD(s.custo_medio_por_geracao_usd)}</span></div>
-    <div class="fin-row"><span class="fin-row-label">Receita total histórica</span><span class="fin-row-val green">R$ 61,90</span></div>
+    <div class="fin-row"><span class="fin-row-label">Receita total histórica</span><span class="fin-row-val green">${fmtBRL(receita)}</span></div>
     <div class="fin-row"><span class="fin-row-label">Margem histórica estimada</span><span class="fin-row-val">${margem}%</span></div>
     <div class="fin-row"><span class="fin-row-label">Projeção 30d</span><span class="fin-row-val">${fmtBRL(s.projecao_30d_brl)}</span></div>
   `;
@@ -1603,14 +1616,20 @@ async function loadCosts() {
 }
 
 // ══ AUTO-REFRESH ══════════════════════════════════════════════════════════════
+let _lastSalesCount = -1;
+let _lastSalesTotal = -1;
+
 async function refreshKPIsQuiet() {
-  const [kpis, presence, metrics, stats] = await Promise.all([
+  const [kpis, presence, metrics, stats, sales] = await Promise.all([
     api('/api/admin/kpis'),
     api('/api/admin/presence'),
     api('/api/admin/metrics?days=30'),
     api('/api/admin/stats'),
+    api('/api/admin/sales?days=30&limit=500'),
   ]);
+
   if (kpis) {
+    _lastKpis = kpis;
     renderKPIs(kpis, stats, metrics);
     renderBanner(kpis);
   }
@@ -1619,13 +1638,49 @@ async function refreshKPIsQuiet() {
     _metricsCache = metrics.data || [];
     _buildChart(_chartPeriod);
   }
+
+  // Detecta nova venda
+  if (sales) {
+    const count = sales.count || (sales.data?.length) || 0;
+    const total = sales.total_brl || 0;
+
+    if (_lastSalesCount !== -1 && count > _lastSalesCount) {
+      const novas = sales.data?.slice(0, count - _lastSalesCount) || [];
+      novas.forEach(venda => {
+        showToast(
+          'Nova venda!',
+          `${venda.name || venda.email || 'Cliente'} · ${venda.plan || ''} · R$ ${(+venda.amount_brl).toFixed(2).replace('.',',')}`
+        );
+      });
+      _salesCache = sales.data || [];
+      renderDashSales(sales.data || []);
+      renderFunnel(kpis, sales);
+      _buildChart(_chartPeriod);
+      if (_currentPage === 'sales') loadSales();
+    }
+
+    _lastSalesCount = count;
+    _lastSalesTotal = total;
+  }
 }
 
+function showToast(title, body) {
+  const c = document.getElementById('toast-container');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<div class="toast-title">🎉 ${title}</div><div class="toast-body">${body}</div>`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 5000);
+}
+
+// Poll a cada 15s — detecta compra em até 15s após confirmação do webhook
 // ══ INIT ══════════════════════════════════════════════════════════════════════
 initTheme();
 initAuth();
 loadDashboard();
-setInterval(refreshKPIsQuiet, 60_000);
+setInterval(refreshKPIsQuiet, 15_000);
 </script>
+<div id="toast-container"></div>
 </body>
 </html>
