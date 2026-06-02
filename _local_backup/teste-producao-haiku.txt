@@ -1,0 +1,20 @@
+STATUS: 200 | Tempo: 22757ms
+Tokens: in=6570 out=1456
+Custo: $0.01108 USD (Haiku)
+
+[CHARACTER_SHEET]
+Character reference sheet, 5 views on clean light gray background. A pardo Brazilian man, early 30s, medium 3A curly dark brown hair, warm golden-tan skin, round full face with defined cheeks, full beard, charming warm expression, natural skin texture. Full chubby build: round belly, broad frame, soft full arms — represented confidently and attractively. Wearing a short-sleeve printed floral camp-collar shirt open over a white tee, relaxed straight dark jeans, clean sneakers, simple chain. 5 VIEWS in one image: TOP ROW: [1] Face Front — natural relaxed expression, eyes on camera [2] Face 3/4 — confident look [3] Profile Left — natural posture BOTTOM ROW: [4] Upper Body Front — natural standing posture [5] Upper Body 3/4 — slight turn. All 5 views: same man, same outfit, same lighting. Clea
+
+[START_FRAME_PROMPT]
+Vertical 9:16, pardo Brazilian man, early 30s, warm golden-tan skin, full beard, medium curly dark brown hair, round full face, charming genuine smile with wide eyes and open expression, sitting relaxed on beige sofa in bright daylight living room, holding a white and pink insulated water bottle with handle in both hands at chest level, wearing open floral camp-collar shirt over white tee and dark jeans, soft potted plant blurred in background, cream curtains behind, natural window light casting soft glow across face, photorealistic iPhone 16 Pro quality, no filter, authentic UGC TikTok first frame style, clean screen, no overlays, pure video frame only
+
+[PROMPT_VIDEO_1]
+Photorealistic UGC, filmed with smartphone, bright daylit living room with cream curtains, soft indirect sunlight through window, beige sofa, potted plant slightly blurred in background, 9:16 vertical, no filter, no tripod, clean screen, no overlays, pure video frame only. Character: Pardo Brazilian man, early 30s, full beard, curly dark brown hair, warm golden-tan skin, round full face, charming expression, full chubby build with broad frame and round belly, wearing open floral camp-collar shirt over white tee, dark jeans, simple chain, sitting relaxed on sofa. Scene - 8 Seconds: 0-2s (HOOK): "Irmão, descobri esse aqui faz pouco e já tá na minha rotina todo dia." [holding water bottle at chest level, genuine smile, slightly tilting head toward camera]. 2-6s (PRODUTO): "Mantém a água gelad
+
+[PROMPT_VIDEO_2_CONTINUACAO]
+Photorealistic UGC, filmed with smartphone, same bright daylit living room, camera positioned at different angle (slightly wider mid-shot), soft indirect sunlight, cream curtains, beige sofa, potted plant in softer focus, 9:16 vertical, no filter, no tripod, clean screen, no overlays, pure video frame only. Character: Pardo Brazilian man, early 30s, full beard, curly dark brown hair, warm golden-tan skin, round full face, same charming expression, full chubby build, wearing identical open floral camp-collar shirt over white tee and dark jeans, same simple chain. Scene - 8 Seconds - CONTINUAÇÃO: 0-2s (COMPLEMENTAÇÃO): "O que mais me impressiona aqui é que não precisa recarregar toda hora — leva a garrafa comigo pra todo lado." [holding bottle in one hand, gesturing with other hand, relaxed 
+
+[LEGENDA_TOPO]
+Garrafa que gela E mantém gelado o dia inteiro 💧 R$ 49,90 no carrinho laranja ⬇️
+Água morna não, moço! Essa garrafa resolveu meu problema de hidratação 🧊 Carrinho laranja embaixo!
+Presente perfeito pra quem toma água demais — ou deveria tomar 💚 Corre lá ⬇️
