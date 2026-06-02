@@ -147,7 +147,9 @@
       "Bash(wc:*)",
       "Bash(find:*)",
       "Read(//c/Users/phalm/.claude//**)",
-      "Read(//c/Users/phalm/.claude/projects//**)"
+      "Read(//c/Users/phalm/.claude/projects//**)",
+      "Read(//g//**)",
+      "Read(//d//**)"
     ]
   }
 }
