@@ -1,0 +1,373 @@
+========================================================================
+  COMPARACAO HAIKU vs SONNET — UGC.AI
+  Estilos: nano-veo-2 | roupa-feminina-v2 | serie
+  Gerado em: 2026-05-09 23:26
+========================================================================
+
+  Haiku recebe instrucao extra:
+  "Falas/legendas em PT-BR. Legendas com emojis UGC. Zero texto visual."
+  Sonnet: comportamento de producao padrao (sem instrucao extra).
+
+========================================================================
+  ESTILO: NANO-VEO-2 — Produto casa/lifestyle — 3 cenas Kling
+========================================================================
+
+────────────────────────────────────────────────────────────────────────
+  HAIKU (claude-haiku-4-5-20251001)
+────────────────────────────────────────────────────────────────────────
+  Modelo : claude-haiku-4-5-20251001
+  Estilo : nano-veo-2
+  Tempo  : 29014ms
+  Tokens : in=11095 out=2702
+  Custo  : $0.01968 USD
+
+  [CHARACTER_SHEET]
+  Character reference sheet, 5 views on clean light gray background. A Brazilian Latina woman, early 30s, long wavy black hair with natural waves, warm medium tan skin with visible pores and real skin texture, no beauty filter. Light fresh makeup. Wearing a simple beige/cream cotton sleeveless tank top. 5 VIEWS in one image: TOP ROW: [1] Face Front — soft natural smile, eyes on camera [2] Face 3/4 — relaxed confident look [3] Profile Left — natural posture BOTTOM ROW: [4] Upper Body Front — natural posture [5] Upper Body 3/4 — slight turn. All 5 views: same woman, same outfit, same lighting. Clean light gray studio background. Soft even light. Filmed on iPhone 16, no filters. Text labels: Top row: 'Face Front' | 'Face 3/4' | 'Profile' Bottom row: 'Upper Body Front' | 'Upper Body 3/4'
+
+  [CENA_1_IMAGEM]
+  📸 CENA 1 — IMAGEM (NANO) | TIPO WIDE BED SHOT | 00:00-00:08 | 8s
+❌ sem personagem
+Vertical 9:16 image. Someone just pointed their iPhone at their bedroom to show off their bed freshly made. A large bed dressed with a thick fluffy white percal comforter, perfectly smooth and crisp with subtle quilted stitching lines visible across the surface. White and cream linen pillows neatly stacked. Natural oak wooden headboard partially visible in background. Soft sheer cream curtains on the left filtering warm natural window light. A small green houseplant softly blurred in the corner. No person visible. Natural slightly imperfect iPhone framing. Warm soft intimate tones. No professional setup.
+Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_1_VIDEO]
+  🎬 CENA 1 — VIDEO (VEO) | TIPO WIDE BED SHOT | 00:00-00:08 | 8s
+❌ sem personagem
+Someone just casually filmed their freshly made bed on iPhone. Vertical video. A large bed dressed with a thick fluffy white percal comforter, perfectly arranged. The camera slowly drifts closer toward the bed in a natural casual movement, showing the smooth crisp quilted stitching and the plumpness of white linen pillows against a natural oak wooden headboard. Soft sheer cream curtains visible on the left. Warm natural window light floods the room. Looks totally unplanned and natural. No phone visible. Real bedroom sounds throughout.
+Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_2_IMAGEM]
+  📸 CENA 2 — IMAGEM (NANO) | TIPO SQUEEZE | 00:08-00:16 | 8s
+❌ sem personagem
+Vertical 9:16 image. Close-up of feminine hands with warm medium tan skin gently squeezing and pressing deep into a thick fluffy white percal blanket on the bed, fingers sinking slowly into the plush quilted surface. Both hands squeeze from opposite sides, then release, then press again in different spots. The motion shows the volume, thickness and springy quality of the fabric. No phone visible. Background: white linen pillows softly blurred, natural oak headboard partially visible, warm golden natural light from window highlighting the quilted texture. Natural unplanned casual iPhone framing. Warm cozy tones.
+Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_2_VIDEO]
+  🎬 CENA 2 — VIDEO (VEO) | TIPO SQUEEZE | 00:08-00:16 | 8s
+❌ sem personagem
+Someone filming on their iPhone gets really close to show how soft and thick their blanket is. Vertical video. Two feminine hands with warm medium tan skin press deep into a thick fluffy white percal comforter on the bed, fingers sinking slowly into the quilted plush surface. The hands squeeze, release, then press again in different spots like someone genuinely addicted to the softness and volume. Movement is totally casual and unplanned. No phone visible. Background: white linen pillows softly blurred, natural oak headboard, warm golden natural light. Real cozy bedroom sounds throughout.
+Audio: woman's voice off-camera in casual everyday Brazilian Portuguese, warm and playful carioca tone: 'Gente... e ridiculamente macio. Eu nao esperava isso por esse preco nao.' Pause. Hands squeeze again. 'E tao grosso... nao e aquele fininho que a gente compra e se arrepende no mesmo dia.' Natural laugh. 'Minha maezinha pediu emprestado e quase nao devolveu.'
+Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_3_IMAGEM]
+  📸 CENA 3 — IMAGEM (NANO) | TIPO EXTREME CLOSE-UP | 00:16-00:22 | 6s
+❌ sem personagem
+Vertical 9:16 image. Extreme close-up of the white percal fabric surface showing the detailed quilted stitching pattern and fine cotton weave texture. Camera is very close, almost touching the fabric. The subtle geometric quilted lines are visible with soft shadows emphasizing the raised pattern. The fabric has a slight smooth sheen from the cotton fibers catching warm natural light from the side. No hands visible, just the textile surface. Warm intimate side lighting showing the thread count and quality. No professional setup feel.
+Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_3_VIDEO]
+  🎬 CENA 3 — VIDEO (VEO) | TIPO CTA POINT | 00:22-00:30 | 8s
+✅ ANEXAR CHARACTER SHEET
+A beautiful Brazilian Latina woman is sitting casually on her bed filmed on iPhone. Vertical video. She has long wavy black hair, natural skin with visible pores and real skin texture, no beauty filter, wearing a simple beige cream cotton sleeveless tank top. Sitting on white percal comforter with white linen pillows and natural oak wooden headboard behind her. She looks directly at the camera with a warm natural smile. No phone visible. Background: sheer cream curtains on left with warm natural light, small green plant softly blurred on side table.
+Audio: she speaks in casual everyday Brazilian Portuguese, warm genuine carioca tone, like sharing a discovery with a close friend: 'Eu peguei por menos de R$50 reais e to vendo que ja subiu de preco.' Eyes widen slightly. 'Isso aqui vai ficar mais caro em breve, eu tenho certeza.' She naturally points her index finger toward the bottom left corner of the screen. 'Entao se voce tava querendo um bom coberdrom... agora e a hora.' Smiles warmly. 'Eu to usando toda noite e nao quero nem sair da minha cama.' Laughs softly. Finger stays pointing bottom left throughout the CTA. Real room sounds fade out gently.
+Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, n
+
+  [ANCORA_FIXA]
+  Consistent character: same long wavy black hair woman, warm medium tan skin, beige cream cotton sleeveless tank top.
+Same bedroom: white percal comforter bed, natural oak wooden headboard, cream walls, sheer curtains, warm natural window light from left.
+No phone visible in any frame. Audio in fluent natural casual Brazilian Portuguese, warm carioca tone.
+Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [RESUMO]
+  💰 RESUMO FINAL — EDREDOM PERCAL BRANCO | 30s
+
+CENA 1 -> 8s ❌ TIPO WIDE BED SHOT (produto estabelecimento)
+CENA 2 -> 8s ❌ TIPO SQUEEZE (textura + áudio hook)
+CENA 3 -> 6s ❌ TIPO EXTREME CLOSE-UP (detalhe fibra)
+CENA 4 -> 8s ✅ TIPO CTA POINT (modelo + conversão)
+──────────────────────────────────────────────
+TOTAL -> 30s exatos
+
+📊 COPY STRATEGY:
+HOOK: Surpresa com qualidade pelo preço (R$49.90)
+BENEFÍCIO: Macio, grosso, 400 fios percal, durável
+PROVA SOCIAL: Familiar pediu emprestado
+URGÊNCIA: Preço subindo, estoque limitado
+CTA: 'Agora é a hora' + gesto apontando carrinho
+
+🎥 VARIAÇÃO TÉCNICA:
+✓ Sem celular visível
+✓ Sem texto em tela
+✓ Sem personagem cenas 1-3 (produto puro)
+✓ Máximo 1 personagem cena 4
+✓ Lighting natural consistente
+✓ Português carioca natural
+✓ Pele real, sem filtros de beleza
+
+────────────────────────────────────────────────────────────────────────
+  SONNET (claude-sonnet-4-6) — PRODUCAO
+────────────────────────────────────────────────────────────────────────
+  Modelo : claude-sonnet-4-6
+  Estilo : nano-veo-2
+  Tempo  : 65324ms
+  Tokens : in=10978 out=3363
+  Custo  : $0.08338 USD
+
+  [CHARACTER_SHEET]
+  Character reference sheet, 5 views on clean light gray background. A Brazilian woman, early 30s, long dark wavy hair with natural volume, warm light skin with visible pores and real skin texture, no beauty filter. Light fresh makeup. Wearing a beige ribbed tank top and light blue relaxed-fit jeans, nude manicure, no rings. 5 VIEWS in one image: TOP ROW: [1] Face Front — soft natural smile, eyes on camera [2] Face 3/4 — relaxed confident look [3] Profile Left — natural posture BOTTOM ROW: [4] Upper Body Front — natural posture, seated on bed [5] Upper Body 3/4 — slight turn, casual sit All 5 views: same woman, same outfit, same lighting. Clean light gray studio background. Soft even light. filmed on iPhone 16, no filters. Text labels: Top row: 'Face Front' | 'Face 3/4' | 'Profile' Bottom row: 'Upper Body Front' | 'Upper Body 3/4'
+
+  [CENA_1_IMAGEM]
+  📸 CENA 1 — IMAGEM (NANO) | TIPO WIDE BED SHOT | 00:00-00:05 | 5s
+❌ sem personagem
+Vertical 9:16 image. Someone just pointed their iPhone at their bedroom to show off their water bottle on the bed. A matte white insulated water bottle with a dusty rose pink lid and matching silicone carry loop sits upright on a rumpled cream linen comforter on a white bed. The bottle is centered in frame, slightly angled. Natural soft light from a sheer curtain window to the left. Background: wooden headboard and cream linen pillows softly blurred, small potted green plant partially visible at edge. No person visible. Natural slightly imperfect iPhone framing, slightly off-center. No professional setup. No phone visible. No text on screen. Warm neutral tones.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_1_VIDEO]
+  🎬 CENA 1 — VIDEO (VEO) | TIPO WIDE BED SHOT | 00:00-00:05 | 5s
+❌ sem personagem
+Someone casually points their iPhone at their bed to show a water bottle. Vertical video. A matte white insulated water bottle with dusty rose pink lid and silicone carry loop sits upright on a rumpled cream linen comforter. Camera drifts slowly closer toward the bottle in a natural casual movement, like someone leaning in to get a better look. Looks totally unplanned and natural. Natural warm bedroom light from window on the left, sheer curtains diffusing the light. Background: wooden headboard and cream pillows softly blurred. No person visible. No phone visible. No text on screen. No professional setup.
+Audio: soft room ambiance, distant street sounds, no voice in this clip. Real room sounds throughout.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_2_IMAGEM]
+  📸 CENA 2 — IMAGEM (NANO) | TIPO REVEAL | 00:05-00:14 | 9s
+❌ sem personagem
+Vertical 9:16 image. Close-up of a feminine hand with warm light skin and nude-painted short nails gripping the dusty rose pink lid of a matte white insulated water bottle, twisting and lifting the lid slightly open to reveal the clean stainless steel interior rim. The other hand steadies the bottle from below. Both hands visible, no full person visible. Focus on the lid mechanism and interior opening. No phone visible. No text on screen. Background: cream linen comforter surface softly blurred, warm natural side window light highlighting the matte white bottle surface and pink lid texture. Natural unplanned casual iPhone framing, slightly imperfect. No professional setup. Warm soft neutral tones.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_2_VIDEO]
+  🎬 CENA 2 — VIDEO (VEO) | TIPO REVEAL | 00:05-00:14 | 9s
+❌ sem personagem
+Someone filming their water bottle on iPhone gets close to show how it opens. Vertical video. A feminine hand with warm light skin and nude short nails grips the dusty rose pink lid of a matte white insulated bottle and slowly twists it open, revealing the clean stainless interior. The movement is slow and deliberate, pausing at the open position for a moment before gently closing it again. Looks totally unplanned and natural. Natural warm bedroom light from window. Background: cream linen comforter softly blurred. No person visible. No phone visible. No text on screen.
+Audio: a woman's voice off-camera in casual everyday Brazilian Portuguese, warm and natural carioca tone, like a voice note to a friend: 'Gente... essa tampa nao vaza nao. Pode jogar na bolsa, pode deitar a garrafa... nada sai.' Short pause. 'Fica gelada por horas e nao transpira por fora. Minha mesa de trabalho agradece.' Real room sounds throughout, soft click of lid closing.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_3_IMAGEM]
+  📸 CENA 3 — IMAGEM (NANO) | TIPO EXTREME CLOSE-UP | 00:14-00:22 | 8s
+❌ sem personagem
+Vertical 9:16 image. Extreme close-up of the matte white surface of an insulated water bottle, camera very close to the body of the bottle. The matte powder-coat finish shows subtle texture and soft light absorption. At the very top edge of frame the dusty rose pink lid and silicone loop are partially visible. No hand, no full person, no phone visible. No text on screen. Lateral natural window light from the left rakes across the matte surface highlighting the soft texture. Background: completely blurred warm cream tones. Natural unplanned casual iPhone framing, slightly imperfect angle. No professional setup. Warm minimal neutral tones.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_3_VIDEO]
+  🎬 CENA 3 — VIDEO (VEO) | TIPO EXTREME CLOSE-UP | 00:14-00:22 | 8s
+❌ sem personagem
+Someone filming their water bottle casually gets extremely close to show the texture. Vertical video. Camera very close to the matte white powder-coated surface of the bottle, slowly scanning from the body up toward the dusty rose pink lid with a gentle lateral movement. The matte finish absorbs light softly with zero shine. Looks totally unplanned and natural. Natural warm window light raking from the left. No hand visible. No person visible. No phone visible. No text on screen. No professional setup.
+Audio: same woman's voice off-camera in casual everyday Brazilian Portuguese, warm natural carioca tone: 'Olha esse acabamento aqui... nao risca, nao mancha, nao fica com marca de dedo.' Pause. 'Por quarenta e nove reais e noventa... eu fiquei desconfiada. Achei que era barato demais pra ser bom.' Short breath. 'Mas nao e nao.' Real room sounds throughout.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_4_IMAGEM]
+  📸 CENA 4 — IMAGEM (NANO) | TIPO CTA POINT | 00:22-00:30 | 8s
+✅ ANEXAR CHARACTER SHEET
+Vertical 9:16 image. A beautiful Brazilian woman, early 30s, long dark wavy hair with natural volume, natural warm light skin with visible pores and real skin texture, no beauty filter, no airbrushing, no smoothing, light fresh makeup. Wearing a beige ribbed tank top and light blue relaxed-fit jeans, nude manicure. Sitting cross-legged on a cream linen bed, holding the matte white insulated water bottle with dusty rose pink lid upright in her left hand resting on her knee. She looks directly into the camera with a warm natural smile and points her right index finger toward the bottom left corner of the frame. Casual iPhone framing from slightly above, slightly imperfect. No phone visible. No text on screen. Background: wooden headboard and cream linen pillows softly blurred, warm natural window light from left. Warm intimate neutral tones. No professional setup.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [CENA_4_VIDEO]
+  🎬 CENA 4 — VIDEO (VEO) | TIPO CTA POINT | 00:22-00:30 | 8s
+✅ ANEXAR CHARACTER SHEET
+A Brazilian woman is sitting on her bed casually filmed on iPhone. Vertical video. She has long dark wavy hair with natural volume, warm light skin with visible pores and real skin texture, no beauty filter, wearing a beige ribbed tank top and light blue relaxed-fit jeans, nude manicure. Sitting cross-legged on a cream linen bed, holding the matte white insulated water bottle with dusty rose lid in her left hand resting on her knee. She looks straight at the camera naturally. No phone visible. No text on screen.
+Audio: she speaks in casual everyday Brazilian Portuguese, warm natural carioca tone, like telling a friend: 'Por quarenta e nove reais e noventa... to deixando o link aqui embaixo.' She naturally points her right index finger toward the bottom left corner of the screen, eyebrows raising slightly. 'Porque eu to vendo que o preco pode subir a qualquer hora.' Soft laugh, finger stays pointing bottom left corner. 'Pega o seu antes que acaba.' She taps the bottle lightly with her thumb. Real room sounds fade out naturally. No professional setup. Background: wooden headboard and cream linen pillows softly blurred, warm natural window light from left.
+Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed jeans.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white bottle with dusty rose lid throughout every frame. No phone visible in any frame. Authentic casual iPhone TikT
+
+  [ANCORA_FIXA]
+  Consistent character: same long dark wavy hair woman, warm light skin, beige ribbed tank top and light blue relaxed-fit jeans, nude manicure.
+Same bedroom: cream linen bed, wooden headboard, beige walls, warm natural window light from left. Matte white insulated bottle with dusty rose pink lid and silicone loop throughout every frame. No phone visible in any frame.
+Audio in fluent natural casual Brazilian Portuguese, carioca tone.
+Authentic casual iPhone TikTok aesthetic. Real skin texture, no beauty filters.
+
+  [RESUMO]
+  💰 Resumo final
+CENA 1 -> 5s ❌ TIPO WIDE BED SHOT
+CENA 2 -> 9s ❌ TIPO REVEAL
+CENA 3 -> 8s ❌ TIPO EXTREME CLOSE-UP
+CENA 4 -> 8s ✅ CTA POINT
+──────────────────────────
+TOTAL -> 30s
+
+
+========================================================================
+  ESTILO: ROUPA-FEMININA-V2 — Roupa feminina — CH-01 Loira Californiana, Cenario A
+========================================================================
+
+────────────────────────────────────────────────────────────────────────
+  HAIKU (claude-haiku-4-5-20251001)
+────────────────────────────────────────────────────────────────────────
+  Modelo : claude-haiku-4-5-20251001
+  Estilo : roupa-feminina-v2
+  Tempo  : 8810ms
+  Tokens : in=3039 out=787
+  Custo  : $0.00558 USD
+
+  [OUTFIT_DETECTADO]
+  Beige sleeveless fitted tank top with crew neckline, soft cotton-blend fabric, form-fitting through torso and bust. Light-wash classic blue jeans with medium rise, straight leg fit, natural cotton denim with visible fade details. Natural, casual everyday styling.
+
+  [START_FRAME_PROMPT]
+  Vertical 9:16 photo, UGC casual authentic style. Brazilian woman mid 20s, long voluminous wavy platinum-blonde hair with warm tones and natural root, glowing golden-tan skin, light brown eyes, light fresh minimal makeup, sculpted arched brows, glossy nude-pink lip, naturally enhanced full bust, defined toned waist, wide full hips, thick muscular thighs, flat toned abs, athletic hourglass figure, real skin texture, visible pores, no beauty filter. Wearing beige sleeveless fitted tank top and light-wash blue jeans. Standing straight and centered, direct confident eye contact, upright confident posture. Outdoor red-orange brick wall background with natural daylight from above-front, clean sidewalk partially visible, authentic urban feel. Bokeh background, warm natural light, no ring light, no studio. iPhone 16 Pro quality, photorealistic, visible pores, no beauty filter, no overlays, pure frame only, 9:16.
+
+  [PROMPT_KLING_VIDEO]
+  Vertical 9:16 UGC video, 8 seconds. Medium close-up shot — bust to just above head, character centered. Camera slightly above eye level, handheld, slight authentic tilt. The exact woman from the reference image: Brazilian woman mid 20s, long voluminous wavy platinum-blonde hair with warm tones and natural root, glowing golden-tan skin, light brown eyes, light fresh minimal makeup, sculpted arched brows, glossy nude-pink lip, naturally enhanced full bust, defined toned waist, wide full hips, thick muscular thighs, flat toned abs, athletic hourglass figure, real skin texture, visible pores, no beauty filter. Wearing beige sleeveless fitted tank top and light-wash blue jeans. HOOK 0-2s: both hands lightly gripping the bottom hem of the top and slightly lifting it — natural outfit-reveal gesture. 2-8s: releases top, runs hand through hair, shifts weight subtly, maintains direct confident eye contact with camera, relaxed confident smile, standing straight and centered in frame, upright confident posture. Background: outdoor red-orange brick wall — classic rough brick texture, natural daylight from above-front, clean sidewalk or pavement partially visible at bottom, no clutter, authentic urban UGC feel. Bokeh, handheld natural shake, warm natural light, no ring light, no studio. 9:16, iPhone 16 Pro, photorealistic, no dialogue, no subtitles, no UI, no overlays, no ring light, pure video only.
+
+  [SCRIPT]
+  {
+  "hook": "Peça básica que todo dia quer usar",
+  "beneficio": "Regata ajustada que marca a silhueta sem apertar, pronta pro dia inteiro",
+  "cta": "Vira pro carrinho laranja agora, antes de sair do estoque!"
+}
+
+  [LEGENDA_TOPO]
+  Regata básica que é sucesso 🔥
+
+────────────────────────────────────────────────────────────────────────
+  SONNET (claude-sonnet-4-6) — PRODUCAO
+────────────────────────────────────────────────────────────────────────
+  Modelo : claude-sonnet-4-6
+  Estilo : roupa-feminina-v2
+  Tempo  : 29507ms
+  Tokens : in=2922 out=873
+  Custo  : $0.02186 USD
+
+  [OUTFIT_DETECTADO]
+  Cream/off-white fitted sleeveless ribbed tank top with a slight scoop neck, form-fitting stretch fabric, cropped length sitting just at the natural waist. Paired with light-wash blue loose-fit straight-leg denim jeans with a relaxed, casual fit and slight ankle crop.
+
+  [START_FRAME_PROMPT]
+  Vertical 9:16 photo, UGC casual authentic style. Brazilian woman mid 20s, long voluminous wavy platinum-blonde hair with warm tones and natural root, glowing golden-tan skin, light brown eyes, light fresh minimal makeup, sculpted arched brows, glossy nude-pink lip, naturally enhanced full bust visible through fitted clothing, defined toned waist, wide full hips and thick muscular thighs, athletic hourglass figure, real skin texture visible pores no beauty filter. Wearing cream off-white fitted sleeveless ribbed tank top with scoop neck cropped at natural waist, paired with light-wash blue loose-fit straight-leg denim jeans. Both hands lightly gripping the bottom hem of the top slightly lifting it, standing straight and centered, upright confident posture, direct confident eye contact. Background: outdoor red-orange brick wall, classic rough brick texture, natural daylight from above-front, clean sidewalk partially visible at bottom, no clutter. Soft confident expression, bokeh background, warm natural light, no ring light, no studio. iPhone 16 Pro quality, photorealistic, visible pores, no beauty filter, no overlays, pure frame only, 9:16.
+
+  [PROMPT_KLING_VIDEO]
+  Vertical 9:16 UGC video, 8 seconds. Medium close-up shot — bust to just above head, character centered. Camera slightly above eye level, handheld, slight authentic tilt. The exact woman from the reference image: Brazilian woman mid 20s, long voluminous wavy platinum-blonde hair with warm tones and natural root, glowing golden-tan skin, light brown eyes, light fresh minimal makeup, sculpted arched brows, glossy nude-pink lip, naturally enhanced full bust visible through fitted clothing, defined toned waist, wide full hips and thick muscular thighs, athletic hourglass figure, real skin texture visible pores no beauty filter. Wearing cream off-white fitted sleeveless ribbed tank top with scoop neck cropped at natural waist, paired with light-wash blue loose-fit straight-leg denim jeans. HOOK 0-2s: both hands lightly grip the bottom hem of the tank top and slightly lift it upward in a natural outfit-reveal gesture, direct confident eye contact with camera, slight knowing smile. 2-8s: shifts weight to one hip, performs a slow natural side turn showing the silhouette, runs one hand casually through her wavy hair, returns to front gaze, relaxed confident smile, sustained direct eye contact. Background: outdoor red-orange brick wall, classic rough brick texture, natural daylight from above-front, clean sidewalk partially visible at bottom, no clutter, authentic urban UGC feel. Bokeh, handheld natural shake, warm natural outdoor light. 9:16, iPhone 16 Pro, photorealistic, no dialogue, no subtitles, no UI, no overlays, no ring light, pure video only.
+
+  [SCRIPT]
+  {
+  "hook": "Esse look tá me deixando confiante demais hoje.",
+  "beneficio": "Combinação perfeita: cropped fresquinho valoriza a cintura com o jeans solto.",
+  "cta": "Corre no carrinho laranja antes de esgotar, sério!"
+}
+
+  [LEGENDA_TOPO]
+  Esse combo é tudo 🤍
+
+
+========================================================================
+  ESTILO: SERIE — Edredons Premium — prompt serie
+========================================================================
+
+────────────────────────────────────────────────────────────────────────
+  HAIKU (claude-haiku-4-5-20251001)
+────────────────────────────────────────────────────────────────────────
+  Modelo : claude-haiku-4-5-20251001
+  Estilo : serie
+  Tempo  : 22511ms
+  Tokens : in=7971 out=1881
+  Custo  : $0.01390 USD
+
+  [CHARACTER_SHEET]
+  Character reference sheet, 5 views on clean light gray background. A strikingly attractive Brazilian Latin woman, early 30s, long wavy dark brown hair with soft natural waves and warm chocolate tones, natural glowing warm golden fair skin with visible pores, no beauty filter, light fresh makeup with defined bold brows, soft nude glossy lips, bright expressive warm honey brown eyes with golden flecks. Fitness body: toned arms, defined shoulders, slim waist, naturally full bust visible at neckline. Confident posture.
+Wearing: Cream satin short-sleeve pajama top with delicate lace trim at neckline, luxurious soft creamy champagne tone, open V-neckline showing naturally full bust softly.
+
+5 VIEWS arranged in one single image:
+TOP ROW (left to right):
+[1] Face Front Close-Up — soft excited smile, eyes wide and expressive looking into camera
+[2] Face 3/4 Angle Left — relaxed confident expression, hair falling naturally over shoulder
+[3] Face Profile Left — clean jawline visible, hair tucked behind ear
+
+BOTTOM ROW (left to right):
+[4] Upper Body Front — one hand relaxed touching chest, naturally full bust softly visible at open V-neckline, authentic natural posture
+[5] Upper Body 3/4 — slight shoulder turn left, natural relaxed arms, hair over one shoulder
+
+All 5 views: exact same woman, same outfit, same lighting.
+Clean light gray studio background.
+Soft even studio light, no harsh shadows, no reflections.
+Photorealistic, sharp detail, iPhone 16 quality, no filters.
+Text labels below each panel in clean black sans-serif font:
+Top row: "Face Front" | "Face 3/4" | "Face Profile"
+Bo
+
+  [CENA_1]
+  🎬 CENA 1 — Rosto Direto 8s
+✅ ANEXAR CHARACTER SHEET
+
+Vertical 9:16 UGC video. Close-medium shot at eye level. The exact woman from the reference sheet: Brazilian Latin woman, early 30s, long wavy dark brown hair with soft natural waves and warm chocolate tones, natural glowing warm golden fair skin with visible pores, light fresh makeup with defined bold brows, soft nude glossy lips, bright expressive warm honey brown eyes with golden flecks. Wearing cream satin short-sleeve pajama top with delicate lace trim at neckline, luxurious soft creamy champagne tone. Sitting upright in bed against white linen pillows and light natural wood headboard. She looks directly into the camera with an intense confident expression, slight knowing smile, as if sharing something unmissable. One hand gently touching the edge of the cream plush sherpa blanket draped over her lap, fingers sinking slightly into the soft pile, showing texture and depth. Cream sherpa interior folded and visible at the edge. No phone visible. Soft blurred green potted plant and cream curtains behind. Warm golden natural morning window light coming from the left side. Shot on iPhone 16, handheld, slight natural shake, authentic UGC aesthetic, 4K photorealistic, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+  [CENA_2]
+  🎬 CENA 2 — Mãos Dupla Face 8s
+❌ sem personagem
+
+Vertical 9:16 UGC video. Close mid-range shot at bed level. Two feminine hands with warm golden fair skin tone and delicate thin gold ring on left hand peeling back and rolling a thick cream plush sherpa blanket to reveal the soft off-white interior, fingers gripping the folded edge mid-roll, both sides of the double-sided blanket clearly visible — cream plush exterior and soft pale interior with visible curly sherpa texture. Camera angle slightly above, filmed like a lifestyle content creator demonstrating blanket thickness, softness and premium quality. Bright cozy bedroom with wooden headboard, warm natural morning light coming from window on left, white linen duvet and cream pillows softly blurred in background. Photorealistic sherpa and plush fabric textures with visible pile depth and luxurious appearance. 9:16 vertical handheld iPhone style, warm neutral tones, authentic UGC aesthetic, 4K quality, no harsh shadows, soft cozy mood, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+  [CENA_3]
+  🎬 CENA 3 — Mãos Toque Suave 8s
+❌ sem personagem
+
+Vertical 9:16 UGC video. Extreme close-up shot slightly above. One feminine hand with warm golden fair skin tone and delicate thin gold ring slowly presses and drags fingers deep across the surface of a thick cream plush sherpa blanket folded on a white linen bed, fingers sinking into the pile showing extreme softness, texture and depth, soft pale sherpa interior peeking at the folded edge. Camera angle slightly above looking down at the hand and blanket, capturing the luxury texture and tactile appeal. No person visible above the wrist. White linen duvet and neutral cream pillows softly blurred in background, cozy bedroom with wooden furniture and potted plants desfocados, bright cozy room with warm natural window light coming from left side. Photorealistic plush fabric texture with visible pile depth and premium sherpa softness, 9:16 vertical handheld iPhone style, warm neutral tones, authentic UGC content creator aesthetic, 4K quality, no harsh shadows, soft cozy welcoming mood, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+  [CENA_4]
+  🎬 CENA 4 — CTA Conversão 6s
+✅ ANEXAR CHARACTER SHEET
+
+Vertical 9:16 UGC video. Close-medium shot. The exact woman from the reference sheet: Brazilian Latin woman, early 30s, long wavy dark brown hair with soft natural waves and warm chocolate tones, natural glowing warm golden fair skin with visible pores, light fresh makeup with defined bold brows, soft nude glossy lips, bright expressive warm honey brown eyes with golden flecks. Wearing cream satin short-sleeve pajama top with delicate lace trim at neckline, luxurious soft creamy champagne tone. Sitting upright in bed, cream plush sherpa blanket draped over her lap, soft pale interior clearly visible at folded edge. She looks directly into the camera with an intense confident expression, calm serious expression of someone giving important advice, warm urgent smile of a friend who found something special. She slowly raises her right index finger and points deliberately downward toward the bottom-center of the frame with conviction, holding the gesture, maintaining direct eye contact with camera. Fitness body, naturally full bust softly visible at V-neckline. Light natural wood headboard, white linen pillows, soft blurred green plants and cream curtains behind. Warm golden morning window light. Shot on iPhone 16, handheld, authentic UGC aesthetic, 4K photorealistic, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+────────────────────────────────────────────────────────────────────────
+  SONNET (claude-sonnet-4-6) — PRODUCAO
+────────────────────────────────────────────────────────────────────────
+  Modelo : claude-sonnet-4-6
+  Estilo : serie
+  Tempo  : 60890ms
+  Tokens : in=7854 out=2349
+  Custo  : $0.05880 USD
+
+  [CHARACTER_SHEET]
+  Character reference sheet, 5 views on clean light gray background. A strikingly attractive Brazilian Latin woman, late 20s, long wavy golden blonde hair with sun-kissed highlights falling naturally over her shoulders, natural glowing warm golden fair skin with peachy undertone, natural dewy texture, visible fine pores, no beauty filter, light fresh makeup with defined bold brows, soft nude glossy lips, bright expressive warm honey brown eyes with golden flecks. Fitness body: toned arms, defined shoulders, slim waist, naturally full bust visible at neckline. Confident posture. Wearing: a soft ivory white fitted scoop-neck modal crop top with thin straps and a delicate ribbed texture, paired with light wash relaxed-fit denim jeans, barefoot — casual chic cozy bedroom style fully coordinated with the off-white and rose product palette.
+
+5 VIEWS arranged in one single image:
+TOP ROW (left to right):
+[1] Face Front Close-Up — soft excited smile, eyes wide and expressive looking into camera
+[2] Face 3/4 Angle Left — relaxed confident expression, hair falling naturally over shoulder
+[3] Face Profile Left — clean jawline visible, hair tucked behind ear
+
+BOTTOM ROW (left to right):
+[4] Upper Body Front — one hand relaxed touching chest, naturally full bust softly visible at open scoop neckline, authentic natural posture
+[5] Upper Body 3/4 — slight shoulder turn left, natural relaxed arms, hair over one shoulder
+
+All 5 views: exact same woman, same outfit, same lighting. Clean light gray studio background. Soft even studio light, no harsh shadows, no reflections. Photorealistic, shar
+
+  [CENA_1]
+  🎬 CENA 1 — ROSTO DIRETO | 8s (1200cr)
+✅ ANEXAR CHARACTER SHEET
+Vertical 9:16 UGC video. Close-medium shot at eye level. The exact woman from the reference sheet: Brazilian Latin woman, late 20s, long wavy golden blonde hair with sun-kissed highlights, natural glowing warm golden fair skin with peachy undertone and visible fine pores, no beauty filter, warm honey brown eyes with golden flecks, defined bold brows, soft nude glossy lips. Wearing a soft ivory white fitted scoop-neck modal crop top, light wash relaxed-fit denim jeans, barefoot. Sitting cross-legged on a neatly made bed with white linen pillows and a natural wood low-profile headboard. She looks directly into the camera with a wide can't-keep-a-secret expression, eyebrows raised high, mouth slightly open in genuine surprise and excitement. One hand pressed flat against her chest in a heartfelt 'I have to tell you this' gesture. In her other hand she holds up the off-white matte thermal water bottle with dusty rose silicone lid and matching rose carry loop, product clearly visible and prominently displayed toward the camera. Warm natural morning window light coming from the left. Linen beige curtains, soft green indoor plant blurred in background. Shot on iPhone 16, handheld, slight natural shake, authentic UGC aesthetic, 4K photorealistic, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+  [CENA_2]
+  🎬 CENA 2 — MÃOS TOQUE PRODUTO | 8s (1200cr)
+❌ sem personagem
+Vertical 9:16 UGC video. Extreme close-up shot slightly above. Two feminine hands with warm golden fair skin tone and a thin delicate gold ring on the right ring finger, nude manicured nails, slowly rotating and examining the off-white matte thermal water bottle with dusty rose silicone screw-top lid and a soft rose silicone carry loop handle. Left hand cradles the base of the bottle while the right hand gently runs fingertips along the smooth matte surface of the body, then slides up to softly press and test the dusty rose silicone lid — demonstrating the premium quality, matte powder-coat finish and the softness of the silicone details. The bottle is held upright and angled slightly toward the camera so both the off-white body and the rose lid are fully visible. White linen duvet and neutral pillows softly blurred in background. Warm natural morning window light coming softly from the left. Photorealistic smooth matte surface texture with clear product detail, 9:16 vertical handheld iPhone style, warm neutral tones, authentic UGC content creator aesthetic, 4K quality, no harsh shadows, soft cozy mood, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+  [CENA_3]
+  🎬 CENA 3 — SELFIE COMPARTILHANDO | 8s (1200cr)
+✅ ANEXAR CHARACTER SHEET
+Vertical 9:16 UGC video. Close-up selfie angle, camera held at arm's length slightly above eye level looking down. The exact woman from the reference sheet: Brazilian Latin woman, late 20s, long wavy golden blonde hair with sun-kissed highlights, natural glowing warm golden fair skin with peachy undertone and visible fine pores, no beauty filter, warm honey brown eyes with golden flecks, defined bold brows, soft nude glossy lips. Wearing a soft ivory white fitted scoop-neck modal crop top, light wash relaxed-fit denim jeans, barefoot. She holds the phone at arm's length, looking directly into camera with a warm excited smile, eyes bright and sparkling, head slightly tilted, as if sharing a secret with her best friend — pure genuine joy. In her free hand she holds the off-white matte thermal water bottle with dusty rose silicone lid upright beside her face, product clearly visible next to her expression. Behind her slightly blurred: white linen bed, natural wood headboard, a potted green plant, warm beige linen curtains with soft morning light. Warm natural morning window light. Shot on iPhone 16, handheld selfie style, authentic UGC aesthetic, 4K photorealistic, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure video frame only.
+
+  [CENA_4]
+  🎬 CENA 4 — CTA CONVERSÃO | 8s (1200cr)
+✅ ANEXAR CHARACTER SHEET ⭐
+Vertical 9:16 UGC video. Close-medium shot at eye level. The exact woman from the reference sheet: Brazilian Latin woman, late 20s, long wavy golden blonde hair with sun-kissed highlights, natural glowing warm golden fair skin with peachy undertone and visible fine pores, no beauty filter, warm honey brown eyes with golden flecks, defined bold brows, soft nude glossy lips. Wearing a soft ivory white fitted scoop-neck modal crop top, light wash relaxed-fit denim jeans, barefoot. Sitting upright on the bed, naturally full bust softly visible at scoop neckline, the off-white matte thermal water bottle with dusty rose silicone lid resting on the bed beside her hip, product fully visible. She looks directly into the camera with a calm serious expression of someone giving important advice — slight knowing smile, intense confident eyes. She slowly raises her index finger and points deliberately and steadily downward toward the bottom-center of the frame, holding the gesture firmly, maintaining direct unbroken eye contact with the camera, eyebrows slightly raised in emphasis — as if saying 'R$49,90, corre lá'. Natural wood headboard, white linen pillows, softly blurred potted green plant in background. Warm golden natural morning window light. Shot on iPhone 16, handheld, authentic UGC aesthetic, 4K photorealistic, clean screen, no overlays, no recording indicators, no camera UI, no REC indicator, no battery icon, no camera viewfinder border, no doodles, no annotations, no timer, no icons, no graphics on screen, pure
+
+
+========================================================================
+  RESUMO GERAL
+========================================================================
+  Estilo                H.Tempo    H.Custo   S.Tempo    S.Custo   H/S custo   H/S speed
+  -------------------- -------- ----------  -------- ----------  ----------  ----------
+  nano-veo-2             29014ms $ 0.01968    65324ms $ 0.08338       0.24x       0.44x
+  roupa-feminina-v2       8810ms $ 0.00558    29507ms $ 0.02186       0.26x       0.30x
+  serie                  22511ms $ 0.01390    60890ms $ 0.05880       0.24x       0.37x
+
+========================================================================
+  FIM DO RELATORIO
+========================================================================
